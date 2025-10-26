@@ -1,8 +1,5 @@
 
   # ProMed
-
-  This is a code bundle for ProMed. The original project is available at https://www.figma.com/design/5g6bOmioJuikQpcC7k25Iz/ProMed.
-
   ## Running the code
 
   Run `npm i` to install the dependencies.
