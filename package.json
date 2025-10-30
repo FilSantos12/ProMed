@@ -58,6 +58,6 @@
         "predeploy": "npm run build",
         "deploy": "gh-pages -d build"
      },
-    "homepage": "https://filsantos12.github.io/ProMed/"
+      "homepage": "./"
       
 }
