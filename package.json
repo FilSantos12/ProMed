@@ -56,8 +56,8 @@
         "dev": "vite",
         "build": "vite build",
         "predeploy": "npm run build",
-        "deploy": "gh-pages -d dist"
+        "deploy": "gh-pages -d build"
      },
-    "homepage": "https://github.com/FilSantos12/ProMed"
+    "homepage": "https://filsantos12.github.io/ProMed/"
       
 }
