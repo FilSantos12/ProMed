@@ -5,7 +5,7 @@
 
   export default defineConfig({
     plugins: [react()],
-    base: 'https://github.com/filsantos12/ProMed',
+    base: '/ProMed/',
     resolve: {
       extensions: ['.js', '.jsx', '.ts', '.tsx', '.json'],
       alias: {
