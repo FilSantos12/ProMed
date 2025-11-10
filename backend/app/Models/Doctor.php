@@ -1,0 +1,70 @@
+<?php
+
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+
+class Doctor extends Model
+{
+    use HasFactory;
+
+    protected $fillable = [
+        'user_id',
+        'specialty_id',
+        'crm',
+        'crm_state',
+        'bio',
+        'consultation_price',
+        'consultation_duration',
+        'formation',
+        'years_experience',
+    ];
+
+    protected $casts = [
+        'formation' => 'array',
+        'consultation_price' => 'decimal:2',
+    ];
+
+    public function user()
+    {
+        return $this->belongsTo(User::class);
+    }
+
+    public function specialty()
+    {
+        return $this->belongsTo(Specialty::class);
+    }
+
+    public function schedules()
+    {
+        return $this->hasMany(Schedule::class);
+    }
+
+    public function appointments()
+    {
+        return $this->hasMany(Appointment::class);
+    }
+
+    public function medicalRecords()
+    {
+        return $this->hasMany(MedicalRecord::class);
+    }
+
+    public function getFullNameAttribute()
+    {
+        return "Dr(a). {$this->user->name}";
+    }
+
+    public function scopeWithSpecialty($query, $specialtyId)
+    {
+        return $query->where('specialty_id', $specialtyId);
+    }
+
+    public function scopeAvailable($query)
+    {
+        return $query->whereHas('user', function ($q) {
+            $q->where('is_active', true);
+        });
+    }
+}
