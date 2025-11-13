@@ -1,0 +1,111 @@
+// frontend/src/contexts/AuthContext.tsx
+import { createContext, useState, useEffect, ReactNode } from 'react';
+import api from '../services/api';
+import { User, LoginCredentials, RegisterData, AuthResponse } from '../types';
+
+interface AuthContextData {
+  user: User | null;
+  token: string | null;
+  loading: boolean;
+  login: (credentials: LoginCredentials) => Promise<void>;
+  register: (data: RegisterData) => Promise<void>;
+  logout: () => void;
+  isAuthenticated: boolean;
+}
+
+export const AuthContext = createContext<AuthContextData>({} as AuthContextData);
+
+interface AuthProviderProps {
+  children: ReactNode;
+}
+
+export function AuthProvider({ children }: AuthProviderProps) {
+  const [user, setUser] = useState<User | null>(null);
+  const [token, setToken] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  // Carregar dados do localStorage ao iniciar
+  useEffect(() => {
+    const storedToken = localStorage.getItem('token');
+    const storedUser = localStorage.getItem('user');
+
+    if (storedToken && storedUser) {
+      setToken(storedToken);
+      setUser(JSON.parse(storedUser));
+    }
+    setLoading(false);
+  }, []);
+
+  // Login
+const login = async (credentials: LoginCredentials) => {
+  try {
+    console.log('Tentando login com:', credentials); // DEBUG
+    
+    const response = await api.post<AuthResponse>('/login', credentials);
+    
+    console.log('Login bem-sucedido:', response.data); // DEBUG
+    
+    const { user, token } = response.data;
+
+    localStorage.setItem('token', token);
+    localStorage.setItem('user', JSON.stringify(user));
+
+    setToken(token);
+    setUser(user);
+  } catch (error: any) {
+    console.error('Erro no login:', error.response?.data); // DEBUG
+    
+    const errorMessage = error.response?.data?.message 
+      || error.response?.data?.errors 
+      || 'Erro ao fazer login';
+    
+    throw new Error(JSON.stringify(errorMessage));
+  }
+};
+
+  // Registro
+  const register = async (data: RegisterData) => {
+    try {
+      const response = await api.post<AuthResponse>('/register', data);
+      const { user, token } = response.data;
+
+      localStorage.setItem('token', token);
+      localStorage.setItem('user', JSON.stringify(user));
+
+      setToken(token);
+      setUser(user);
+    } catch (error: any) {
+      throw new Error(error.response?.data?.message || 'Erro ao cadastrar');
+    }
+  };
+
+  // Logout
+  const logout = async () => {
+    try {
+      await api.post('/logout');
+    } catch (error) {
+      console.error('Erro ao fazer logout:', error);
+    } finally {
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+      setToken(null);
+      setUser(null);
+    }
+  };
+
+  return (
+    <AuthContext.Provider
+      value={{
+        user,
+        token,
+        loading,
+        login,
+        register,
+        logout,
+        isAuthenticated: !!token,
+      }}
+    >
+      {children}
+    </AuthContext.Provider>
+  );
+}

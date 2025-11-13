@@ -12,12 +12,14 @@ import {
   User, Stethoscope, Edit, Trash2, Plus, Search,
   Eye, TrendingUp, Clock, MapPin
 } from 'lucide-react';
+import { useAuth } from '../hooks/useAuth';
 
 interface AdminAreaProps {
-  user: any;
+  onSectionChange?: (section: string) => void;
 }
 
-export function AdminArea({ user }: AdminAreaProps) {
+export function AdminArea({ onSectionChange }: AdminAreaProps) {
+  const { user } = useAuth();
   const [activeTab, setActiveTab] = useState('dashboard');
   const [searchTerm, setSearchTerm] = useState('');
 
@@ -159,7 +161,7 @@ export function AdminArea({ user }: AdminAreaProps) {
             Painel Administrativo
           </h1>
           <p className="text-gray-600">
-            Bem-vindo, {user.name} - Gerencie o sistema ProMed
+            Bem-vindo, {user?.name ?? 'Usuário'} - Gerencie o sistema ProMed
           </p>
         </div>
 
