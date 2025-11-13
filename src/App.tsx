@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { AuthProvider } from './contexts/AuthContext';
 import { Header } from './components/Header';
 import { HomePage } from './components/HomePage';
 import { EspecialidadesPage } from './components/EspecialidadesPage';
@@ -11,36 +12,11 @@ import { PatientArea } from './components/PatientArea';
 import { AdminArea } from './components/AdminArea';
 import { CadastroPages } from './components/CadastroPages';
 
-export default function App() {
+function AppContent() {
   const [currentSection, setCurrentSection] = useState('home');
-  const [user, setUser] = useState<any>(null);
 
   const handleSectionChange = (section: string) => {
     setCurrentSection(section);
-  };
-
-  const handleLogin = (userData: any) => {
-    setUser(userData);
-    
-    // Redirect to appropriate area based on user role
-    switch (userData.role) {
-      case 'doctor':
-        setCurrentSection('doctor-area');
-        break;
-      case 'patient':
-        setCurrentSection('patient-area');
-        break;
-      case 'admin':
-        setCurrentSection('admin-area');
-        break;
-      default:
-        setCurrentSection('home');
-    }
-  };
-
-  const handleLogout = () => {
-    setUser(null);
-    setCurrentSection('home');
   };
 
   const renderCurrentSection = () => {
@@ -56,13 +32,13 @@ export default function App() {
       case 'agendamentos':
         return <AgendamentosPage />;
       case 'login':
-        return <LoginPage onLogin={handleLogin} onSectionChange={handleSectionChange} />;
+        return <LoginPage onSectionChange={handleSectionChange} />;
       case 'doctor-area':
-        return user?.role === 'doctor' ? <DoctorArea user={user} /> : <LoginPage onLogin={handleLogin} onSectionChange={handleSectionChange} />;
+        return <DoctorArea onSectionChange={handleSectionChange} />;
       case 'patient-area':
-        return user?.role === 'patient' ? <PatientArea user={user} onSectionChange={handleSectionChange} /> : <LoginPage onLogin={handleLogin} onSectionChange={handleSectionChange} />;
+        return <PatientArea onSectionChange={handleSectionChange} />;
       case 'admin-area':
-        return user?.role === 'admin' ? <AdminArea user={user} /> : <LoginPage onLogin={handleLogin} onSectionChange={handleSectionChange} />;
+        return <AdminArea onSectionChange={handleSectionChange} />;
       case 'cadastro-profissional':
         return <CadastroPages type="professional" onSectionChange={handleSectionChange} />;
       case 'cadastro-paciente':
@@ -77,9 +53,6 @@ export default function App() {
       <Header 
         currentSection={currentSection}
         onSectionChange={handleSectionChange}
-        user={user}
-        onLogin={() => setCurrentSection('login')}
-        onLogout={handleLogout}
       />
       
       <main>
@@ -131,5 +104,13 @@ export default function App() {
         </div>
       </footer>
     </div>
+  );
+}
+
+export default function App() {
+  return (
+    <AuthProvider>
+      <AppContent />
+    </AuthProvider>
   );
 }

@@ -8,12 +8,14 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from './ui/table';
 import { Textarea } from './ui/textarea';
 import { Calendar, Clock, User, FileText, Phone, Edit, Check, X, Mail, Plus, Camera } from 'lucide-react';
+import { useAuth } from '../hooks/useAuth';
 
 interface DoctorAreaProps {
-  user: any;
+  onSectionChange?: (section: string) => void;
 }
 
-export function DoctorArea({ user }: DoctorAreaProps) {
+export function DoctorArea({ onSectionChange }: DoctorAreaProps) {
+  const { user } = useAuth();
   const [activeTab, setActiveTab] = useState('agenda');
   const [profilePhoto, setProfilePhoto] = useState<string>('');
 
@@ -125,7 +127,7 @@ export function DoctorArea({ user }: DoctorAreaProps) {
                 Área do Médico
               </h1>
               <p className="text-gray-600">
-                Bem-vindo, {user.name} - {user.specialty} | {user.crm}
+                Bem-vindo, {user?.name ?? 'Usuário'} - {(user as any)?.specialty ?? 'Especialidade'} | {(user as any)?.crm ?? 'CRM'}
               </p>
             </div>
           </div>
@@ -545,18 +547,18 @@ export function DoctorArea({ user }: DoctorAreaProps) {
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="name">Nome Completo</Label>
-                    <Input id="name" defaultValue={user.name} />
+                    <Input id="name" defaultValue={user?.name} />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="specialty">Especialidade</Label>
-                    <Input id="specialty" defaultValue={user.specialty} />
+                    <Input id="specialty" defaultValue={(user as any)?.specialty} />
                   </div>
                 </div>
                 
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="crm">CRM</Label>
-                    <Input id="crm" defaultValue={user.crm} />
+                    <Input id="crm" defaultValue={(user as any)?.crm} />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="phone">Telefone</Label>

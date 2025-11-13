@@ -2,17 +2,22 @@ import React, { useState } from 'react';
 import { Button } from './ui/button';
 import { Sheet, SheetContent, SheetTrigger } from './ui/sheet';
 import { Menu, Stethoscope, User, Calendar, Shield } from 'lucide-react';
+import { useAuth } from '../hooks/useAuth';
 
 interface HeaderProps {
   currentSection: string;
   onSectionChange: (section: string) => void;
-  user: any;
-  onLogin: () => void;
-  onLogout: () => void;
 }
 
-export function Header({ currentSection, onSectionChange, user, onLogin, onLogout }: HeaderProps) {
-  const [isOpen, setIsOpen] = useState(false);
+export function Header({ currentSection, onSectionChange }: HeaderProps) {
+  const { user, logout, isAuthenticated } = useAuth();
+  const [isOpen, setIsOpen] = useState(false); 
+
+  const handleLogout = () => {
+    logout();
+    onSectionChange('home');
+    setIsOpen(false);
+  };
 
   type MenuItem = {
     id: string;
@@ -27,32 +32,30 @@ export function Header({ currentSection, onSectionChange, user, onLogin, onLogou
     { id: 'contato', label: 'Contato' },
   ];
 
-  const userMenuItems: MenuItem[] = user ? [
-    ...(user.role === 'doctor' ? [{ id: 'doctor-area', label: 'Área do Médico', icon: Stethoscope }] : []),
-    ...(user.role === 'patient' ? [{ id: 'patient-area', label: 'Área do Paciente', icon: User }] : []),
-    ...(user.role === 'admin' ? [{ id: 'admin-area', label: 'Administração', icon: Shield }] : []),
-    { id: 'agendamentos', label: 'Agendamentos', icon: Calendar },
-  ] : [
-    { id: 'login', label: 'Login' },
-    { id: 'cadastro-profissional', label: 'Cadastro Médico' },
-    { id: 'cadastro-paciente', label: 'Cadastro Paciente' },
-  ];
+  const userMenuItems: MenuItem[] = user
+    ? [
+        ...(user.role === 'doctor' ? [{ id: 'doctor-area', label: 'Área do Médico', icon: Stethoscope }] : []),
+        ...(user.role === 'patient' ? [{ id: 'patient-area', label: 'Área do Paciente', icon: User }] : []),
+        ...(user.role === 'admin' ? [{ id: 'admin-area', label: 'Administração', icon: Shield }] : []),
+        { id: 'agendamentos', label: 'Agendamentos', icon: Calendar },
+      ]
+    : [
+        { id: 'login', label: 'Login' },
+        { id: 'cadastro-profissional', label: 'Cadastro Médico' },
+        { id: 'cadastro-paciente', label: 'Cadastro Paciente' },
+      ];
 
   const handleNavClick = (sectionId: string) => {
-    if (sectionId === 'login') {
-      onLogin();
-    } else {
-      onSectionChange(sectionId);
-    }
+    onSectionChange(sectionId);
     setIsOpen(false);
   };
 
   return (
     <header className="bg-white/95 backdrop-blur-sm border-b border-blue-100 sticky top-0 z-50">
       <div className="container mx-auto px-4 h-16 flex items-center justify-between">
+        {/* Logo */}
         <div className="flex items-center space-x-2">
           <img src="/img/Logo1.JPG" alt="ProMed Logo" className="h-12" />
-          {/*<span className="text-xl font-semibold text-gray-900">ProMed</span>*/}
         </div>
 
         {/* Desktop Navigation */}
@@ -72,15 +75,15 @@ export function Header({ currentSection, onSectionChange, user, onLogin, onLogou
 
         {/* Desktop User Menu */}
         <div className="hidden md:flex items-center space-x-4">
-          {user ? (
+          {isAuthenticated ? (
             <div className="flex items-center space-x-4">
-              <span className="text-sm text-gray-700">Olá, {user.name}</span>
+              <span className="text-sm text-gray-700">Olá, {user?.name}</span>
               {userMenuItems.map((item) => {
                 const Icon = item.icon;
                 return (
                   <Button
                     key={item.id}
-                    variant={currentSection === item.id ? "default" : "ghost"}
+                    variant={currentSection === item.id ? 'default' : 'ghost'}
                     size="sm"
                     onClick={() => handleNavClick(item.id)}
                     className="flex items-center space-x-2"
@@ -90,7 +93,7 @@ export function Header({ currentSection, onSectionChange, user, onLogin, onLogou
                   </Button>
                 );
               })}
-              <Button variant="outline" size="sm" onClick={onLogout}>
+              <Button variant="outline" size="sm" onClick={handleLogout}>
                 Sair
               </Button>
             </div>
@@ -99,7 +102,7 @@ export function Header({ currentSection, onSectionChange, user, onLogin, onLogou
               {userMenuItems.map((item) => (
                 <Button
                   key={item.id}
-                  variant={item.id === 'login' ? "default" : "ghost"}
+                  variant={item.id === 'login' ? 'default' : 'ghost'}
                   size="sm"
                   onClick={() => handleNavClick(item.id)}
                 >
@@ -123,17 +126,15 @@ export function Header({ currentSection, onSectionChange, user, onLogin, onLogou
                 <Stethoscope className="w-6 h-6 text-blue-600" />
                 <span className="text-lg font-semibold">ProMed</span>
               </div>
-              
-              {user && (
-                <div className="text-sm text-gray-600 pb-2">
-                  Olá, {user.name}
-                </div>
+
+              {isAuthenticated && (
+                <div className="text-sm text-gray-600 pb-2">Olá, {user?.name}</div>
               )}
 
               {navigationItems.map((item) => (
                 <Button
                   key={item.id}
-                  variant={currentSection === item.id ? "default" : "ghost"}
+                  variant={currentSection === item.id ? 'default' : 'ghost'}
                   className="justify-start"
                   onClick={() => handleNavClick(item.id)}
                 >
@@ -147,7 +148,7 @@ export function Header({ currentSection, onSectionChange, user, onLogin, onLogou
                   return (
                     <Button
                       key={item.id}
-                      variant={currentSection === item.id ? "default" : "ghost"}
+                      variant={currentSection === item.id ? 'default' : 'ghost'}
                       className="justify-start mb-2"
                       onClick={() => handleNavClick(item.id)}
                     >
@@ -156,9 +157,13 @@ export function Header({ currentSection, onSectionChange, user, onLogin, onLogou
                     </Button>
                   );
                 })}
-                
-                {user && (
-                  <Button variant="outline" className="justify-start mt-4" onClick={onLogout}>
+
+                {isAuthenticated && (
+                  <Button
+                    variant="outline"
+                    className="justify-start mt-4"
+                    onClick={handleLogout}
+                  >
                     Sair
                   </Button>
                 )}

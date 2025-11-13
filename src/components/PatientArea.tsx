@@ -7,13 +7,15 @@ import { Badge } from './ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from './ui/table';
 import { Calendar, Clock, User, FileText, Download, Eye, Plus, Phone, Camera } from 'lucide-react';
+import { useAuth } from '../hooks/useAuth';
 
 interface PatientAreaProps {
-  user: any;
+  
   onSectionChange: (section: string) => void;
 }
 
-export function PatientArea({ user, onSectionChange }: PatientAreaProps) {
+export function PatientArea({ onSectionChange }: PatientAreaProps) {
+  const { user } = useAuth();
   const [activeTab, setActiveTab] = useState('consultas');
   const [profilePhoto, setProfilePhoto] = useState<string>('');
 
@@ -114,6 +116,7 @@ export function PatientArea({ user, onSectionChange }: PatientAreaProps) {
                 accept="image/*"
                 onChange={handlePhotoUpload}
                 className="hidden"
+                arial-label="Upload de foto de perfil"
               />
             </div>
             <div>
@@ -121,7 +124,7 @@ export function PatientArea({ user, onSectionChange }: PatientAreaProps) {
                 Área do Paciente
               </h1>
               <p className="text-gray-600">
-                Bem-vindo, {user.name} - CPF: {user.cpf}
+                Bem-vindo, {user?.name} - CPF: {user?.cpf}
               </p>
             </div>
           </div>
@@ -254,22 +257,22 @@ export function PatientArea({ user, onSectionChange }: PatientAreaProps) {
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="name">Nome Completo</Label>
-                    <Input id="name" defaultValue={user.name} />
+                    <Input id="name" defaultValue={user?.name} />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="cpf">CPF</Label>
-                    <Input id="cpf" defaultValue={user.cpf} disabled />
+                    <Input id="cpf" defaultValue={user?.cpf} disabled />
                   </div>
                 </div>
                 
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="phone">Telefone</Label>
-                    <Input id="phone" defaultValue={user.phone} />
+                    <Input id="phone" defaultValue={user?.phone} />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="email">Email</Label>
-                    <Input id="email" type="email" defaultValue={user.email} />
+                    <Input id="email" type="email" defaultValue={user?.email} />
                   </div>
                 </div>
                 
