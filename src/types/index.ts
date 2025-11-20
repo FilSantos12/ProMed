@@ -86,3 +86,20 @@ export interface AuthResponse {
   user: User;
   token: string;
 }
+
+export interface RegisterDoctorData {
+  name: string;
+  email: string;
+  password: string;
+  cpf: string;
+  phone: string;
+  birth_date: string;
+  gender?: 'M' | 'F' | 'Outro';
+  specialty_id: number;
+  crm: string;
+  crm_state: string;
+  bio?: string;
+  consultation_price?: number;
+  consultation_duration?: number;
+  years_experience?: number;
+}

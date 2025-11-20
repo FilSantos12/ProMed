@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
@@ -8,6 +8,10 @@ import { Textarea } from './ui/textarea';
 import { Checkbox } from './ui/checkbox';
 import { Separator } from './ui/separator';
 import { User, Stethoscope, FileText, Shield, Mail, Upload, Image, X } from 'lucide-react';
+import { useAuth } from '../hooks/useAuth';
+import { Alert, AlertDescription } from './ui/alert';
+import { AlertCircle, CheckCircle2 } from 'lucide-react';
+import api from '../services/api';
 
 interface CadastroPagesProps {
   type: 'patient' | 'professional';
@@ -23,6 +27,9 @@ export function CadastroPages({ type, onSectionChange }: CadastroPagesProps) {
     birthDate: '',
     phone: '',
     email: '',
+    gender: '',
+    password: '',
+    confirmPassword: '',
     
     // Endereço
     cep: '',
@@ -35,10 +42,14 @@ export function CadastroPages({ type, onSectionChange }: CadastroPagesProps) {
     
     // Profissional específico
     crm: '',
+    crmState: '',
     specialty: '',
     university: '',
     graduationYear: '',
     bio: '',
+    consultationPrice: '',
+    consultationDuration: '30',
+   yearsExperience: '',
     
     // Termos
     acceptTerms: false,
@@ -51,6 +62,78 @@ export function CadastroPages({ type, onSectionChange }: CadastroPagesProps) {
   const handleInputChange = (field: string, value: string | boolean) => {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
+
+
+const handleRegister = async (e: React.FormEvent) => {
+  e.preventDefault();
+  console.log('🟢 handleRegister FOI CHAMADA!');
+  console.log('📦 Dados do formulário:', formData);
+  console.log('👤 Tipo de cadastro:', type);
+  
+  setLoading(true);
+  setError('');
+
+  // Validação de senha
+  if (formData.password !== formData.confirmPassword) {
+    setError('As senhas não coincidem');
+    setLoading(false);
+    return;
+  }
+
+  // Validação dos termos
+  if (!formData.acceptTerms || !formData.acceptPrivacy) {
+    setError('Você precisa aceitar os termos e a política de privacidade');
+    setLoading(false);
+    return;
+  }
+
+  // Preparar dados para enviar à API
+  const dataToSend = {
+    name: formData.name,
+    email: formData.email,
+    password: formData.password,
+    password_confirmation: formData.confirmPassword, // Backend espera este nome
+    cpf: formData.cpf || formData.rg, // Use RG se CPF estiver vazio
+    phone: formData.phone,
+    birth_date: formData.birthDate,
+    gender: formData.gender || 'Outro',
+    role: type === 'patient' ? 'patient' : 'doctor',
+    
+    // Campos específicos do médico (se for médico)
+    ...(type === 'professional' && {
+      crm: formData.crm,
+      specialty_id: formData.specialty,
+    }),
+  };
+
+  console.log('🔵 Dados que serão enviados para API:', dataToSend);
+
+  try {
+    const response = await api.post('/register', dataToSend);
+    
+    console.log('✅ Cadastro realizado com sucesso:', response.data);
+    
+    alert('Cadastro realizado com sucesso! Faça login para continuar.');
+    onSectionChange('login');
+    
+  } catch (err: any) {
+    console.error('❌ Erro no cadastro:', err);
+    console.error('📛 Detalhes do erro:', err.response?.data);
+    
+    const errorMessage = err.response?.data?.message || 'Erro ao realizar cadastro';
+    setError(errorMessage);
+    
+    // Mostrar erros de validação
+    if (err.response?.data?.errors) {
+      console.error('❌ Erros de validação:', err.response.data.errors);
+      const firstError = Object.values(err.response.data.errors)[0];
+      setError(Array.isArray(firstError) ? firstError[0] : errorMessage);
+    }
+    
+  } finally {
+    setLoading(false);
+  }
+};
 
   const handleDiplomasChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
@@ -70,20 +153,140 @@ export function CadastroPages({ type, onSectionChange }: CadastroPagesProps) {
     setCertificates(prev => prev.filter((_, i) => i !== index));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (!formData.acceptTerms || !formData.acceptPrivacy) {
-      alert('Você deve aceitar os termos de uso e política de privacidade.');
-      return;
-    }
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState(false);
+  const { register } = useAuth();
 
-    // Aqui seria feita a integração com o backend
-    alert(`Cadastro realizado com sucesso! ${type === 'patient' ? 'Você já pode agendar consultas.' : 'Seu cadastro será analisado em até 48h.'}`);
-    
-    // Redirect to login
-    onSectionChange('login');
+  useEffect(() => {
+  const fetchSpecialties = async () => {
+    try {
+      const response = await api.get('/specialties');
+      // Atualizar o estado das especialidades se você tiver um
+      console.log('Especialidades:', response.data);
+    } catch (error) {
+      console.error('Erro ao carregar especialidades:', error);
+    }
   };
+
+  if (type === 'professional') {
+    fetchSpecialties();
+  }
+}, [type]);
+
+  // Função para submissão do formulário de cadastro Paciente
+const handleSubmitForm = async (e: React.FormEvent) => {
+  e.preventDefault();
+  setLoading(true);
+  setError('');
+  setSuccess(false);
+
+  // Validar senha
+  if (formData.password !== formData.confirmPassword) {
+    setError('As senhas não coincidem');
+    setLoading(false);
+    return;
+  }
+
+  if (formData.password.length < 8) {
+    setError('A senha deve ter no mínimo 8 caracteres');
+    setLoading(false);
+    return;
+  }
+
+  try {
+    await register({
+      name: formData.name,
+      email: formData.email,
+      password: formData.password,
+      password_confirmation: formData.confirmPassword,
+      cpf: formData.cpf,
+      phone: formData.phone,
+      birth_date: formData.birthDate,
+      gender: formData.gender as 'M' | 'F' | 'Outro' | undefined,
+    });
+
+    setSuccess(true);
+    
+    // Redirecionar após 2 segundos
+    setTimeout(() => {
+      onSectionChange('patient-area');
+    }, 2000);
+
+  } catch (err: any) {
+    const errorMessage = err.response?.data?.message 
+      || err.response?.data?.errors 
+      || err.message 
+      || 'Erro ao realizar cadastro. Tente novamente.';
+    
+    setError(typeof errorMessage === 'object' 
+      ? JSON.stringify(errorMessage) 
+      : errorMessage
+    );
+  } finally {
+    setLoading(false);
+  }
+};
+
+// Função para submissão do formulário de cadastro Profissional
+    const handleSubmit = async (e: React.FormEvent) => {
+  e.preventDefault();
+  setLoading(true);
+  setError('');
+  setSuccess(false);
+
+  // Validar senha
+  if (formData.password !== formData.confirmPassword) {
+    setError('As senhas não coincidem');
+    setLoading(false);
+    return;
+  }
+
+  if (formData.password.length < 8) {
+    setError('A senha deve ter no mínimo 8 caracteres');
+    setLoading(false);
+    return;
+  }
+
+  try {
+    const response = await api.post('/admin/doctors', {
+      name: formData.name,
+      email: formData.email,
+      password: formData.password,
+      cpf: formData.cpf,
+      phone: formData.phone,
+      birth_date: formData.birthDate,
+      gender: formData.gender as 'M' | 'F' | 'Outro' | undefined,
+      specialty_id: parseInt(formData.specialty),
+      crm: formData.crm,
+      crm_state: formData.crmState,
+      bio: formData.bio,
+      consultation_price: formData.consultationPrice ? parseFloat(formData.consultationPrice) : undefined,
+      consultation_duration: formData.consultationDuration ? parseInt(formData.consultationDuration) : 30,
+      years_experience: formData.yearsExperience ? parseInt(formData.yearsExperience) : undefined,
+    });
+
+    setSuccess(true);
+    
+    // Redirecionar após 2 segundos
+    setTimeout(() => {
+      onSectionChange('login');
+    }, 2000);
+
+  } catch (err: any) {
+    const errorMessage = err.response?.data?.message 
+      || err.response?.data?.errors 
+      || err.message 
+      || 'Erro ao realizar cadastro. Tente novamente.';
+    
+    setError(typeof errorMessage === 'object' 
+      ? JSON.stringify(errorMessage) 
+      : errorMessage
+    );
+  } finally {
+    setLoading(false);
+  }
+};
 
   const especialidades = [
     'Cardiologia',
@@ -141,6 +344,21 @@ export function CadastroPages({ type, onSectionChange }: CadastroPagesProps) {
           </CardHeader>
           
           <CardContent>
+            {error && (
+              <Alert variant="destructive" className="mb-4">
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription>{error}</AlertDescription>
+              </Alert>
+            )}
+
+            {success && (
+              <Alert className="mb-4 border-green-200 bg-green-50">
+                <CheckCircle2 className="h-4 w-4 text-green-600" />
+                <AlertDescription className="text-green-900">
+                  Cadastro realizado com sucesso! Redirecionando...
+                </AlertDescription>
+              </Alert>
+            )}
             <form onSubmit={handleSubmit} className="space-y-8">
               {/* Dados Pessoais */}
               <div className="space-y-4">
@@ -216,6 +434,35 @@ export function CadastroPages({ type, onSectionChange }: CadastroPagesProps) {
                     required
                   />
                 </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="password">Senha *</Label>
+                  <Input
+                    id="password"
+                    type="password"
+                    value={formData.password}
+                    onChange={(e) => handleInputChange('password', e.target.value)}
+                    placeholder="Mínimo 8 caracteres"
+                    required
+                    disabled={loading}
+                    minLength={8}
+                  />
+                  <p className="text-sm text-gray-500"></p>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="confirmPassword">Confirmar Senha *</Label>
+                  <Input
+                    id="confirmPassword"
+                    type="password"
+                    value={formData.confirmPassword}
+                    onChange={(e) => handleInputChange('confirmPassword', e.target.value)}
+                    placeholder="Digite a senha novamente"
+                    required
+                    disabled={loading}
+                    minLength={8}
+                  />
+                </div>
               </div>
 
               <Separator />
@@ -282,7 +529,7 @@ export function CadastroPages({ type, onSectionChange }: CadastroPagesProps) {
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="state">Estado *</Label>
-                    <Select value={formData.state} onValueChange={(value) => handleInputChange('state', value)}>
+                    <Select value={formData.state} onValueChange={(value: string) => handleInputChange('state', value)}>
                       <SelectTrigger>
                         <SelectValue placeholder="UF" />
                       </SelectTrigger>
@@ -330,7 +577,7 @@ export function CadastroPages({ type, onSectionChange }: CadastroPagesProps) {
                       </div>
                       <div className="space-y-2">
                         <Label htmlFor="specialty">Especialidade *</Label>
-                        <Select value={formData.specialty} onValueChange={(value) => handleInputChange('specialty', value)}>
+                        <Select value={formData.specialty} onValueChange={(value: string) => handleInputChange('specialty', value)}>
                           <SelectTrigger>
                             <SelectValue placeholder="Selecione a especialidade" />
                           </SelectTrigger>
@@ -419,6 +666,12 @@ export function CadastroPages({ type, onSectionChange }: CadastroPagesProps) {
                                 className="text-red-600 hover:text-red-700"
                               >
                                 <X className="w-4 h-4" />
+                                <Button 
+                                  type="submit"
+                                  disabled={loading}
+                                >
+                                  {loading ? 'Cadastrando...' : 'Criar Conta'}
+                                </Button>
                               </button>
                             </div>
                           ))}
@@ -465,6 +718,12 @@ export function CadastroPages({ type, onSectionChange }: CadastroPagesProps) {
                                 className="text-red-600 hover:text-red-700"
                               >
                                 <X className="w-4 h-4" />
+                                <Button 
+                                  type="submit"
+                                  disabled={loading}
+                                >
+                                  {loading ? 'Cadastrando...' : 'Criar Conta'}
+                                </Button>
                               </button>
                             </div>
                           ))}
@@ -489,7 +748,7 @@ export function CadastroPages({ type, onSectionChange }: CadastroPagesProps) {
                     <Checkbox 
                       id="terms"
                       checked={formData.acceptTerms}
-                      onCheckedChange={(checked) => handleInputChange('acceptTerms', checked as boolean)}
+                      onCheckedChange={(checked: boolean | 'indeterminate') => handleInputChange('acceptTerms', checked === true)}
                       required
                     />
                     <Label htmlFor="terms" className="text-sm leading-relaxed">
@@ -502,7 +761,7 @@ export function CadastroPages({ type, onSectionChange }: CadastroPagesProps) {
                     <Checkbox 
                       id="privacy"
                       checked={formData.acceptPrivacy}
-                      onCheckedChange={(checked) => handleInputChange('acceptPrivacy', checked as boolean)}
+                      onCheckedChange={(checked: boolean | 'indeterminate') => handleInputChange('acceptPrivacy', checked === true)}
                       required
                     />
                     <Label htmlFor="privacy" className="text-sm leading-relaxed">
@@ -516,17 +775,15 @@ export function CadastroPages({ type, onSectionChange }: CadastroPagesProps) {
               {/* Submit Button */}
               <div className="flex flex-col sm:flex-row gap-4 pt-6">
                 <Button 
-                  type="button" 
-                  variant="outline" 
-                  className="flex-1"
-                  onClick={() => onSectionChange('login')}
-                >
-                  Já tenho conta
-                </Button>
-                <Button 
-                  type="submit" 
+                  type="button"  // ← Mudei para "button" temporariamente
                   className="flex-1"
                   disabled={!formData.acceptTerms || !formData.acceptPrivacy}
+                  onClick={(e: React.MouseEvent<HTMLButtonElement>) => {
+                      e.preventDefault();
+                      console.log('🔴 BOTÃO CLICADO DIRETAMENTE!');
+                      console.log('📦 FormData:', formData);
+                      handleRegister(e as any);
+                    }}
                 >
                   {type === 'patient' ? 'Criar Conta de Paciente' : 'Solicitar Cadastro Profissional'}
                 </Button>
@@ -534,12 +791,11 @@ export function CadastroPages({ type, onSectionChange }: CadastroPagesProps) {
             </form>
           </CardContent>
         </Card>
-
         {/* Info Card */}
         {type === 'professional' && (
           <Card className="mt-6">
             <CardContent className="pt-6">
-              <div className="text-center space-y-2">
+               <form onSubmit={handleRegister} className="space-y-6">
                 <Shield className="w-12 h-12 text-blue-600 mx-auto" />
                 <h4 className="font-medium text-gray-900">Processo de Verificação</h4>
                 <p className="text-sm text-gray-600">
@@ -552,7 +808,7 @@ export function CadastroPages({ type, onSectionChange }: CadastroPagesProps) {
                     certificados de especialização (se aplicável).
                   </p>
                 </div>
-              </div>
+              </form>
             </CardContent>
           </Card>
         )}

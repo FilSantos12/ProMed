@@ -30,7 +30,7 @@ export function LoginPage({ onSectionChange }: LoginPageProps) {
     setError('');
   };
 
-  const handleLogin = async (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent, role?: 'patient' | 'doctor' | 'admin') => {
     e.preventDefault();
     setLoading(true);
     setError('');
@@ -43,7 +43,25 @@ export function LoginPage({ onSectionChange }: LoginPageProps) {
 
       // Aguardar um pouco para o context atualizar
       setTimeout(() => {
-        // Redirecionar baseado no role
+        // Se o role foi passado explicitamente (ex.: formulário do médico), usar ele para redirecionar
+        if (role) {
+          switch (role) {
+            case 'doctor':
+              onSectionChange('doctor-area');
+              break;
+            case 'patient':
+              onSectionChange('patient-area');
+              break;
+            case 'admin':
+              onSectionChange('admin-area');
+              break;
+            default:
+              onSectionChange('home');
+          }
+          return;
+        }
+
+        // Caso contrário, tentar inferir do usuário no localStorage
         const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
         
         switch (currentUser.role) {
@@ -203,6 +221,135 @@ export function LoginPage({ onSectionChange }: LoginPageProps) {
 
           {/* Médico e Admin tabs similares... (mantém o mesmo padrão) */}
 
+          <TabsContent value="doctor">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center space-x-2">
+                  <Stethoscope className="w-5 h-5 text-blue-600" />
+                  <span>Área do Médico</span>
+                </CardTitle>
+                <CardDescription>
+                  Gerencie seus agendamentos, prontuários e pacientes
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <form onSubmit={(e) => handleLogin(e, 'doctor')} className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="doctor-email">Email</Label>
+                    <Input
+                      id="doctor-email"
+                      type="email"
+                      value={loginData.email}
+                      onChange={(e) => handleInputChange('email', e.target.value)}
+                      placeholder="medico@email.com"
+                      required
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="doctor-password">Senha</Label>
+                    <Input
+                      id="doctor-password"
+                      type="password"
+                      value={loginData.password}
+                      onChange={(e) => handleInputChange('password', e.target.value)}
+                      placeholder="Sua senha"
+                      required
+                    />
+                  </div>
+                  <Button type="submit" className="w-full">
+                    <Stethoscope className="w-4 h-4 mr-2" />
+                    Entrar como Médico
+                  </Button>
+                </form>
+                
+                <Separator className="my-4" />
+                
+                <div className="space-y-2">
+                  <Button 
+                    variant="outline" 
+                    className="w-full"
+                    onClick={() => handleDemoLogin('doctor')}
+                  >
+                    Acesso Demo - Médico
+                  </Button>
+                  <div className="text-center space-y-2">
+                    <Button 
+                      variant="link" 
+                      className="text-sm"
+                      onClick={() => onSectionChange('cadastro-profissional')}
+                    >
+                      Não tem conta? Cadastre-se
+                    </Button>
+                    <br />
+                    <Button variant="link" className="text-sm">
+                      Esqueceu sua senha?
+                    </Button>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="admin">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center space-x-2">
+                  <Shield className="w-5 h-5 text-blue-600" />
+                  <span>Área Administrativa</span>
+                </CardTitle>
+                <CardDescription>
+                  Acesso ao painel administrativo do sistema
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <form onSubmit={(e) => handleLogin(e, 'admin')} className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="admin-email">Email</Label>
+                    <Input
+                      id="admin-email"
+                      type="email"
+                      value={loginData.email}
+                      onChange={(e) => handleInputChange('email', e.target.value)}
+                      placeholder="admin@promed.com"
+                      required
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="admin-password">Senha</Label>
+                    <Input
+                      id="admin-password"
+                      type="password"
+                      value={loginData.password}
+                      onChange={(e) => handleInputChange('password', e.target.value)}
+                      placeholder="Sua senha"
+                      required
+                    />
+                  </div>
+                  <Button type="submit" className="w-full">
+                    <Shield className="w-4 h-4 mr-2" />
+                    Entrar como Admin
+                  </Button>
+                </form>
+                
+                <Separator className="my-4" />
+                
+                <div className="space-y-2">
+                  <Button 
+                    variant="outline" 
+                    className="w-full"
+                    onClick={() => handleDemoLogin('admin')}
+                  >
+                    Acesso Demo - Admin
+                  </Button>
+                  <div className="text-center">
+                    <Button variant="link" className="text-sm">
+                      Esqueceu sua senha?
+                    </Button>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
         </Tabs>
 
         {/* Credenciais de Teste */}
