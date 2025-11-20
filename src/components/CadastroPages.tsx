@@ -12,6 +12,7 @@ import { useAuth } from '../hooks/useAuth';
 import { Alert, AlertDescription } from './ui/alert';
 import { AlertCircle, CheckCircle2 } from 'lucide-react';
 import api from '../services/api';
+import { Modal } from './ui/modal';
 
 interface CadastroPagesProps {
   type: 'patient' | 'professional';
@@ -55,6 +56,9 @@ export function CadastroPages({ type, onSectionChange }: CadastroPagesProps) {
     acceptTerms: false,
     acceptPrivacy: false
   });
+
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [registeredUserName, setRegisteredUserName] = useState('');
 
   const [diplomas, setDiplomas] = useState<File[]>([]);
   const [certificates, setCertificates] = useState<File[]>([]);
@@ -113,8 +117,9 @@ const handleRegister = async (e: React.FormEvent) => {
     
     console.log('✅ Cadastro realizado com sucesso:', response.data);
     
-    alert('Cadastro realizado com sucesso! Faça login para continuar.');
-    onSectionChange('login');
+      // Salvar nome do usuário e abrir modal
+      setRegisteredUserName(formData.name);
+      setShowSuccessModal(true);
     
   } catch (err: any) {
     console.error('❌ Erro no cadastro:', err);
@@ -331,7 +336,7 @@ const handleSubmitForm = async (e: React.FormEvent) => {
             }
           </p>
         </div>
-
+        {/* Form Card */}
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center space-x-2">
@@ -813,6 +818,53 @@ const handleSubmitForm = async (e: React.FormEvent) => {
           </Card>
         )}
       </div>
+
+      {/* Modal de Sucesso */}
+      <Modal
+        isOpen={showSuccessModal}
+        onClose={() => {
+          setShowSuccessModal(false);
+          onSectionChange('login');
+        }}
+        title={type === 'patient' ? '🎉 Bem-vindo à ProMed!' : '🩺 Cadastro Profissional Enviado!'}
+      >
+        <div className="space-y-4">
+          {type === 'patient' ? (
+            <>
+              <p className="text-lg">
+                Olá, <strong>{registeredUserName}</strong>!
+              </p>
+              <p>Seu cadastro foi realizado com sucesso!</p>
+              <p className="text-sm text-gray-500">
+                Agora você pode fazer login e agendar suas consultas.
+              </p>
+            </>
+          ) : (
+            <>
+              <p className="text-lg">
+                Olá, <strong>Dr(a). {registeredUserName}</strong>!
+              </p>
+              <p>Sua solicitação de cadastro foi enviada com sucesso!</p>
+              <p className="text-sm text-gray-500">
+                Nossa equipe irá analisar seus dados e você receberá um email quando seu cadastro for aprovado.
+              </p>
+            </>
+          )}
+          
+          <div className="pt-4">
+            <Button
+              onClick={() => {
+                setShowSuccessModal(false);
+                onSectionChange('login');
+              }}
+              className="w-full"
+            >
+              {type === 'patient' ? 'Fazer Login' : 'Entendi'}
+            </Button>
+          </div>
+        </div>
+      </Modal>
     </div>
   );
 }
+  

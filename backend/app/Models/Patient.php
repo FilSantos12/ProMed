@@ -4,10 +4,11 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use App\Traits\EncryptsAttributes;
 
 class Patient extends Model
 {
-    use HasFactory;
+    use HasFactory, EncryptsAttributes;
 
     protected $fillable = [
         'user_id',
@@ -19,6 +20,16 @@ class Patient extends Model
         'medications',
         'health_insurance',
         'insurance_number',
+    ];
+
+    /**
+     * Atributos que devem ser criptografados (LGPD)
+     */
+    protected array $encryptable = [
+        'health_insurance',
+        'insurance_number',
+        'emergency_contact',
+        'emergency_phone',
     ];
 
     public function user()

@@ -7,10 +7,11 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
+use App\Traits\EncryptsAttributes;
 
 class User extends Authenticatable
 {
-    use HasApiTokens, HasFactory, Notifiable, SoftDeletes;
+    use HasApiTokens, HasFactory, Notifiable, SoftDeletes, EncryptsAttributes;
 
     protected $fillable = [
         'name',
@@ -35,6 +36,14 @@ class User extends Authenticatable
         'birth_date' => 'date',
         'is_active' => 'boolean',
         'password' => 'hashed',
+    ];
+
+    /**
+     * Atributos que devem ser criptografados (LGPD)
+     */
+    protected array $encryptable = [
+        'cpf',
+        'phone',
     ];
 
     // Relacionamentos
