@@ -13,6 +13,9 @@ import { Alert, AlertDescription } from './ui/alert';
 import { AlertCircle, CheckCircle2 } from 'lucide-react';
 import api from '../services/api';
 import { Modal } from './ui/modal';
+import { ErrorModal } from './ui/error-modal';
+import { TermsModal } from './ui/terms-modal';
+import InputMask from 'react-input-mask';
 
 interface CadastroPagesProps {
   type: 'patient' | 'professional';
@@ -28,6 +31,7 @@ export function CadastroPages({ type, onSectionChange }: CadastroPagesProps) {
     birthDate: '',
     phone: '',
     email: '',
+    confirmEmail: '',
     gender: '',
     password: '',
     confirmPassword: '',
@@ -50,18 +54,25 @@ export function CadastroPages({ type, onSectionChange }: CadastroPagesProps) {
     bio: '',
     consultationPrice: '',
     consultationDuration: '30',
-   yearsExperience: '',
+    yearsExperience: '',
     
     // Termos
     acceptTerms: false,
     acceptPrivacy: false
   });
 
+    // Modais de sucesso e erro
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [registeredUserName, setRegisteredUserName] = useState('');
 
   const [diplomas, setDiplomas] = useState<File[]>([]);
   const [certificates, setCertificates] = useState<File[]>([]);
+
+  const [showErrorModal, setShowErrorModal] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
+
+  const [showTermsModal, setShowTermsModal] = useState(false);
+  const [showPrivacyModal, setShowPrivacyModal] = useState(false);
 
   const handleInputChange = (field: string, value: string | boolean) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -79,14 +90,24 @@ const handleRegister = async (e: React.FormEvent) => {
 
   // Validação de senha
   if (formData.password !== formData.confirmPassword) {
-    setError('As senhas não coincidem');
+    setErrorMessage('As senhas não coincidem. Verifique e tente novamente.');
+    setShowErrorModal(true);
+    setLoading(false);
+    return;
+  }
+
+  // Validação de email
+  if (formData.email !== formData.confirmEmail) {
+    setErrorMessage('Os emails não coincidem. Verifique e tente novamente.');
+    setShowErrorModal(true);
     setLoading(false);
     return;
   }
 
   // Validação dos termos
   if (!formData.acceptTerms || !formData.acceptPrivacy) {
-    setError('Você precisa aceitar os termos e a política de privacidade');
+    setErrorMessage('Você precisa aceitar os termos e a política de privacidade');
+    setShowErrorModal(true);
     setLoading(false);
     return;
   }
@@ -97,7 +118,8 @@ const handleRegister = async (e: React.FormEvent) => {
     email: formData.email,
     password: formData.password,
     password_confirmation: formData.confirmPassword, // Backend espera este nome
-    cpf: formData.cpf || formData.rg, // Use RG se CPF estiver vazio
+    cpf: formData.cpf, 
+    rg: formData.rg, 
     phone: formData.phone,
     birth_date: formData.birthDate,
     gender: formData.gender || 'Outro',
@@ -121,19 +143,44 @@ const handleRegister = async (e: React.FormEvent) => {
       setRegisteredUserName(formData.name);
       setShowSuccessModal(true);
     
-  } catch (err: any) {
+ } catch (err: any) {
     console.error('❌ Erro no cadastro:', err);
     console.error('📛 Detalhes do erro:', err.response?.data);
     
-    const errorMessage = err.response?.data?.message || 'Erro ao realizar cadastro';
-    setError(errorMessage);
+    let errorMsg = 'Ocorreu um erro ao realizar o cadastro. Tente novamente.';
     
-    // Mostrar erros de validação
+    // Tratar erros específicos do backend
+    if (err.response?.data?.message) {
+      errorMsg = err.response.data.message;
+    }
+    
+    // Mostrar erros de validação do backend
     if (err.response?.data?.errors) {
       console.error('❌ Erros de validação:', err.response.data.errors);
-      const firstError = Object.values(err.response.data.errors)[0];
-      setError(Array.isArray(firstError) ? firstError[0] : errorMessage);
-    }
+      const errors = err.response.data.errors;
+    // Mapeamento manual (BACKUP)
+    const errorTranslations: { [key: string]: string } = {
+      'The cpf has already been taken.': 'Este CPF já está cadastrado no sistema.',
+      'The email has already been taken.': 'Este email já está cadastrado no sistema.',
+      'The rg has already been taken.': 'Este RG já está cadastrado no sistema.',
+      'The phone has already been taken.': 'Este telefone já está cadastrado no sistema.',
+      'The crm has already been taken.': 'Este CRM já está cadastrado no sistema.',
+      'The password confirmation does not match.': 'A confirmação de senha não confere.',
+      'The cpf field is required.': 'O campo CPF é obrigatório.',
+      'The email field is required.': 'O campo email é obrigatório.',
+      'The password field is required.': 'O campo senha é obrigatório.',
+    };
+    
+    const firstErrorKey = Object.keys(errors)[0];
+    const firstErrorArray = errors[firstErrorKey];
+    const firstErrorMessage = Array.isArray(firstErrorArray) ? firstErrorArray[0] : firstErrorArray;
+    
+    // Tentar traduzir, se não encontrar usa a mensagem original
+    errorMsg = errorTranslations[firstErrorMessage] || firstErrorMessage;
+  }
+    
+    setErrorMessage(errorMsg);
+    setShowErrorModal(true);
     
   } finally {
     setLoading(false);
@@ -385,27 +432,42 @@ const handleSubmitForm = async (e: React.FormEvent) => {
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="cpf">CPF *</Label>
-                    <Input
-                      id="cpf"
-                      value={formData.cpf}
-                      onChange={(e) => handleInputChange('cpf', e.target.value)}
-                      placeholder="000.000.000-00"
-                      required
-                    />
+                      <InputMask
+                        mask="999.999.999-99"
+                        value={formData.cpf}
+                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleInputChange('cpf', e.target.value)}
+                      >
+                        {(inputProps: any) => (
+                          <Input 
+                            {...inputProps}
+                            id="cpf"
+                            placeholder="000.000.000-00"
+                            required
+                          />
+                        )}
+                      </InputMask>
                   </div>
                 </div>
 
                 <div className="grid md:grid-cols-3 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="rg">RG *</Label>
-                    <Input
-                      id="rg"
+                    <InputMask
+                      mask="99.999.999-9"
                       value={formData.rg}
-                      onChange={(e) => handleInputChange('rg', e.target.value)}
-                      placeholder="00.000.000-0"
-                      required
-                    />
+                      onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleInputChange('rg', e.target.value)}
+                    >
+                      {(inputProps: any) => (
+                        <Input 
+                          {...inputProps}
+                          id="rg"
+                          placeholder="00.000.000-0"
+                          required
+                        />
+                      )}
+                    </InputMask>
                   </div>
+     
                   <div className="space-y-2">
                     <Label htmlFor="birthDate">Data de Nascimento *</Label>
                     <Input
@@ -418,16 +480,24 @@ const handleSubmitForm = async (e: React.FormEvent) => {
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="phone">Telefone *</Label>
-                    <Input
-                      id="phone"
+                    <InputMask
+                      mask="(99) 99999-9999"
                       value={formData.phone}
-                      onChange={(e) => handleInputChange('phone', e.target.value)}
-                      placeholder="(11) 99999-9999"
-                      required
-                    />
+                      onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleInputChange('phone', e.target.value)}
+                    >
+                      {(inputProps: any) => (
+                        <Input 
+                          {...inputProps}
+                          id="phone"
+                          placeholder="(11) 99999-9999"
+                          required
+                        />
+                      )}
+                    </InputMask>
                   </div>
                 </div>
 
+              <div className="grid md:grid-cols-2 gap-4">         
                 <div className="space-y-2">
                   <Label htmlFor="email">Email *</Label>
                   <Input
@@ -439,6 +509,31 @@ const handleSubmitForm = async (e: React.FormEvent) => {
                     required
                   />
                 </div>
+                <div className="space-y-2"> 
+                  <Label htmlFor="confirmEmail">Confirmar Email *</Label>
+                  <Input
+                    id="confirmEmail"
+                    type="email"
+                    value={formData.confirmEmail}
+                    onChange={(e) => handleInputChange('confirmEmail', e.target.value)}
+                    placeholder="Confirme seu@email.com"
+                    required
+                     className={
+                        formData.confirmEmail && formData.email !== formData.confirmEmail
+                          ? 'border-red-500 focus:ring-red-500'
+                          : formData.confirmEmail && formData.email === formData.confirmEmail
+                          ? 'border-green-500 focus:ring-green-500'
+                          : ''
+                      }
+                    />
+                    {formData.confirmEmail && formData.email !== formData.confirmEmail && (
+                      <p className="text-sm text-red-600">Os emails estão diferentes</p>
+                    )}
+                    {formData.confirmEmail && formData.email === formData.confirmEmail && (
+                      <p className="text-sm text-green-600">✓ Correto, os emails são iguais</p>
+                    )}
+                </div>
+              </div>    
 
                 <div className="space-y-2">
                   <Label htmlFor="password">Senha *</Label>
@@ -466,7 +561,20 @@ const handleSubmitForm = async (e: React.FormEvent) => {
                     required
                     disabled={loading}
                     minLength={8}
-                  />
+                      className={
+                        formData.confirmPassword && formData.password !== formData.confirmPassword
+                          ? 'border-red-500 focus:ring-red-500'
+                          : formData.confirmPassword && formData.password === formData.confirmPassword
+                          ? 'border-green-500 focus:ring-green-500'
+                          : ''
+                      }
+                    />
+                    {formData.confirmPassword && formData.password !== formData.confirmPassword && (
+                      <p className="text-sm text-red-600">As senhas não são iguais</p>
+                    )}
+                    {formData.confirmPassword && formData.password === formData.confirmPassword && (
+                      <p className="text-sm text-green-600">✓ Correto, as senhas são iguais</p>
+                    )}
                 </div>
               </div>
 
@@ -482,13 +590,20 @@ const handleSubmitForm = async (e: React.FormEvent) => {
                 <div className="grid md:grid-cols-3 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="cep">CEP *</Label>
-                    <Input
-                      id="cep"
+                    <InputMask
+                      mask="99999-999"
                       value={formData.cep}
-                      onChange={(e) => handleInputChange('cep', e.target.value)}
-                      placeholder="00000-000"
-                      required
-                    />
+                      onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleInputChange('cep', e.target.value)}
+                    >
+                      {(inputProps: any) => (
+                        <Input 
+                          {...inputProps}
+                          id="cep"
+                          placeholder="00000-000"
+                          required
+                        />
+                      )}
+                    </InputMask>
                   </div>
                   <div className="space-y-2 md:col-span-2">
                     <Label htmlFor="address">Endereço *</Label>
@@ -741,41 +856,55 @@ const handleSubmitForm = async (e: React.FormEvent) => {
 
               <Separator />
 
-              {/* Termos e Condições */}
-              <div className="space-y-4">
-                <h3 className="text-lg font-semibold text-gray-900 flex items-center space-x-2">
-                  <Shield className="w-5 h-5 text-blue-600" />
-                  <span>Termos e Condições</span>
-                </h3>
-                
+                {/* Termos e Condições */}
                 <div className="space-y-4">
-                  <div className="flex items-start space-x-2">
-                    <Checkbox 
-                      id="terms"
-                      checked={formData.acceptTerms}
-                      onCheckedChange={(checked: boolean | 'indeterminate') => handleInputChange('acceptTerms', checked === true)}
-                      required
-                    />
-                    <Label htmlFor="terms" className="text-sm leading-relaxed">
-                      Aceito os <button type="button" className="text-blue-600 hover:underline">Termos de Uso</button> e 
-                      confirmo que li e compreendi todas as condições.
-                    </Label>
-                  </div>
+                  <h3 className="text-lg font-semibold text-gray-900 flex items-center space-x-2">
+                    <Shield className="w-5 h-5 text-blue-600" />
+                    <span>Termos e Condições</span>
+                  </h3>
                   
-                  <div className="flex items-start space-x-2">
-                    <Checkbox 
-                      id="privacy"
-                      checked={formData.acceptPrivacy}
-                      onCheckedChange={(checked: boolean | 'indeterminate') => handleInputChange('acceptPrivacy', checked === true)}
-                      required
-                    />
-                    <Label htmlFor="privacy" className="text-sm leading-relaxed">
-                      Aceito a <button type="button" className="text-blue-600 hover:underline">Política de Privacidade</button> e 
-                      autorizo o tratamento dos meus dados pessoais conforme descrito.
-                    </Label>
+                  <div className="space-y-4">
+                    <div className="flex items-start space-x-2">
+                      <Checkbox 
+                        id="terms"
+                        checked={formData.acceptTerms}
+                        onCheckedChange={(checked: boolean | 'indeterminate') => handleInputChange('acceptTerms', checked === true)}
+                        required
+                      />
+                      <Label htmlFor="terms" className="text-sm leading-relaxed">
+                        Aceito os{' '}
+                        <button 
+                          type="button" 
+                          onClick={() => setShowTermsModal(true)}
+                          className="text-blue-600 hover:underline font-medium"
+                        >
+                          Termos de Uso
+                        </button>{' '}
+                        e confirmo que li e compreendi todas as condições.
+                      </Label>
+                    </div>
+                    
+                    <div className="flex items-start space-x-2">
+                      <Checkbox 
+                        id="privacy"
+                        checked={formData.acceptPrivacy}
+                        onCheckedChange={(checked: boolean | 'indeterminate') => handleInputChange('acceptPrivacy', checked === true)}
+                        required
+                      />
+                      <Label htmlFor="privacy" className="text-sm leading-relaxed">
+                        Aceito a{' '}
+                        <button 
+                          type="button" 
+                          onClick={() => setShowPrivacyModal(true)}
+                          className="text-blue-600 hover:underline font-medium"
+                        >
+                          Política de Privacidade
+                        </button>{' '}
+                        e autorizo o tratamento dos meus dados pessoais conforme descrito.
+                      </Label>
+                    </div>
                   </div>
                 </div>
-              </div>
 
               {/* Submit Button */}
               <div className="flex flex-col sm:flex-row gap-4 pt-6">
@@ -819,7 +948,14 @@ const handleSubmitForm = async (e: React.FormEvent) => {
         )}
       </div>
 
-      {/* Modal de Sucesso */}
+    {/* Modal de Erro */}
+      <ErrorModal
+        isOpen={showErrorModal}
+        onClose={() => setShowErrorModal(false)}
+        message={errorMessage}
+      />
+
+    {/* Modal de Sucesso */}
       <Modal
         isOpen={showSuccessModal}
         onClose={() => {
@@ -864,7 +1000,25 @@ const handleSubmitForm = async (e: React.FormEvent) => {
           </div>
         </div>
       </Modal>
+
+
+      {/* Modal de Termos de Uso */}
+        <TermsModal
+          isOpen={showTermsModal}
+          onClose={() => setShowTermsModal(false)}
+          type="terms"
+        />
+
+        {/* Modal de Política de Privacidade */}
+        <TermsModal
+          isOpen={showPrivacyModal}
+          onClose={() => setShowPrivacyModal(false)}
+          type="privacy"
+        />
+
     </div>
   );
 }
+  
+
   

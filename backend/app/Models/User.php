@@ -16,8 +16,10 @@ class User extends Authenticatable
     protected $fillable = [
         'name',
         'email',
+        'confirm_email',
         'password',
         'cpf',
+        'rg',
         'phone',
         'birth_date',
         'gender',
@@ -44,6 +46,7 @@ class User extends Authenticatable
     protected array $encryptable = [
         'cpf',
         'phone',
+        'rg',
     ];
 
     // Relacionamentos
