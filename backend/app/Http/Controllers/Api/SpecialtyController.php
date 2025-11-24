@@ -13,7 +13,7 @@ class SpecialtyController extends Controller
      */
     public function index()
     {
-        $specialties = Specialty::active()
+        $specialties = Specialty::where('is_active', true)
             ->withCount('doctors')
             ->orderBy('name')
             ->get();

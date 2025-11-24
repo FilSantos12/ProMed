@@ -16,6 +16,7 @@ import { Modal } from './ui/modal';
 import { ErrorModal } from './ui/error-modal';
 import { TermsModal } from './ui/terms-modal';
 import InputMask from 'react-input-mask';
+import { specialtyService, Specialty } from '../services/specialtyService';
 
 interface CadastroPagesProps {
   type: 'patient' | 'professional';
@@ -74,6 +75,9 @@ export function CadastroPages({ type, onSectionChange }: CadastroPagesProps) {
   const [showTermsModal, setShowTermsModal] = useState(false);
   const [showPrivacyModal, setShowPrivacyModal] = useState(false);
 
+  const [specialties, setSpecialties] = useState<Specialty[]>([]);
+  const [loadingSpecialties, setLoadingSpecialties] = useState(false);
+
   const handleInputChange = (field: string, value: string | boolean) => {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
@@ -84,9 +88,10 @@ const handleRegister = async (e: React.FormEvent) => {
   console.log('🟢 handleRegister FOI CHAMADA!');
   console.log('📦 Dados do formulário:', formData);
   console.log('👤 Tipo de cadastro:', type);
+  console.log('📋 Especialidades disponíveis:', specialties);
   
   setLoading(true);
-  setError('');
+  setErrorMessage('');
 
   // Validação de senha
   if (formData.password !== formData.confirmPassword) {
@@ -112,30 +117,90 @@ const handleRegister = async (e: React.FormEvent) => {
     return;
   }
 
-  // Preparar dados para enviar à API
-  const dataToSend = {
-    name: formData.name,
-    email: formData.email,
-    password: formData.password,
-    password_confirmation: formData.confirmPassword, // Backend espera este nome
-    cpf: formData.cpf, 
-    rg: formData.rg, 
-    phone: formData.phone,
-    birth_date: formData.birthDate,
-    gender: formData.gender || 'Outro',
-    role: type === 'patient' ? 'patient' : 'doctor',
-    
-    // Campos específicos do médico (se for médico)
-    ...(type === 'professional' && {
-      crm: formData.crm,
-      specialty_id: formData.specialty,
-    }),
-  };
+  // Se for médico, validar documentos obrigatórios
+  if (type === 'professional') {
+    if (!documents.diploma) {
+      setErrorMessage('O diploma de medicina é obrigatório.');
+      setShowErrorModal(true);
+      setLoading(false);
+      return;
+    }
+    if (!documents.crm_document) {
+      setErrorMessage('O comprovante de CRM é obrigatório.');
+      setShowErrorModal(true);
+      setLoading(false);
+      return;
+    }
+    if (!documents.photo) {
+      setErrorMessage('A foto 3x4 é obrigatória.');
+      setShowErrorModal(true);
+      setLoading(false);
+      return;
+    }
+  }
 
-  console.log('🔵 Dados que serão enviados para API:', dataToSend);
+  // ========================================
+// PREPARAR DADOS COM FORMDATA (para enviar arquivos)
+// ========================================
+const formDataToSend = new FormData();
+
+// Dados básicos (para todos os tipos de usuário)
+formDataToSend.append('name', formData.name);
+formDataToSend.append('email', formData.email);
+formDataToSend.append('password', formData.password);
+formDataToSend.append('password_confirmation', formData.confirmPassword);
+formDataToSend.append('cpf', formData.cpf);
+formDataToSend.append('rg', formData.rg || '');
+formDataToSend.append('phone', formData.phone);
+formDataToSend.append('birth_date', formData.birthDate);
+formDataToSend.append('gender', formData.gender || 'Outro');
+formDataToSend.append('role', type === 'patient' ? 'patient' : 'doctor');
+
+// Campos específicos do médico
+if (type === 'professional') {
+  formDataToSend.append('crm', formData.crm);
+  formDataToSend.append('crm_state', formData.crmState);
+  formDataToSend.append('specialty_id', formData.specialty);
+  formDataToSend.append('bio', formData.bio || '');
+  formDataToSend.append('consultation_price', formData.consultationPrice || '0');
+  formDataToSend.append('consultation_duration', formData.consultationDuration || '30');
+  formDataToSend.append('university', formData.university || '');
+  formDataToSend.append('graduation_year', formData.graduationYear || '');
+  formDataToSend.append('years_experience', formData.yearsExperience || '0');
+
+  // ========================================
+  // ADICIONAR ARQUIVOS
+  // ========================================
+  if (documents.diploma) {
+    formDataToSend.append('diploma', documents.diploma);
+    console.log('✅ Diploma adicionado:', documents.diploma.name);
+  }
+  if (documents.crm_document) {
+    formDataToSend.append('crm_document', documents.crm_document);
+    console.log('✅ CRM Document adicionado:', documents.crm_document.name);
+  }
+  if (documents.rg_document) {
+    formDataToSend.append('rg_document', documents.rg_document);
+    console.log('✅ RG Document adicionado (opcional):', documents.rg_document.name);
+  }
+  if (documents.photo) {
+    formDataToSend.append('photo', documents.photo);
+    console.log('✅ Photo adicionado:', documents.photo.name);
+  }
+}
+
+console.log('🔵 CRM State:', formData.crmState);
+console.log('🔵 CRM:', formData.crm);
+console.log('🔵 Specialty:', formData.specialty);
+
+console.log('🔵 Enviando FormData com arquivos...');
 
   try {
-    const response = await api.post('/register', dataToSend);
+        const response = await api.post('/register', formDataToSend, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
     
     console.log('✅ Cadastro realizado com sucesso:', response.data);
     
@@ -169,7 +234,10 @@ const handleRegister = async (e: React.FormEvent) => {
       'The cpf field is required.': 'O campo CPF é obrigatório.',
       'The email field is required.': 'O campo email é obrigatório.',
       'The password field is required.': 'O campo senha é obrigatório.',
-    };
+      'The crm state field is required when role is professional.': 'O campo estado do CRM é obrigatório para profissionais.',
+      'The crm document field is required when role is professional.': 'O comprovante de CRM é obrigatório.',
+      'The photo field is required when role is professional.': 'A foto 3x4 é obrigatória.',
+      };
     
     const firstErrorKey = Object.keys(errors)[0];
     const firstErrorArray = errors[firstErrorKey];
@@ -225,6 +293,43 @@ const handleRegister = async (e: React.FormEvent) => {
     fetchSpecialties();
   }
 }, [type]);
+
+      // Estado para documentos enviados
+        const handleFileChange = (field: string, file: File | null) => {
+          setDocuments(prev => ({ ...prev, [field]: file }));
+          console.log(`📄 Arquivo ${field}:`, file);
+        };
+      
+      const [documents, setDocuments] = useState<{
+        diploma: File | null;
+        crm_document: File | null;
+        rg_document: File | null;
+        photo: File | null;
+      }>({
+        diploma: null,
+        crm_document: null,
+        rg_document: null,
+        photo: null,
+      });
+
+
+      // Buscar especialidades ao montar o componente
+      useEffect(() => {
+        const fetchSpecialties = async () => {
+          setLoadingSpecialties(true);
+          try {
+            const data = await specialtyService.getAll();
+            setSpecialties(data);
+            console.log('✅ Especialidades carregadas:', data);
+          } catch (error) {
+            console.error('❌ Erro ao buscar especialidades:', error);
+          } finally {
+            setLoadingSpecialties(false);
+          }
+        };
+
+        fetchSpecialties();
+      }, []);
 
   // Função para submissão do formulário de cadastro Paciente
 const handleSubmitForm = async (e: React.FormEvent) => {
@@ -301,7 +406,7 @@ const handleSubmitForm = async (e: React.FormEvent) => {
   }
 
   try {
-    const response = await api.post('/admin/doctors', {
+    const response = await api.post('/admin/professionals', {
       name: formData.name,
       email: formData.email,
       password: formData.password,
@@ -340,7 +445,7 @@ const handleSubmitForm = async (e: React.FormEvent) => {
   }
 };
 
-  const especialidades = [
+  {/*const especialidades = [
     'Cardiologia',
     'Neurologia',
     'Oftalmologia',
@@ -353,7 +458,7 @@ const handleSubmitForm = async (e: React.FormEvent) => {
     'Urologia',
     'Dermatologia',
     'Psiquiatria'
-  ];
+  ];*/}
 
   const states = [
     'AC', 'AL', 'AP', 'AM', 'BA', 'CE', 'DF', 'ES', 'GO', 'MA',
@@ -687,26 +792,88 @@ const handleSubmitForm = async (e: React.FormEvent) => {
                     <div className="grid md:grid-cols-2 gap-4">
                       <div className="space-y-2">
                         <Label htmlFor="crm">CRM *</Label>
-                        <Input
-                          id="crm"
+                        <InputMask
+                          mask="999999"
+                          maskChar={null}
                           value={formData.crm}
-                          onChange={(e) => handleInputChange('crm', e.target.value)}
-                          placeholder="CRM 12345-SP"
-                          required
-                        />
+                          onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleInputChange('crm', e.target.value.toUpperCase())}
+                        >
+                          {(inputProps: any) => (
+                            <Input 
+                              {...inputProps}
+                              id="crm"
+                              placeholder="CRM 123456"
+                              required
+                            />
+                          )}
+                        </InputMask>
                       </div>
+
+                       {/* Estado do CRM */}
+                        <div className="space-y-2">
+                          <Label htmlFor="crmState">Estado do CRM *</Label>
+                          <select
+                            id="crmState"
+                            aria-label="Estado do CRM"
+                            value={formData.crmState}
+                            onChange={(e) => handleInputChange('crmState', e.target.value)}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            required
+                          >
+                            <option value="">Selecione</option>
+                            <option value="AC">AC - Acre</option>
+                            <option value="AL">AL - Alagoas</option>
+                            <option value="AP">AP - Amapá</option>
+                            <option value="AM">AM - Amazonas</option>
+                            <option value="BA">BA - Bahia</option>
+                            <option value="CE">CE - Ceará</option>
+                            <option value="DF">DF - Distrito Federal</option>
+                            <option value="ES">ES - Espírito Santo</option>
+                            <option value="GO">GO - Goiás</option>
+                            <option value="MA">MA - Maranhão</option>
+                            <option value="MT">MT - Mato Grosso</option>
+                            <option value="MS">MS - Mato Grosso do Sul</option>
+                            <option value="MG">MG - Minas Gerais</option>
+                            <option value="PA">PA - Pará</option>
+                            <option value="PB">PB - Paraíba</option>
+                            <option value="PR">PR - Paraná</option>
+                            <option value="PE">PE - Pernambuco</option>
+                            <option value="PI">PI - Piauí</option>
+                            <option value="RJ">RJ - Rio de Janeiro</option>
+                            <option value="RN">RN - Rio Grande do Norte</option>
+                            <option value="RS">RS - Rio Grande do Sul</option>
+                            <option value="RO">RO - Rondônia</option>
+                            <option value="RR">RR - Roraima</option>
+                            <option value="SC">SC - Santa Catarina</option>
+                            <option value="SP">SP - São Paulo</option>
+                            <option value="SE">SE - Sergipe</option>
+                            <option value="TO">TO - Tocantins</option>
+                          </select>
+                        </div>
+
+                      
+
                       <div className="space-y-2">
                         <Label htmlFor="specialty">Especialidade *</Label>
-                        <Select value={formData.specialty} onValueChange={(value: string) => handleInputChange('specialty', value)}>
+                        <Select value={formData.specialty} onValueChange={(value: string) => handleInputChange('specialty', value)} disabled={loadingSpecialties}>
                           <SelectTrigger>
-                            <SelectValue placeholder="Selecione a especialidade" />
+                            <SelectValue placeholder={loadingSpecialties 
+                            ? "Carregando especialidades..." 
+                            : "Selecione a especialidade"} />
                           </SelectTrigger>
                           <SelectContent>
-                            {especialidades.map((esp) => (
-                              <SelectItem key={esp} value={esp}>{esp}</SelectItem>
+                            {specialties.map((spec) => (
+                              <SelectItem key={spec.id} value={String(spec.id)}>
+                                {spec.icon} {spec.name}
+                              </SelectItem>
                             ))}
                           </SelectContent>
                         </Select>
+                            {specialties.length === 0 && !loadingSpecialties && (
+                              <p className="text-sm text-red-600">
+                                Erro ao carregar especialidades. Recarregue a página.
+                              </p>
+                            )}
                       </div>
                     </div>
 
@@ -747,113 +914,211 @@ const handleSubmitForm = async (e: React.FormEvent) => {
                       />
                     </div>
 
-                    {/* Upload de Diplomas */}
-                    <div className="space-y-2">
-                      <Label htmlFor="diplomas">Diplomas *</Label>
-                      <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 hover:border-blue-500 transition-colors">
-                        <Label 
-                          htmlFor="diplomas" 
-                          className="cursor-pointer flex flex-col items-center justify-center gap-2"
-                        >
-                          <Upload className="w-8 h-8 text-gray-400" />
-                          <span className="text-sm text-gray-600">
-                            Clique para fazer upload dos diplomas
-                          </span>
-                          <span className="text-xs text-gray-500">
-                            PDF, JPG ou PNG (máx. 10MB cada)
-                          </span>
+                    {/* Diploma de Medicina */}
+                      <div className="space-y-2">
+                        <Label htmlFor="diploma" className="flex items-center space-x-2">
+                          <FileText className="w-4 h-4" />
+                          <span>Diploma de Medicina *</span>
                         </Label>
-                        <Input
-                          id="diplomas"
-                          type="file"
-                          accept=".pdf,.jpg,.jpeg,.png"
-                          multiple
-                          onChange={handleDiplomasChange}
-                          className="hidden"
-                        />
-                      </div>
-                      {diplomas.length > 0 && (
-                        <div className="space-y-2 mt-2">
-                          {diplomas.map((file, index) => (
-                            <div key={index} className="flex items-center justify-between bg-blue-50 p-2 rounded">
-                              <div className="flex items-center space-x-2">
-                                <FileText className="w-4 h-4 text-blue-600" />
-                                <span className="text-sm">{file.name}</span>
-                              </div>
-                              <button
-                                type="button"
-                                onClick={() => removeDiploma(index)}
-                                className="text-red-600 hover:text-red-700"
-                              >
-                                <X className="w-4 h-4" />
-                                <Button 
-                                  type="submit"
-                                  disabled={loading}
+                        <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 hover:border-blue-500 transition-colors">
+                          <input
+                            id="diploma"
+                            type="file"
+                            accept=".pdf,.jpg,.jpeg,.png"
+                            onChange={(e) => handleFileChange('diploma', e.target.files?.[0] || null)}
+                            className="hidden"
+                            required
+                          />
+                          <label htmlFor="diploma" className="cursor-pointer block text-center">
+                            {documents.diploma ? (
+                              <div className="space-y-2">
+                                <div className="flex items-center justify-center">
+                                  <FileText className="w-8 h-8 text-green-600" />
+                                </div>
+                                <p className="text-sm font-medium text-gray-900">{documents.diploma.name}</p>
+                                <p className="text-xs text-gray-500">
+                                  {(documents.diploma.size / 1024 / 1024).toFixed(2)} MB
+                                </p>
+                                <Button
+                                  type="button"
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={(e) => {
+                                    e.preventDefault();
+                                    handleFileChange('diploma', null);
+                                  }}
                                 >
-                                  {loading ? 'Cadastrando...' : 'Criar Conta'}
+                                  Remover
                                 </Button>
-                              </button>
-                            </div>
-                          ))}
+                              </div>
+                            ) : (
+                              <div className="space-y-2">
+                                <FileText className="w-12 h-12 mx-auto text-gray-400" />
+                                <p className="text-sm text-gray-600">
+                                  <span className="font-semibold text-blue-600">Clique para enviar</span>
+                                </p>
+                                <p className="text-xs text-gray-500">PDF, JPG ou PNG (máx. 5MB)</p>
+                              </div>
+                            )}
+                          </label>
                         </div>
-                      )}
-                    </div>
+                      </div>
 
-                    {/* Upload de Certificados */}
-                    <div className="space-y-2">
-                      <Label htmlFor="certificates">Certificados e Especializações</Label>
-                      <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 hover:border-blue-500 transition-colors">
-                        <Label 
-                          htmlFor="certificates" 
-                          className="cursor-pointer flex flex-col items-center justify-center gap-2"
-                        >
-                          <Upload className="w-8 h-8 text-gray-400" />
-                          <span className="text-sm text-gray-600">
-                            Clique para fazer upload dos certificados
-                          </span>
-                          <span className="text-xs text-gray-500">
-                            PDF, JPG ou PNG (máx. 10MB cada)
-                          </span>
+                      {/* Comprovante de CRM */}
+                      <div className="space-y-2">
+                        <Label htmlFor="crm_document" className="flex items-center space-x-2">
+                          <FileText className="w-4 h-4" />
+                          <span>Comprovante de CRM *</span>
                         </Label>
-                        <Input
-                          id="certificates"
-                          type="file"
-                          accept=".pdf,.jpg,.jpeg,.png"
-                          multiple
-                          onChange={handleCertificatesChange}
-                          className="hidden"
-                        />
-                      </div>
-                      {certificates.length > 0 && (
-                        <div className="space-y-2 mt-2">
-                          {certificates.map((file, index) => (
-                            <div key={index} className="flex items-center justify-between bg-green-50 p-2 rounded">
-                              <div className="flex items-center space-x-2">
-                                <FileText className="w-4 h-4 text-green-600" />
-                                <span className="text-sm">{file.name}</span>
-                              </div>
-                              <button
-                                type="button"
-                                onClick={() => removeCertificate(index)}
-                                className="text-red-600 hover:text-red-700"
-                              >
-                                <X className="w-4 h-4" />
-                                <Button 
-                                  type="submit"
-                                  disabled={loading}
+                        <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 hover:border-blue-500 transition-colors">
+                          <input
+                            id="crm_document"
+                            type="file"
+                            accept=".pdf,.jpg,.jpeg,.png"
+                            onChange={(e) => handleFileChange('crm_document', e.target.files?.[0] || null)}
+                            className="hidden"
+                            required
+                          />
+                          <label htmlFor="crm_document" className="cursor-pointer block text-center">
+                            {documents.crm_document ? (
+                              <div className="space-y-2">
+                                <div className="flex items-center justify-center">
+                                  <FileText className="w-8 h-8 text-green-600" />
+                                </div>
+                                <p className="text-sm font-medium text-gray-900">{documents.crm_document.name}</p>
+                                <p className="text-xs text-gray-500">
+                                  {(documents.crm_document.size / 1024 / 1024).toFixed(2)} MB
+                                </p>
+                                <Button
+                                  type="button"
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={(e) => {
+                                    e.preventDefault();
+                                    handleFileChange('crm_document', null);
+                                  }}
                                 >
-                                  {loading ? 'Cadastrando...' : 'Criar Conta'}
+                                  Remover
                                 </Button>
-                              </button>
-                            </div>
-                          ))}
+                              </div>
+                            ) : (
+                              <div className="space-y-2">
+                                <FileText className="w-12 h-12 mx-auto text-gray-400" />
+                                <p className="text-sm text-gray-600">
+                                  <span className="font-semibold text-blue-600">Clique para enviar</span>
+                                </p>
+                                <p className="text-xs text-gray-500">PDF, JPG ou PNG (máx. 5MB)</p>
+                              </div>
+                            )}
+                          </label>
                         </div>
-                      )}
-                    </div>
+                      </div>
+                      {/* RG/CPF (opcional) */}
+                      <div className="space-y-2">
+                        <Label htmlFor="rg_document" className="flex items-center space-x-2">
+                          <FileText className="w-4 h-4" />
+                          <span>RG ou CPF (opcional)</span>
+                        </Label>
+                        <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 hover:border-blue-500 transition-colors">
+                          <input
+                            id="rg_document"
+                            type="file"
+                            accept=".pdf,.jpg,.jpeg,.png"
+                            onChange={(e) => handleFileChange('rg_document', e.target.files?.[0] || null)}
+                            className="hidden"
+                          />
+                          <label htmlFor="rg_document" className="cursor-pointer block text-center">
+                            {documents.rg_document ? (
+                              <div className="space-y-2">
+                                <div className="flex items-center justify-center">
+                                  <FileText className="w-8 h-8 text-green-600" />
+                                </div>
+                                <p className="text-sm font-medium text-gray-900">{documents.rg_document.name}</p>
+                                <p className="text-xs text-gray-500">
+                                  {(documents.rg_document.size / 1024 / 1024).toFixed(2)} MB
+                                </p>
+                                <Button
+                                  type="button"
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={(e) => {
+                                    e.preventDefault();
+                                    handleFileChange('rg_document', null);
+                                  }}
+                                >
+                                  Remover
+                                </Button>
+                              </div>
+                            ) : (
+                              <div className="space-y-2">
+                                <FileText className="w-12 h-12 mx-auto text-gray-400" />
+                                <p className="text-sm text-gray-600">
+                                  <span className="font-semibold text-blue-600">Clique para enviar</span>
+                                </p>
+                                <p className="text-xs text-gray-500">PDF, JPG ou PNG (máx. 5MB)</p>
+                              </div>
+                            )}
+                          </label>
+                        </div>
+                      </div>
+
+                      {/* Foto 3x4 */}
+                      <div className="space-y-2">
+                        <Label htmlFor="photo" className="flex items-center space-x-2">
+                          <User className="w-4 h-4" />
+                          <span>Foto 3x4 *</span>
+                        </Label>
+                        <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 hover:border-blue-500 transition-colors">
+                          <input
+                            id="photo"
+                            type="file"
+                            accept=".jpg,.jpeg,.png"
+                            onChange={(e) => handleFileChange('photo', e.target.files?.[0] || null)}
+                            className="hidden"
+                            required
+                          />
+                          <label htmlFor="photo" className="cursor-pointer block text-center">
+                            {documents.photo ? (
+                              <div className="space-y-2">
+                                {documents.photo.type.startsWith('image/') && (
+                                  <img 
+                                    src={URL.createObjectURL(documents.photo)} 
+                                    alt="Preview" 
+                                    className="mx-auto h-24 w-24 object-cover rounded-lg"
+                                  />
+                                )}
+                                <p className="text-sm font-medium text-gray-900">{documents.photo.name}</p>
+                                <p className="text-xs text-gray-500">
+                                  {(documents.photo.size / 1024 / 1024).toFixed(2)} MB
+                                </p>
+                                <Button
+                                  type="button"
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={(e) => {
+                                    e.preventDefault();
+                                    handleFileChange('photo', null);
+                                  }}
+                                >
+                                  Remover
+                                </Button>
+                              </div>
+                            ) : (
+                              <div className="space-y-2">
+                                <User className="w-12 h-12 mx-auto text-gray-400" />
+                                <p className="text-sm text-gray-600">
+                                  <span className="font-semibold text-blue-600">Clique para enviar</span>
+                                </p>
+                                <p className="text-xs text-gray-500">JPG ou PNG (máx. 5MB)</p>
+                              </div>
+                            )}
+                          </label>
+                        </div>
+                      </div>
                   </div>
                 </>
-              )}
-
+              )}  
+               
               <Separator />
 
                 {/* Termos e Condições */}

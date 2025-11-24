@@ -9,6 +9,8 @@ use App\Models\Patient;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\ValidationException;
+use Illuminate\Support\Facades\Storage;
+use App\Models\DoctorDocument;
 
 class AuthController extends Controller
 {
@@ -55,15 +57,35 @@ class AuthController extends Controller
     {
         $request->validate([
             'name' => 'required|string|max:255',
-            'email' => 'required|email|unique:users,email',
-            'password' => 'required|min:8|confirmed',
-            'cpf' => 'required|unique:users,cpf',
-            'rg' => 'nullable|unique:users,rg',
-            'phone' => 'required',
+            'email' => 'required|string|email|max:255|unique:users',
+            'password' => 'required|string|min:8|confirmed',
+            'cpf' => 'required|string|unique:users',
+            'rg' => 'nullable|string|max:20',
+            'phone' => 'required|string',
             'birth_date' => 'required|date',
             'gender' => 'nullable|in:M,F,Outro',
+            'role' => 'required|in:patient,doctor,admin',
+            
+            // Campos específicos do médico
+            'crm' => 'required_if:role,doctor|nullable|string|unique:doctors',
+            'crm_state' => 'required_if:role,doctor|nullable|string|size:2',
+            'specialty_id' => 'required_if:role,doctor|nullable|exists:specialties,id',
+            'bio' => 'nullable|string',
+            'consultation_price' => 'nullable|numeric|min:0',
+            'consultation_duration' => 'nullable|integer|min:15',
+            'university' => 'nullable|string',
+            'graduation_year' => 'nullable|integer|min:1950|max:' . date('Y'),
+            'years_experience' => 'nullable|integer|min:0',
+
+            // Documentos do médico (arquivos)
+            'diploma' => 'required_if:role,doctor|nullable|file|mimes:pdf,jpg,jpeg,png|max:5120',
+            'crm_document' => 'required_if:role,doctor|nullable|file|mimes:pdf,jpg,jpeg,png|max:5120',
+            'rg_document' => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:5120',
+            'photo' => 'required_if:role,doctor|nullable|image|mimes:jpg,jpeg,png|max:5120',
+    
         ]);
 
+        // Criar usuário
         $user = User::create([
             'name' => $request->name,
             'email' => $request->email,
@@ -73,15 +95,82 @@ class AuthController extends Controller
             'phone' => $request->phone,
             'birth_date' => $request->birth_date,
             'gender' => $request->gender,
-            'role' => 'patient',
+            'role' => $request->role ?? 'patient',
+            'is_active' => true,
         ]);
 
-        Patient::create(['user_id' => $user->id]);
+        // Se for paciente, criar registro na tabela patients
+        if ($user->role === 'patient') {
+            Patient::create([
+                'user_id' => $user->id,
+            ]);
+        }
+
+        // Se for médico, criar registro na tabela doctors
+        if ($user->role === 'doctor') {
+            // Preparar dados de formação acadêmica
+            $formation = [];
+            if ($request->university || $request->graduation_year) {
+                $formation[] = [
+                    'university' => $request->university,
+                    'graduation_year' => $request->graduation_year,
+                    'degree' => 'Medicina'
+                ];
+            }
+
+            $doctor = Doctor::create([
+                'user_id' => $user->id,
+                'specialty_id' => $request->specialty_id,
+                'crm' => $request->crm,
+                'crm_state' => $request->crm_state,
+                'bio' => $request->bio,
+                'consultation_price' => $request->consultation_price ?? 0,
+                'consultation_duration' => $request->consultation_duration ?? 30,
+                'formation' => !empty($formation) ? json_encode($formation) : null,
+                'years_experience' => $request->years_experience ?? 0,
+            ]);
+
+            // Salvar documentos
+            $documentTypes = ['diploma', 'crm_document', 'rg_document', 'photo'];
+            
+            foreach ($documentTypes as $type) {
+                if ($request->hasFile($type)) {
+                    $file = $request->file($type);
+                    
+                    // Determinar pasta baseado no tipo
+                    $folder = $type === 'photo' ? 'doctors/photos' : 'doctors/documents';
+                    
+                    // Gerar nome único
+                    $fileName = time() . '_' . $type . '_' . $file->getClientOriginalName();
+                    
+                    // Salvar arquivo
+                    $filePath = $file->storeAs($folder, $fileName, 'public');
+                    
+                    // Criar registro no banco
+                    DoctorDocument::create([
+                        'doctor_id' => $doctor->id,
+                        'document_type' => $type,
+                        'file_name' => $file->getClientOriginalName(),
+                        'file_path' => $filePath,
+                        'file_size' => $file->getSize(),
+                        'mime_type' => $file->getMimeType(),
+                        'status' => 'pending',
+                    ]);
+                }
+            }
+        }
 
         $token = $user->createToken('auth_token')->plainTextToken;
 
+        // Carregar relações
+        if ($user->isDoctor()) {
+            $user->load('doctor.specialty', 'doctor.documents');
+        } elseif ($user->isPatient()) {
+            $user->load('patient');
+        }
+
         return response()->json([
-            'message' => 'Cadastro realizado com sucesso!',
+            'message' => 'Usuário cadastrado com sucesso!',
             'user' => $user,
             'token' => $token,
         ], 201);
@@ -105,4 +194,6 @@ class AuthController extends Controller
 
         return response()->json($user);
     }
+
+    
 }

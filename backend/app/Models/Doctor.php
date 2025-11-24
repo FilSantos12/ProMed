@@ -75,4 +75,28 @@ class Doctor extends Model
             $q->where('is_active', true);
         });
     }
+
+        /**
+     * Relacionamento com documentos
+     */
+    public function documents()
+    {
+        return $this->hasMany(DoctorDocument::class);
+    }
+
+    /**
+     * Verificar se tem todos os documentos obrigatórios
+     */
+    public function hasRequiredDocuments()
+    {
+        $required = ['diploma', 'crm_document', 'photo'];
+        
+        foreach ($required as $type) {
+            if (!$this->documents()->where('document_type', $type)->exists()) {
+                return false;
+            }
+        }
+        
+        return true;
+    }
 }

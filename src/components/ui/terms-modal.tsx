@@ -192,8 +192,6 @@ function TermsContent() {
         </p>
         <ul className="list-none pl-0 mt-2 space-y-1">
           <li>Email: suporte@promed.com.br</li>
-          <li>Telefone: (11) 3000-0000</li>
-          <li>Endereço: Av. Paulista, 1000 - São Paulo/SP</li>
         </ul>
       </section>
 
@@ -235,7 +233,7 @@ function PrivacyContent() {
           </ul>
         </div>
 
-        <div className="mt-3">
+        {/*<div className="mt-3">
           <p className="font-semibold">2.2. Dados de Saúde (Pacientes):</p>
           <ul className="list-disc pl-6 mt-2 space-y-1">
             <li>Histórico médico e prontuários</li>
@@ -243,7 +241,7 @@ function PrivacyContent() {
             <li>Informações de convênio médico</li>
             <li>Resultados de exames</li>
           </ul>
-        </div>
+        </div>8*/}
 
         <div className="mt-3">
           <p className="font-semibold">2.3. Dados Profissionais (Médicos):</p>
@@ -377,7 +375,6 @@ function PrivacyContent() {
         </p>
         <ul className="list-none pl-0 mt-2 space-y-1">
           <li>Email: dpo@promed.com.br</li>
-          <li>Telefone: (11) 3000-0001</li>
         </ul>
       </section>
 
@@ -388,8 +385,6 @@ function PrivacyContent() {
         </p>
         <ul className="list-none pl-0 mt-2 space-y-1">
           <li>Email: privacidade@promed.com.br</li>
-          <li>Telefone: (11) 3000-0000</li>
-          <li>Endereço: Av. Paulista, 1000 - São Paulo/SP - CEP 01310-100</li>
         </ul>
       </section>
 
