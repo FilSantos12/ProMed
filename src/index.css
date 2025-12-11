@@ -254,7 +254,6 @@
   }
 
   img, svg, video, canvas, audio, iframe, embed, object {
-    vertical-align: middle;
     display: block;
   }
 
@@ -2355,7 +2354,7 @@
   }
 
   :is(.\*\:data-\[slot\=select-value\]\:line-clamp-1 > *)[data-slot="select-value"] {
-    -webkit-line-clamp: 1;
+    -line-clamp: 1;
     -webkit-box-orient: vertical;
     display: -webkit-box;
     overflow: hidden;
@@ -3207,4 +3206,34 @@ html {
     opacity: var(--tw-exit-opacity, 1);
     transform: translate3d(var(--tw-exit-translate-x, 0), var(--tw-exit-translate-y, 0), 0) scale3d(var(--tw-exit-scale, 1), var(--tw-exit-scale, 1), var(--tw-exit-scale, 1)) rotate(var(--tw-exit-rotate, 0));
   }
+}
+
+/* Animações para modais */
+@keyframes modalFadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes modalZoomIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* Classes para usar nos componentes */
+.animate-fade-in {
+  animation: modalFadeIn 0.2s ease-out;
+}
+
+.animate-zoom-in {
+  animation: modalZoomIn 0.2s ease-out;
 }

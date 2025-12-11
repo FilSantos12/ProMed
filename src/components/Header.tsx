@@ -1,8 +1,12 @@
 import React, { useState } from 'react';
 import { Button } from './ui/button';
 import { Sheet, SheetContent, SheetTrigger } from './ui/sheet';
-import { Menu, Stethoscope, User, Calendar, Shield } from 'lucide-react';
+import { Menu, LogOut, Stethoscope, User, Calendar, Shield } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
+
+
+
+
 
 interface HeaderProps {
   currentSection: string;
@@ -11,11 +15,12 @@ interface HeaderProps {
 
 export function Header({ currentSection, onSectionChange }: HeaderProps) {
   const { user, logout, isAuthenticated } = useAuth();
+
   const [isOpen, setIsOpen] = useState(false); 
 
   const handleLogout = () => {
     logout();
-    onSectionChange('home');
+    onSectionChange('');
     setIsOpen(false);
   };
 
@@ -38,6 +43,8 @@ export function Header({ currentSection, onSectionChange }: HeaderProps) {
         ...(user.role === 'patient' ? [{ id: 'patient-area', label: 'Área do Paciente', icon: User }] : []),
         ...(user.role === 'admin' ? [{ id: 'admin-area', label: 'Administração', icon: Shield }] : []),
         { id: 'agendamentos', label: 'Agendamentos', icon: Calendar },
+
+        { id: 'logout', label: 'Sair', icon: LogOut },
       ]
     : [
         { id: 'login', label: 'Login' },
@@ -45,9 +52,14 @@ export function Header({ currentSection, onSectionChange }: HeaderProps) {
         { id: 'cadastro-paciente', label: 'Cadastro Paciente' },
       ];
 
-  const handleNavClick = (sectionId: string) => {
-    onSectionChange(sectionId);
-    setIsOpen(false);
+    const handleNavClick = (sectionId: string) => {
+        if (sectionId === 'logout') {
+        handleLogout();  // Chama a função de logout
+        return;
+      }
+
+      onSectionChange(sectionId);
+      setIsOpen(false);
   };
 
   return (

@@ -20,7 +20,7 @@ export function Modal({ isOpen, onClose, title, children }: ModalProps) {
       />
       
       {/* Modal */}
-      <div className="relative bg-white rounded-lg shadow-xl max-w-md w-full mx-4 p-6 animate-in fade-in zoom-in duration-200">
+      <div className="relative bg-white rounded-lg shadow-xl max-w-2xl w-full p-6 animate-zoom-in">
         {/* Header */}
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-xl font-semibold text-gray-900">{title}</h3>

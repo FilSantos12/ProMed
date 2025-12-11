@@ -9,23 +9,33 @@ interface ErrorModalProps {
   message: string;
 }
 
-export function ErrorModal({ isOpen, onClose, title = 'Ops! Algo deu errado', message }: ErrorModalProps) {
+export function ErrorModal({ 
+  isOpen, 
+  onClose, 
+  title = 'Ops! Algo deu errado', 
+  message 
+}: ErrorModalProps) {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
-      {/* Overlay */}
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      {/* Overlay com animação */}
       <div 
-        className="fixed inset-0 bg-black/50 backdrop-blur-sm"
+        className="fixed inset-0 bg-black/50 backdrop-blur-sm animate-fade-in"
         onClick={onClose}
       />
       
-      {/* Modal */}
-      <div className="relative bg-white rounded-lg shadow-xl max-w-md w-full mx-4 p-6 animate-in fade-in zoom-in duration-200">
+      {/* Modal com animação */}
+      <div 
+          className="relative bg-white rounded-lg shadow-xl max-w-md w-full mx-4 p-6 animate-zoom-in"
+          style={{
+            animation: 'modalFadeIn 0.2s ease-out'
+          }}
+        >
         {/* Header */}
         <div className="flex items-start justify-between mb-4">
           <div className="flex items-center gap-3">
-            <div className="shrink-0 w-10 h-10 rounded-full bg-red-100 flex items-center justify-center">
+            <div className="shrink w-10 h-10 rounded-full bg-red-100 flex items-center justify-center">
               <AlertCircle className="w-6 h-6 text-red-600" />
             </div>
             <h3 className="text-xl font-semibold text-gray-900">{title}</h3>
@@ -47,7 +57,6 @@ export function ErrorModal({ isOpen, onClose, title = 'Ops! Algo deu errado', me
         <div className="flex justify-end">
           <Button
             onClick={onClose}
-            variant="default"
             className="bg-red-600 hover:bg-red-700"
           >
             Entendi

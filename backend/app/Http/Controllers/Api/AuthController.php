@@ -7,25 +7,96 @@ use App\Models\User;
 use App\Models\Doctor;
 use App\Models\Patient;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\ValidationException;
 use Illuminate\Support\Facades\Storage;
 use App\Models\DoctorDocument;
+use Laravel\Sanctum\HasApiTokens;
+use Illuminate\Database\Eloquent\Model;
 
 class AuthController extends Controller
 {
+
     public function login(Request $request)
+    
     {
-        $request->validate([
+        // Validar campos
+    $request->validate([
+        'email' => 'required|email',
+        'password' => 'required',
+        'expected_role' => 'required|in:patient,doctor,admin',
+    ]);
+
+    $credentials = $request->only('email', 'password');
+
+    // Tentar autenticar
+    if (!Auth::attempt($credentials)) {
+        return response()->json([
+            'message' => 'Email ou senha incorretos.'
+        ], 401);
+    }
+
+    // Pegar o usuário
+    $user = \App\Models\User::where('email', $request->email)->first();
+
+    // VALIDAR SE O ROLE BATE
+    if ($user->role !== $request->expected_role) {
+        Auth::logout();
+        
+        $roles = [
+            'patient' => 'pacientes',
+            'doctor' => 'médicos',
+            'admin' => 'administradores',
+        ];
+        
+        return response()->json([
+            'message' => "Esta área é exclusiva para {$roles[$request->expected_role]}."
+        ], 403);
+    }
+
+    // VALIDAR SE ESTÁ ATIVO
+    if (!$user->is_active) {
+        Auth::logout();
+        
+        if ($user->role === 'doctor') {
+            return response()->json([
+                'message' => 'Seu cadastro está em análise.'
+            ], 403);
+        }
+        
+        return response()->json([
+            'message' => 'Sua conta está inativa.'
+        ], 403);
+    }
+
+    // Criar token
+    $token = $user->createToken('auth_token')->plainTextToken;
+
+    // Carregar relações
+    if ($user->role === 'doctor') {
+        $user->load('doctor.specialty');
+    } elseif ($user->role === 'patient') {
+        $user->load('patient');
+    }
+
+    return response()->json([
+        'message' => 'Login realizado com sucesso!',
+        'user' => $user,
+        'token' => $token,
+    ]);
+    
+        {/*$request->validate([
             'email' => 'required|email',
             'password' => 'required',
+            'role'  ,
         ]);
 
         $user = User::where('email', $request->email)->first();
 
         if (!$user || !Hash::check($request->password, $user->password)) {
             throw ValidationException::withMessages([
-                'email' => ['Credenciais inválidas.'],
+                'email' => ['E-mail ou senha incorretos.'],
             ]);
         }
 
@@ -50,8 +121,9 @@ class AuthController extends Controller
             'message' => 'Login realizado com sucesso!',
             'user' => $userData,
             'token' => $token,
-        ]);
+        ]);*/}
     }
+        
 
     public function register(Request $request)
     {
@@ -195,5 +267,6 @@ class AuthController extends Controller
         return response()->json($user);
     }
 
+    
     
 }

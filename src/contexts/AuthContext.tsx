@@ -3,13 +3,24 @@ import { createContext, useState, useEffect, ReactNode } from 'react';
 import api from '../services/api';
 import { User, LoginCredentials, RegisterData, AuthResponse } from '../types';
 
-interface AuthContextData {
+{/*interface AuthContextData {
   user: User | null;
   token: string | null;
   loading: boolean;
   login: (credentials: LoginCredentials) => Promise<void>;
   register: (data: RegisterData) => Promise<void>;
   logout: () => void;
+  isAuthenticated: boolean;
+}*/}
+
+interface AuthContextData {
+  user: User | null;
+  token: string | null;
+  signed: boolean;
+  loading: boolean;
+  login(email: string, password: string, expectedRole: string): Promise<void>;
+  logout(): Promise<void>;
+  register: (data: RegisterData) => Promise<void>;
   isAuthenticated: boolean;
 }
 
@@ -37,7 +48,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
   }, []);
 
   // Login
-const login = async (credentials: LoginCredentials) => {
+{/*const login = async (credentials: LoginCredentials) => {
   try {
     console.log('Tentando login com:', credentials); // DEBUG
     
@@ -60,6 +71,28 @@ const login = async (credentials: LoginCredentials) => {
       || 'Erro ao fazer login';
     
     throw new Error(JSON.stringify(errorMessage));
+  }
+};*/}
+
+const login = async (email: string, password: string, expectedRole: string) => {
+  try {
+    const response = await api.post('/login', {
+      email,
+      password,
+      expected_role: expectedRole,
+    });
+
+    const { token, user } = response.data;
+
+    localStorage.setItem('@ProMed:token', token);
+    localStorage.setItem('@ProMed:user', JSON.stringify(user));
+
+    api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+
+    setUser(user);
+  } catch (error: any) {
+    console.error('Erro no login:', error.response?.data);
+    throw error;
   }
 };
 
@@ -86,8 +119,9 @@ const login = async (credentials: LoginCredentials) => {
     } catch (error) {
       console.error('Erro ao fazer logout:', error);
     } finally {
-      localStorage.removeItem('token');
-      localStorage.removeItem('user');
+      localStorage.removeItem('@ProMed:token');
+      localStorage.removeItem('@ProMed:user');
+      delete api.defaults.headers.common['Authorization']
       setToken(null);
       setUser(null);
     }
@@ -97,6 +131,7 @@ const login = async (credentials: LoginCredentials) => {
     <AuthContext.Provider
       value={{
         user,
+        signed: !!user,
         token,
         loading,
         login,

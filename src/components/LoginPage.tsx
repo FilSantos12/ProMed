@@ -8,6 +8,8 @@ import { Separator } from './ui/separator';
 import { User, Stethoscope, Shield, AlertCircle } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 import { Alert, AlertDescription } from './ui/alert';
+import { LoadingSpinner } from './ui/loading-spinner';
+import { ErrorModal } from './ui/error-modal';
 
 
 interface LoginPageProps {
@@ -23,17 +25,19 @@ export function LoginPage({ onSectionChange }: LoginPageProps) {
   });
   
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
+  const [showErrorModal, setShowErrorModal] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
 
   const handleInputChange = (field: string, value: string) => {
     setLoginData(prev => ({ ...prev, [field]: value }));
-    setError('');
+    setErrorMessage('');
   };
 
-  const handleLogin = async (e: React.FormEvent, role?: 'patient' | 'doctor' | 'admin') => {
+  {/*const handleLogin = async (e: React.FormEvent, role?: 'patient' | 'doctor' | 'admin') => {
     e.preventDefault();
     setLoading(true);
-    setError('');
+    setErrorMessage('');
+    setShowErrorModal(false);
 
     try {
       await login({
@@ -78,24 +82,63 @@ export function LoginPage({ onSectionChange }: LoginPageProps) {
             onSectionChange('home');
         }
       }, 500);
+
+          const errorTranslations: { [key: string]: string } = {
+            'Invalid credentials': 'Email ou senha incorretos.',
+            'The provided credentials are incorrect.': 'Email ou senha incorretos.',
+            'These credentials do not match our records.': 'Email ou senha incorretos.',
+            'Unauthorized': 'Email ou senha incorretos.',
+          };
+          
     } catch (err: any) {
-      setError(err.message || 'Erro ao fazer login. Verifique suas credenciais.');
+      setErrorMessage(err.message || 'Erro ao fazer login. Verifique suas credenciais.');
+      setShowErrorModal(true);
     } finally {
       setLoading(false);
     }
-  };
+  };*/}
+
+  const handleLogin = async (e: React.FormEvent, expectedRole: string) => {
+  e.preventDefault();
+  
+  setLoading(true);
+  setErrorMessage('');
+  setShowErrorModal(true);
+
+  try {
+    await login(loginData.email,loginData.password, expectedRole);
+
+    const user = JSON.parse(localStorage.getItem('@ProMed:user') || '{}');
+    
+    // Redirecionar baseado no role
+    if (user.role === 'admin') {
+      onSectionChange('admin-area');
+    } else if (user.role === 'doctor') {
+      onSectionChange('doctor-area');
+    } else {
+      onSectionChange('patient-area');
+    }
+
+  } catch (err: any) {
+    const errorMsg = err.response?.data?.message || 'Email ou senha incorretos.';
+    setErrorMessage(errorMsg);
+  } finally {
+    setLoading(false);
+  }
+};
 
   const handleDemoLogin = async (userType: 'patient' | 'doctor' | 'admin') => {
     setLoading(true);
-    setError('');
+    setErrorMessage('');
+    setShowErrorModal(false);
 
-    const demoCredentials = {
+    {/*const demoCredentials = {
       patient: { email: 'paciente@demo.com', password: 'password' },
       doctor: { email: 'medico@demo.com', password: 'password' },
       admin: { email: 'admin@promed.com', password: 'password' }
     };
 
-    try {
+   } try { botão de login demo desativado por enquanto
       await login(demoCredentials[userType]);
       
       setTimeout(() => {
@@ -116,6 +159,7 @@ export function LoginPage({ onSectionChange }: LoginPageProps) {
     } finally {
       setLoading(false);
     }
+      */}
   };
 
   return (
@@ -126,12 +170,14 @@ export function LoginPage({ onSectionChange }: LoginPageProps) {
           <p className="text-gray-600">Acesse sua conta na ProMed</p>
         </div>
 
-        {error && (
+        
+        {/* MENSAGEM DE ERRO DESATIVADA - USANDO MODAL
+        {errorMessage && (
           <Alert variant="destructive" className="mb-6">
             <AlertCircle className="h-4 w-4" />
-            <AlertDescription>{error}</AlertDescription>
+            <AlertDescription>{errorMessage}</AlertDescription>
           </Alert>
-        )}
+        )}*/}
 
         <Tabs defaultValue="patient" className="space-y-6">
           <TabsList className="grid w-full grid-cols-3">
@@ -162,7 +208,7 @@ export function LoginPage({ onSectionChange }: LoginPageProps) {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <form onSubmit={handleLogin} className="space-y-4">
+                <form onSubmit={(e) => handleLogin(e, 'patient')} className="space-y-4">
                   <div className="space-y-2">
                     <Label htmlFor="patient-email">Email</Label>
                     <Input
@@ -189,21 +235,21 @@ export function LoginPage({ onSectionChange }: LoginPageProps) {
                   </div>
                   <Button type="submit" className="w-full" disabled={loading}>
                     <User className="w-4 h-4 mr-2" />
-                    {loading ? 'Entrando...' : 'Entrar como Paciente'}
+                    {loading ? <LoadingSpinner size="sm" /> : 'Entrar como Paciente'}
                   </Button>
                 </form>
                 
                 <Separator className="my-4" />
                 
                 <div className="space-y-2">
-                  <Button 
+                  {/*<Button 
                     variant="outline" 
                     className="w-full"
                     onClick={() => handleDemoLogin('patient')}
                     disabled={loading}
                   >
                     Acesso Demo - Paciente
-                  </Button>
+                  </Button>*/}
                   <div className="text-center space-y-2">
                     <Button 
                       variant="link" 
@@ -212,6 +258,10 @@ export function LoginPage({ onSectionChange }: LoginPageProps) {
                       disabled={loading}
                     >
                       Não tem conta? Cadastre-se
+                    </Button>
+                    
+                    <Button variant="link" className="text-sm">
+                      Esqueceu sua senha?
                     </Button>
                   </div>
                 </div>
@@ -265,13 +315,13 @@ export function LoginPage({ onSectionChange }: LoginPageProps) {
                 <Separator className="my-4" />
                 
                 <div className="space-y-2">
-                  <Button 
+                  {/*<Button 
                     variant="outline" 
                     className="w-full"
                     onClick={() => handleDemoLogin('doctor')}
                   >
                     Acesso Demo - Médico
-                  </Button>
+                  </Button>*/}
                   <div className="text-center space-y-2">
                     <Button 
                       variant="link" 
@@ -334,13 +384,13 @@ export function LoginPage({ onSectionChange }: LoginPageProps) {
                 <Separator className="my-4" />
                 
                 <div className="space-y-2">
-                  <Button 
+                  {/*<Button 
                     variant="outline" 
                     className="w-full"
                     onClick={() => handleDemoLogin('admin')}
                   >
                     Acesso Demo - Admin
-                  </Button>
+                  </Button>*/}
                   <div className="text-center">
                     <Button variant="link" className="text-sm">
                       Esqueceu sua senha?
@@ -361,6 +411,13 @@ export function LoginPage({ onSectionChange }: LoginPageProps) {
             </div>
           </CardContent>
         </Card>
+
+        <ErrorModal
+        isOpen={showErrorModal}
+        onClose={() => setShowErrorModal(false)}
+        message={errorMessage}  // ✅ CORRIGIDO
+      />
+
       </div>
     </div>
   );

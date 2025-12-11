@@ -16,6 +16,8 @@ import { Modal } from './ui/modal';
 import { ErrorModal } from './ui/error-modal';
 import { TermsModal } from './ui/terms-modal';
 import InputMask from 'react-input-mask';
+import { LoadingSpinner } from './ui/loading-spinner';
+import { ProgressBar } from './ui/progress-bar';
 import { specialtyService, Specialty } from '../services/specialtyService';
 
 interface CadastroPagesProps {
@@ -200,6 +202,15 @@ console.log('🔵 Enviando FormData com arquivos...');
       headers: {
         'Content-Type': 'multipart/form-data',
       },
+          onUploadProgress: (progressEvent) => {
+        if (progressEvent.total) {
+          const percentCompleted = Math.round(
+            (progressEvent.loaded * 100) / progressEvent.total
+          );
+          setUploadProgress(percentCompleted);
+          console.log('📊 Upload progress:', percentCompleted + '%');
+        }
+      },
     });
     
     console.log('✅ Cadastro realizado com sucesso:', response.data);
@@ -274,6 +285,7 @@ console.log('🔵 Enviando FormData com arquivos...');
   };
 
   const [loading, setLoading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
   const { register } = useAuth();
@@ -1173,10 +1185,18 @@ const handleSubmitForm = async (e: React.FormEvent) => {
 
               {/* Submit Button */}
               <div className="flex flex-col sm:flex-row gap-4 pt-6">
+                  {loading && type === 'professional' && (
+                    <div className="mt-4">
+                      <ProgressBar 
+                        progress={uploadProgress} 
+                        label="Enviando documentos" 
+                      />
+                    </div>
+                  )}
                 <Button 
                   type="button"  // ← Mudei para "button" temporariamente
                   className="flex-1"
-                  disabled={!formData.acceptTerms || !formData.acceptPrivacy}
+                  disabled={!formData.acceptTerms || !formData.acceptPrivacy || loading}
                   onClick={(e: React.MouseEvent<HTMLButtonElement>) => {
                       e.preventDefault();
                       console.log('🔴 BOTÃO CLICADO DIRETAMENTE!');
@@ -1184,12 +1204,21 @@ const handleSubmitForm = async (e: React.FormEvent) => {
                       handleRegister(e as any);
                     }}
                 >
+                    {loading ? (
+                        <div className="flex items-center justify-center gap-2">
+                          <LoadingSpinner size="sm" />
+                          <span>Cadastrando...</span>
+                        </div>
+                      ) : (
+                        'Criar minha conta'
+                      )}
                   {type === 'patient' ? 'Criar Conta de Paciente' : 'Solicitar Cadastro Profissional'}
                 </Button>
               </div>
             </form>
           </CardContent>
         </Card>
+
         {/* Info Card */}
         {type === 'professional' && (
           <Card className="mt-6">

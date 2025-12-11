@@ -23,7 +23,7 @@ export function TermsModal({ isOpen, onClose, type }: TermsModalProps) {
       
       {/* Modal */}
       <div 
-        className="relative bg-white rounded-lg shadow-xl w-full max-w-4xl"
+        className="relative bg-white rounded-lg shadow-xl w-full max-w-4xl animate-zoom-in"
         style={{ 
           maxHeight: '85vh',
           display: 'flex',

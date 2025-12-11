@@ -8,6 +8,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from './ui/table';
 import { Calendar, Clock, User, FileText, Download, Eye, Plus, Phone, Camera } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
+import { Header } from '../components/Header';
+
 
 interface PatientAreaProps {
   
@@ -18,6 +20,7 @@ export function PatientArea({ onSectionChange }: PatientAreaProps) {
   const { user } = useAuth();
   const [activeTab, setActiveTab] = useState('consultas');
   const [profilePhoto, setProfilePhoto] = useState<string>('');
+  
 
   // Mock data - em produção viria do backend
   const consultas = [
