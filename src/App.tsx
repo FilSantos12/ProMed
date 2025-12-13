@@ -14,6 +14,7 @@ import { CadastroPages } from './components/CadastroPages';
 
 function AppContent() {
   const [currentSection, setCurrentSection] = useState('home');
+  const [isProcessing, setIsProcessing] = useState(false);
 
   const handleSectionChange = (section: string) => {
     setCurrentSection(section);
@@ -53,6 +54,7 @@ function AppContent() {
       <Header 
         currentSection={currentSection}
         onSectionChange={handleSectionChange}
+        
       />
       
       <main>

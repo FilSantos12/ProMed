@@ -3,16 +3,6 @@ import { createContext, useState, useEffect, ReactNode } from 'react';
 import api from '../services/api';
 import { User, LoginCredentials, RegisterData, AuthResponse } from '../types';
 
-{/*interface AuthContextData {
-  user: User | null;
-  token: string | null;
-  loading: boolean;
-  login: (credentials: LoginCredentials) => Promise<void>;
-  register: (data: RegisterData) => Promise<void>;
-  logout: () => void;
-  isAuthenticated: boolean;
-}*/}
-
 interface AuthContextData {
   user: User | null;
   token: string | null;
@@ -47,32 +37,6 @@ export function AuthProvider({ children }: AuthProviderProps) {
     setLoading(false);
   }, []);
 
-  // Login
-{/*const login = async (credentials: LoginCredentials) => {
-  try {
-    console.log('Tentando login com:', credentials); // DEBUG
-    
-    const response = await api.post<AuthResponse>('/login', credentials);
-    
-    console.log('Login bem-sucedido:', response.data); // DEBUG
-    
-    const { user, token } = response.data;
-
-    localStorage.setItem('token', token);
-    localStorage.setItem('user', JSON.stringify(user));
-
-    setToken(token);
-    setUser(user);
-  } catch (error: any) {
-    console.error('Erro no login:', error.response?.data); // DEBUG
-    
-    const errorMessage = error.response?.data?.message 
-      || error.response?.data?.errors 
-      || 'Erro ao fazer login';
-    
-    throw new Error(JSON.stringify(errorMessage));
-  }
-};*/}
 
 const login = async (email: string, password: string, expectedRole: string) => {
   try {
@@ -91,7 +55,6 @@ const login = async (email: string, password: string, expectedRole: string) => {
 
     setUser(user);
   } catch (error: any) {
-    console.error('Erro no login:', error.response?.data);
     throw error;
   }
 };
@@ -117,7 +80,7 @@ const login = async (email: string, password: string, expectedRole: string) => {
     try {
       await api.post('/logout');
     } catch (error) {
-      console.error('Erro ao fazer logout:', error);
+
     } finally {
       localStorage.removeItem('@ProMed:token');
       localStorage.removeItem('@ProMed:user');

@@ -3229,6 +3229,20 @@ html {
   }
 }
 
+@keyframes bounceIn {
+  0% {
+    opacity: 0;
+    transform: scale(0);
+  }
+  50% {
+    transform: scale(1.1);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
 /* Classes para usar nos componentes */
 .animate-fade-in {
   animation: modalFadeIn 0.2s ease-out;
@@ -3236,4 +3250,8 @@ html {
 
 .animate-zoom-in {
   animation: modalZoomIn 0.2s ease-out;
+}
+
+.animate-bounce-in {
+  animation: bounceIn 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);
 }
