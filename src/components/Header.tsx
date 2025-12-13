@@ -3,10 +3,7 @@ import { Button } from './ui/button';
 import { Sheet, SheetContent, SheetTrigger } from './ui/sheet';
 import { Menu, LogOut, Stethoscope, User, Calendar, Shield } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
-
-
-
-
+import { ConfirmModal } from './ui/confirm-modal';
 
 interface HeaderProps {
   currentSection: string;
@@ -15,15 +12,20 @@ interface HeaderProps {
 
 export function Header({ currentSection, onSectionChange }: HeaderProps) {
   const { user, logout, isAuthenticated } = useAuth();
-
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const [isOpen, setIsOpen] = useState(false); 
 
   const handleLogout = () => {
+    setShowLogoutConfirm(true); 
     logout();
     onSectionChange('');
     setIsOpen(false);
   };
 
+  const handleLogoutClick = () => {
+    setShowLogoutConfirm(true);
+  }
+  
   type MenuItem = {
     id: string;
     label: string;
@@ -54,7 +56,8 @@ export function Header({ currentSection, onSectionChange }: HeaderProps) {
 
     const handleNavClick = (sectionId: string) => {
         if (sectionId === 'logout') {
-        handleLogout();  // Chama a função de logout
+        //handleLogout();  // Chama a função de logout
+        handleLogoutClick();
         return;
       }
 
@@ -63,6 +66,7 @@ export function Header({ currentSection, onSectionChange }: HeaderProps) {
   };
 
   return (
+    <>
     <header className="bg-white/95 backdrop-blur-sm border-b border-blue-100 sticky top-0 z-50">
       <div className="container mx-auto px-4 h-16 flex items-center justify-between">
         {/* Logo */}
@@ -185,5 +189,18 @@ export function Header({ currentSection, onSectionChange }: HeaderProps) {
         </Sheet>
       </div>
     </header>
+    
+        {/* Modal de Confirmação de Logout */}
+        <ConfirmModal
+          isOpen={showLogoutConfirm}
+          onClose={() => setShowLogoutConfirm(false)}
+          onConfirm={handleLogout}
+          title="Sair da conta"
+          message="Tem certeza que deseja sair? Você precisará fazer login novamente para acessar o sistema."
+          confirmText="Sim, sair"
+          cancelText="Cancelar"
+          type="warning"
+        />
+      </>  
   );
 }
