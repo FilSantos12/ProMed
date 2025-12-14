@@ -1,105 +1,131 @@
 import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
 import { Button } from './ui/button';
-import { Input } from './ui/input';
 import { Label } from './ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
 import { Separator } from './ui/separator';
-import { User, Stethoscope, Shield, AlertCircle } from 'lucide-react';
+import { User, Stethoscope, Shield } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
-import { Alert, AlertDescription } from './ui/alert';
 import { LoadingSpinner } from './ui/loading-spinner';
 import { ErrorModal } from './ui/error-modal';
 import { SuccessModal } from './ui/success-modal';
+import { ValidatedInput } from './ValidatedInput';
+import { useFormValidation } from '../hooks/useFormValidation';
+import { validateEmail, validatePassword } from '../utils/validators';
+import { useToast } from '../contexts/ToastContext';
 
 interface LoginPageProps {
   onSectionChange: (section: string) => void;
 }
 
 export function LoginPage({ onSectionChange }: LoginPageProps) {
+  const { login } = useAuth();
+  const toast = useToast();
 
-  const { login, user } = useAuth();
-  
   const [loginData, setLoginData] = useState({
     email: '',
     password: ''
   });
-  
+
   const [loading, setLoading] = useState(false);
   const [showErrorModal, setShowErrorModal] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
-  //modal de sucesso
-  const [showSuccessModal, setShowSuccessModal] = useState(false);  
-  const [successMessage, setSuccessMessage] = useState(''); 
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [successMessage, setSuccessMessage] = useState('');
+
+  // Hook de validação
+  const {
+    errors,
+    validateField,
+    handleBlur,
+    validateAll,
+    clearErrors,
+    shouldShowError,
+    isFieldValid,
+  } = useFormValidation({
+    email: { validate: validateEmail },
+    password: { validate: validatePassword },
+  });
 
   const handleInputChange = (field: string, value: string) => {
     setLoginData(prev => ({ ...prev, [field]: value }));
     setErrorMessage('');
+    
+    // Valida em tempo real
+    validateField(field, value);
   };
 
-
   const handleLogin = async (e: React.FormEvent, expectedRole: string) => {
-  e.preventDefault();
-  e.stopPropagation(); 
-
-    setLoading(true);
-    setErrorMessage('');
-   //setShowErrorModal(false);
-    setShowSuccessModal(false);
-
-  try {
-
-    await login(loginData.email,loginData.password, expectedRole);
-
-    // Fechar modal de erro se estiver aberto
-    setShowErrorModal(false);
-
-    const user = JSON.parse(localStorage.getItem('@ProMed:user') || '{}');
-
-    // Mostrar modal de sucesso
-    setSuccessMessage(`Bem-vindo, ${user.name}!`);
-    setShowSuccessModal(true);
-
-    // Redirecionar após 2 segundos
-    setTimeout(() => {
-    setShowSuccessModal(false);
-    
-    // Redirecionar baseado no role
-    if (user.role === 'admin') {
-      onSectionChange('admin-area');
-    } else if (user.role === 'doctor') {
-      onSectionChange('doctor-area');
-    } else {
-      onSectionChange('patient-area');
-    }
-  }, 2000);
-
-  } catch (err: any) {
-    // Impedir que algo redirecione
     e.preventDefault();
     e.stopPropagation();
 
-    // Fechar modal de sucesso se estiver aberto
-    setShowSuccessModal(false); 
+    // Validar todos os campos antes de submeter
+    const isValid = validateAll(loginData);
 
-    const errorMsg = err.response?.data?.message || 'Email ou senha incorretos.';
+    if (!isValid) {
+      toast.warning('Preencha todos os campos corretamente');
+      return false;
+    }
 
-    setErrorMessage(errorMsg);
-    setShowErrorModal(true);
-
-  // NÃO redirecionar em caso de erro
-    return false; // ← ADICIONAR
-
-  } finally {
-    setLoading(false);
-  }
-  return false; // ← ADICIONAR
-};
-
-  const handleDemoLogin = async (userType: 'patient' | 'doctor' | 'admin') => {
     setLoading(true);
     setErrorMessage('');
-    setShowErrorModal(false);
+    setShowSuccessModal(false);
+
+    try {
+      await login(loginData.email, loginData.password, expectedRole);
+
+      setShowErrorModal(false);
+
+      const user = JSON.parse(localStorage.getItem('@ProMed:user') || '{}');
+
+      setSuccessMessage(`Bem-vindo, ${user.name}!`);
+      setShowSuccessModal(true);
+      
+      // Toast de sucesso
+      toast.success(`Login realizado com sucesso! Bem-vindo, ${user.name}!`);
+
+      setTimeout(() => {
+        setShowSuccessModal(false);
+
+        if (user.role === 'admin') {
+          onSectionChange('admin-area');
+        } else if (user.role === 'doctor') {
+          onSectionChange('doctor-area');
+        } else {
+          onSectionChange('patient-area');
+        }
+      }, 2000);
+
+    } catch (err: any) {
+      e.preventDefault();
+      e.stopPropagation();
+
+      setShowSuccessModal(false);
+
+      const errorMsg = err.response?.data?.message || 'Email ou senha incorretos.';
+
+      setErrorMessage(errorMsg);
+      setShowErrorModal(true);
+      
+      // Toast de erro
+      toast.error(errorMsg);
+
+      return false;
+
+    } finally {
+      setLoading(false);
+    }
+    return false;
+  };
+
+  // Verifica se o formulário é válido para habilitar o botão
+  const isFormValid = () => {
+    return (
+      loginData.email &&
+      loginData.password &&
+      !errors.email &&
+      !errors.password
+    );
   };
 
   return (
@@ -138,50 +164,60 @@ export function LoginPage({ onSectionChange }: LoginPageProps) {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <form onSubmit={(e) =>{e.preventDefault(); handleLogin(e, 'patient')} }className="space-y-4">
+                <form onSubmit={(e) => { e.preventDefault(); handleLogin(e, 'patient') }} className="space-y-4">
                   <div className="space-y-2">
                     <Label htmlFor="patient-email">Email</Label>
-                    <Input
+                    <ValidatedInput
                       id="patient-email"
                       type="email"
                       value={loginData.email}
                       onChange={(e) => handleInputChange('email', e.target.value)}
+                      onBlur={() => handleBlur('email')}
                       placeholder="seu@email.com"
-                      required
                       disabled={loading}
+                      error={errors.email}
+                      showError={shouldShowError('email')}
+                      isValid={isFieldValid('email')}
                     />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="patient-password">Senha</Label>
-                    <Input
+                    <ValidatedInput
                       id="patient-password"
                       type="password"
                       value={loginData.password}
                       onChange={(e) => handleInputChange('password', e.target.value)}
+                      onBlur={() => handleBlur('password')}
                       placeholder="Sua senha"
-                      required
                       disabled={loading}
+                      error={errors.password}
+                      showError={shouldShowError('password')}
+                      isValid={isFieldValid('password')}
                     />
                   </div>
-                  <Button type="submit" className="w-full" disabled={loading}>
+                  <Button 
+                    type="submit" 
+                    className="w-full" 
+                    disabled={loading || !isFormValid()}
+                  >
                     <User className="w-4 h-4 mr-2" />
                     {loading ? <LoadingSpinner size="sm" /> : 'Entrar como Paciente'}
                   </Button>
                 </form>
-                
+
                 <Separator className="my-4" />
-                
+
                 <div className="space-y-2">
                   <div className="text-center space-y-2">
-                    <Button 
-                      variant="link" 
+                    <Button
+                      variant="link"
                       className="text-sm"
                       onClick={() => onSectionChange('cadastro-paciente')}
                       disabled={loading}
                     >
                       Não tem conta? Cadastre-se
                     </Button>
-                    
+
                     <Button variant="link" className="text-sm">
                       Esqueceu sua senha?
                     </Button>
@@ -191,8 +227,7 @@ export function LoginPage({ onSectionChange }: LoginPageProps) {
             </Card>
           </TabsContent>
 
-          {/* Médico e Admin tabs similares... (mantém o mesmo padrão) */}
-
+          {/* Médico Tab */}
           <TabsContent value="doctor">
             <Card>
               <CardHeader>
@@ -205,41 +240,53 @@ export function LoginPage({ onSectionChange }: LoginPageProps) {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <form onSubmit={(e) => { e.preventDefault(); handleLogin(e, 'doctor')} } className="space-y-4">
+                <form onSubmit={(e) => { e.preventDefault(); handleLogin(e, 'doctor') }} className="space-y-4">
                   <div className="space-y-2">
                     <Label htmlFor="doctor-email">Email</Label>
-                    <Input
+                    <ValidatedInput
                       id="doctor-email"
                       type="email"
                       value={loginData.email}
                       onChange={(e) => handleInputChange('email', e.target.value)}
+                      onBlur={() => handleBlur('email')}
                       placeholder="medico@email.com"
-                      required
+                      disabled={loading}
+                      error={errors.email}
+                      showError={shouldShowError('email')}
+                      isValid={isFieldValid('email')}
                     />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="doctor-password">Senha</Label>
-                    <Input
+                    <ValidatedInput
                       id="doctor-password"
                       type="password"
                       value={loginData.password}
                       onChange={(e) => handleInputChange('password', e.target.value)}
+                      onBlur={() => handleBlur('password')}
                       placeholder="Sua senha"
-                      required
+                      disabled={loading}
+                      error={errors.password}
+                      showError={shouldShowError('password')}
+                      isValid={isFieldValid('password')}
                     />
                   </div>
-                  <Button type="submit" className="w-full">
+                  <Button 
+                    type="submit" 
+                    className="w-full"
+                    disabled={loading || !isFormValid()}
+                  >
                     <Stethoscope className="w-4 h-4 mr-2" />
-                    Entrar como Médico
+                    {loading ? <LoadingSpinner size="sm" /> : 'Entrar como Médico'}
                   </Button>
                 </form>
-                
+
                 <Separator className="my-4" />
-                
+
                 <div className="space-y-2">
                   <div className="text-center space-y-2">
-                    <Button 
-                      variant="link" 
+                    <Button
+                      variant="link"
                       className="text-sm"
                       onClick={() => onSectionChange('cadastro-profissional')}
                     >
@@ -255,6 +302,7 @@ export function LoginPage({ onSectionChange }: LoginPageProps) {
             </Card>
           </TabsContent>
 
+          {/* Admin Tab */}
           <TabsContent value="admin">
             <Card>
               <CardHeader>
@@ -267,37 +315,49 @@ export function LoginPage({ onSectionChange }: LoginPageProps) {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <form onSubmit={(e) => { e.preventDefault(); handleLogin(e, 'admin')} } className="space-y-4">
+                <form onSubmit={(e) => { e.preventDefault(); handleLogin(e, 'admin') }} className="space-y-4">
                   <div className="space-y-2">
                     <Label htmlFor="admin-email">Email</Label>
-                    <Input
+                    <ValidatedInput
                       id="admin-email"
                       type="email"
                       value={loginData.email}
                       onChange={(e) => handleInputChange('email', e.target.value)}
+                      onBlur={() => handleBlur('email')}
                       placeholder="admin@promed.com"
-                      required
+                      disabled={loading}
+                      error={errors.email}
+                      showError={shouldShowError('email')}
+                      isValid={isFieldValid('email')}
                     />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="admin-password">Senha</Label>
-                    <Input
+                    <ValidatedInput
                       id="admin-password"
                       type="password"
                       value={loginData.password}
                       onChange={(e) => handleInputChange('password', e.target.value)}
+                      onBlur={() => handleBlur('password')}
                       placeholder="Sua senha"
-                      required
+                      disabled={loading}
+                      error={errors.password}
+                      showError={shouldShowError('password')}
+                      isValid={isFieldValid('password')}
                     />
                   </div>
-                  <Button type="submit" className="w-full">
+                  <Button 
+                    type="submit" 
+                    className="w-full"
+                    disabled={loading || !isFormValid()}
+                  >
                     <Shield className="w-4 h-4 mr-2" />
-                    Entrar como Admin
+                    {loading ? <LoadingSpinner size="sm" /> : 'Entrar como Admin'}
                   </Button>
                 </form>
-                
+
                 <Separator className="my-4" />
-                
+
                 <div className="space-y-2">
                   <div className="text-center">
                     <Button variant="link" className="text-sm">
@@ -321,28 +381,27 @@ export function LoginPage({ onSectionChange }: LoginPageProps) {
         </Card>
 
         <ErrorModal
-        isOpen={showErrorModal}
-        onClose={() => setShowErrorModal(false)}
-        message={errorMessage}  
-      />
+          isOpen={showErrorModal}
+          onClose={() => setShowErrorModal(false)}
+          message={errorMessage}
+        />
 
-        {/* Modal de Sucesso */}
-          <SuccessModal
-            isOpen={showSuccessModal}
-            onClose={() => {
-              setShowSuccessModal(false);
-              const user = JSON.parse(localStorage.getItem('@ProMed:user') || '{}');
-              if (user.role === 'admin') {
-                onSectionChange('admin-area');
-              } else if (user.role === 'doctor') {
-                onSectionChange('doctor-area');
-              } else {
-                onSectionChange('patient-area');
-              }
-            }}
-            title="Login realizado com sucesso!"
-            message={successMessage}
-          />
+        <SuccessModal
+          isOpen={showSuccessModal}
+          onClose={() => {
+            setShowSuccessModal(false);
+            const user = JSON.parse(localStorage.getItem('@ProMed:user') || '{}');
+            if (user.role === 'admin') {
+              onSectionChange('admin-area');
+            } else if (user.role === 'doctor') {
+              onSectionChange('doctor-area');
+            } else {
+              onSectionChange('patient-area');
+            }
+          }}
+          title="Login realizado com sucesso!"
+          message={successMessage}
+        />
 
       </div>
     </div>
