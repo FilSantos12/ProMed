@@ -82,7 +82,7 @@ export function LoginPage({ onSectionChange }: LoginPageProps) {
       setShowSuccessModal(true);
       
       // Toast de sucesso
-      toast.success(`Login realizado com sucesso! Bem-vindo, ${user.name}!`);
+      //toast.success(`Login realizado com sucesso! Bem-vindo, ${user.name}!`);
 
       setTimeout(() => {
         setShowSuccessModal(false);
@@ -108,7 +108,7 @@ export function LoginPage({ onSectionChange }: LoginPageProps) {
       setShowErrorModal(true);
       
       // Toast de erro
-      toast.error(errorMsg);
+      //toast.error(errorMsg);
 
       return false;
 
@@ -380,7 +380,7 @@ export function LoginPage({ onSectionChange }: LoginPageProps) {
           </CardContent>
         </Card>
 
-        <ErrorModal
+         <ErrorModal
           isOpen={showErrorModal}
           onClose={() => setShowErrorModal(false)}
           message={errorMessage}

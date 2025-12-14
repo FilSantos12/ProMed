@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useCallback } from 'react';
-import ToastContainer from '../components/toast/ToastContainer';
+import ToastContainer from '../components/Toast/ToastContainer';
 import { ToastProps, ToastType } from '../components/toast/Toast';
 
 interface ToastContextData {
@@ -10,7 +10,7 @@ interface ToastContextData {
   info: (message: string, duration?: number) => void;
 }
 
-const ToastContext = createContext<ToastContextData>({} as ToastContextData);
+const ToastContext = createContext<ToastContextData | undefined>(undefined);
 
 export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [toasts, setToasts] = useState<ToastProps[]>([]);
@@ -57,7 +57,7 @@ export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   );
 };
 
-export const useToast = () => {
+export const useToast = (): ToastContextData => {
   const context = useContext(ToastContext);
   
   if (!context) {
