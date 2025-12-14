@@ -109,8 +109,8 @@ export function PatientArea({ onSectionChange }: PatientAreaProps) {
               </div>
               <label 
                 htmlFor="patient-photo-upload" 
-                className="absolute inset-0 rounded-full bg-black bg-opacity-50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
-              >
+                className="absolute inset-0 rounded-full bg-black bg-opacity-50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer">
+                  
                 <Camera className="w-6 h-6 text-white" />
               </label>
               <input

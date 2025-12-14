@@ -110,8 +110,8 @@ export function DoctorArea({ onSectionChange }: DoctorAreaProps) {
               </div>
               <label 
                 htmlFor="doctor-photo-upload" 
-                className="cursor-pointer text-blue-600">
-                  Enviar foto do médico
+                className="absolute inset-0 rounded-full bg-black bg-opacity-50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer">
+            
                 <Camera className="w-6 h-6 text-white" />
               </label>
               <input
@@ -120,6 +120,7 @@ export function DoctorArea({ onSectionChange }: DoctorAreaProps) {
                 accept="image/*"
                 onChange={handlePhotoUpload}
                 className="hidden"
+                aria-label="Upload de foto de perfil"
               />
             </div>
             <div>

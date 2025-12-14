@@ -78,7 +78,7 @@
   --sidebar-ring: oklch(0.439 0 0);
 }
 
-@theme inline {
+inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-card: var(--card);
@@ -186,4 +186,25 @@
 
 html {
   font-size: var(--font-size);
+}
+
+
+/************* Garante que o input tenha padding correto quando tem ícone *************/
+.validated-input-wrapper {
+  position: relative;
+  width: 100%;
+}
+
+.validated-input-with-icon {
+  padding-right: 2.75rem !important; /* 44px */
+}
+
+/* Posiciona o ícone corretamente */
+.validated-input-icon {
+  position: absolute;
+  right: 0.75rem; /* 12px */
+  top: 50%;
+  transform: translateY(-50%);
+  pointer-events: none;
+  z-index: 10;
 }

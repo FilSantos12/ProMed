@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { AuthProvider } from './contexts/AuthContext';
+import { ToastProvider } from './contexts/ToastContext';
 import { Header } from './components/Header';
 import { HomePage } from './components/HomePage';
 import { EspecialidadesPage } from './components/EspecialidadesPage';
@@ -112,7 +113,9 @@ function AppContent() {
 export default function App() {
   return (
     <AuthProvider>
-      <AppContent />
+      <ToastProvider>
+        <AppContent />
+      </ToastProvider>
     </AuthProvider>
   );
 }
