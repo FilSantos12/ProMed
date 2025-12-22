@@ -13,6 +13,7 @@ import { ValidatedInput } from './ValidatedInput';
 import { useFormValidation } from '../hooks/useFormValidation';
 import { validateEmail, validatePassword } from '../utils/validators';
 import { useToast } from '../contexts/ToastContext';
+import { ForgotPasswordModal } from './ForgotPasswordModal';
 
 interface LoginPageProps {
   onSectionChange: (section: string) => void;
@@ -32,6 +33,7 @@ export function LoginPage({ onSectionChange }: LoginPageProps) {
   const [errorMessage, setErrorMessage] = useState('');
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
+  const [showForgotPasswordModal, setShowForgotPasswordModal] = useState(false);
 
   // Hook de validação
   const {
@@ -218,10 +220,18 @@ export function LoginPage({ onSectionChange }: LoginPageProps) {
                       Não tem conta? Cadastre-se
                     </Button>
 
-                    <Button variant="link" className="text-sm">
-                      Esqueceu sua senha?
-                    </Button>
+                      <Button 
+                        variant="link" 
+                        className="text-sm"
+                        onClick={() => setShowForgotPasswordModal(true)}
+                      >
+                        Esqueceu sua senha?
+                      </Button>
                   </div>
+                      <ForgotPasswordModal
+                        isOpen={showForgotPasswordModal}
+                        onClose={() => setShowForgotPasswordModal(false)}
+                      />
                 </div>
               </CardContent>
             </Card>
@@ -293,10 +303,18 @@ export function LoginPage({ onSectionChange }: LoginPageProps) {
                       Não tem conta? Cadastre-se
                     </Button>
                     <br />
-                    <Button variant="link" className="text-sm">
-                      Esqueceu sua senha?
-                    </Button>
+                      <Button 
+                        variant="link" 
+                        className="text-sm"
+                        onClick={() => setShowForgotPasswordModal(true)}
+                      >
+                        Esqueceu sua senha?
+                      </Button>
                   </div>
+                    <ForgotPasswordModal
+                      isOpen={showForgotPasswordModal}
+                      onClose={() => setShowForgotPasswordModal(false)}
+                    />
                 </div>
               </CardContent>
             </Card>
@@ -360,10 +378,18 @@ export function LoginPage({ onSectionChange }: LoginPageProps) {
 
                 <div className="space-y-2">
                   <div className="text-center">
-                    <Button variant="link" className="text-sm">
-                      Esqueceu sua senha?
-                    </Button>
+                      <Button 
+                        variant="link" 
+                        className="text-sm"
+                        onClick={() => setShowForgotPasswordModal(true)}
+                      >
+                        Esqueceu sua senha?
+                      </Button>
                   </div>
+                      <ForgotPasswordModal
+                        isOpen={showForgotPasswordModal}
+                        onClose={() => setShowForgotPasswordModal(false)}
+                      />
                 </div>
               </CardContent>
             </Card>
