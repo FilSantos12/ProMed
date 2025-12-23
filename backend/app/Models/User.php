@@ -60,6 +60,21 @@ class User extends Authenticatable
         return $this->hasOne(Patient::class);
     }
 
+    public function schedules()
+    {
+        return $this->hasMany(Schedule::class, 'doctor_id');
+    }
+
+    public function appointmentsAsPatient()
+    {
+        return $this->hasMany(Appointment::class, 'patient_id');
+    }
+
+    public function appointmentsAsDoctor()
+    {
+        return $this->hasMany(Appointment::class, 'doctor_id');
+    }
+
     // Scopes
     public function scopeActive($query)
     {
@@ -85,5 +100,27 @@ class User extends Authenticatable
     public function isAdmin()
     {
         return $this->role === 'admin';
+    }
+
+    /**
+ * Pegar próximas consultas (para qualquer role)
+ */
+    public function getUpcomingAppointments()
+    {
+        if ($this->isPatient()) {
+            return $this->appointmentsAsPatient()
+                ->upcoming()
+                ->with(['doctor', 'specialty'])
+                ->get();
+        }
+
+        if ($this->isDoctor()) {
+            return $this->appointmentsAsDoctor()
+                ->upcoming()
+                ->with(['patient', 'specialty'])
+                ->get();
+        }
+
+        return collect([]);
     }
 }
