@@ -6,6 +6,7 @@ use App\Http\Controllers\Api\DoctorController;
 use App\Http\Controllers\Api\AppointmentController;
 use App\Http\Controllers\Api\SpecialtyController; 
 use App\Http\Controllers\Api\PasswordResetController;
+use App\Http\Controllers\Api\ScheduleController;
 
 
 Route::get('/health', function () {
@@ -67,6 +68,40 @@ Route::prefix('v1')->group(function () {
                 Route::middleware('auth:sanctum')->group(function () {
                 Route::post('/logout', [AuthController::class, 'logout']);
                 Route::get('/user', [AuthController::class, 'user']);
+
+                // ============================================
+                // ROTAS DE HORÁRIOS (Schedules)
+                // ============================================
+
+                Route::middleware('auth:sanctum')->group(function () {
+                    
+                    // CRUD Completo de Horários
+                    Route::apiResource('schedules', ScheduleController::class);
+                    
+                    // Rota especial: Obter slots disponíveis
+                    Route::get('schedules/{id}/slots', [ScheduleController::class, 'getAvailableSlots']);
+                    
+                });
+
+                // ============================================
+                // ROTAS DE CONSULTAS (Appointments)
+                // ============================================
+
+                Route::middleware('auth:sanctum')->group(function () {
+                    
+                    // CRUD Completo de Consultas
+                    Route::apiResource('appointments', AppointmentController::class);
+                    
+                    // Ações Especiais
+                    Route::post('appointments/{id}/confirm', [AppointmentController::class, 'confirm']);
+                    Route::post('appointments/{id}/cancel', [AppointmentController::class, 'cancel']);
+                    Route::post('appointments/{id}/complete', [AppointmentController::class, 'complete']);
+                    Route::post('appointments/{id}/reschedule', [AppointmentController::class, 'reschedule']);
+                    
+                    // Estatísticas
+                    Route::get('appointments-statistics', [AppointmentController::class, 'statistics']);
+                    
+                });
             });
         });
     });
