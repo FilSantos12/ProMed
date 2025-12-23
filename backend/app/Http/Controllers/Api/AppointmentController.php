@@ -3,180 +3,405 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use App\Models\User;
-use App\Models\Doctor;
-use App\Models\Patient;
+use App\Http\Requests\CreateAppointmentRequest;
+use App\Http\Requests\UpdateAppointmentRequest;
+use App\Models\Appointment;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Hash;
-use Illuminate\Validation\ValidationException;
 
 class AppointmentController extends Controller
-
 {
     /**
-     * Login
+     * Listar todas as consultas
+     * GET /api/appointments
      */
-    public function login(Request $request)
+    public function index(Request $request)
     {
-        $request->validate([
-            'email' => 'required|email',
-            'password' => 'required',
-        ]);
+        $query = Appointment::with(['patient', 'doctor', 'specialty']);
 
-        $user = User::where('email', $request->email)->first();
-
-        if (!$user || !Hash::check($request->password, $user->password)) {
-            throw ValidationException::withMessages([
-                'email' => ['Credenciais inválidas.'],
-            ]);
+        // Filtrar por paciente
+        if ($request->has('patient_id')) {
+            $query->where('patient_id', $request->patient_id);
         }
 
-        if (!$user->is_active) {
+        // Filtrar por médico
+        if ($request->has('doctor_id')) {
+            $query->where('doctor_id', $request->doctor_id);
+        }
+
+        // Filtrar por status
+        if ($request->has('status')) {
+            $query->where('status', $request->status);
+        }
+
+        // Filtrar por data
+        if ($request->has('date')) {
+            $query->where('appointment_date', $request->date);
+        }
+
+        // Filtrar por período
+        if ($request->has('date_from')) {
+            $query->where('appointment_date', '>=', $request->date_from);
+        }
+
+        if ($request->has('date_to')) {
+            $query->where('appointment_date', '<=', $request->date_to);
+        }
+
+        // Filtros especiais
+        if ($request->has('filter')) {
+            switch ($request->filter) {
+                case 'upcoming':
+                    $query->upcoming();
+                    break;
+                case 'past':
+                    $query->past();
+                    break;
+                case 'today':
+                    $query->today();
+                    break;
+                case 'pending':
+                    $query->pending();
+                    break;
+                case 'confirmed':
+                    $query->confirmed();
+                    break;
+            }
+        }
+
+        // Ordenação
+        $sortBy = $request->input('sort_by', 'appointment_date');
+        $sortOrder = $request->input('sort_order', 'asc');
+        $query->orderBy($sortBy, $sortOrder);
+
+        // Paginação
+        $perPage = $request->input('per_page', 15);
+        $appointments = $query->paginate($perPage);
+
+        return response()->json($appointments, 200);
+    }
+
+    /**
+     * Criar nova consulta
+     * POST /api/appointments
+     */
+    public function store(CreateAppointmentRequest $request)
+    {
+        try {
+            $appointment = Appointment::create($request->validated());
+
+            // Aqui você pode adicionar envio de email/notificação
+
             return response()->json([
-                'message' => 'Usuário inativo. Entre em contato com o suporte.'
-            ], 403);
+                'message' => 'Consulta agendada com sucesso.',
+                'appointment' => $appointment->load(['patient', 'doctor', 'specialty'])
+            ], 201);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'message' => 'Erro ao agendar consulta.',
+                'error' => $e->getMessage()
+            ], 500);
         }
-
-        // Criar token
-        $token = $user->createToken('auth_token')->plainTextToken;
-
-        // Carregar relações baseado no role
-        $userData = $user->toArray();
-        if ($user->isDoctor()) {
-            $user->load('doctor.specialty');
-            $userData['doctor'] = $user->doctor;
-        } elseif ($user->isPatient()) {
-            $user->load('patient');
-            $userData['patient'] = $user->patient;
-        }
-
-        return response()->json([
-            'message' => 'Login realizado com sucesso!',
-            'user' => $userData,
-            'token' => $token,
-        ]);
     }
 
     /**
-     * Register - Paciente
+     * Exibir consulta específica
+     * GET /api/appointments/{id}
      */
-    public function register(Request $request)
+    public function show($id)
     {
+        $appointment = Appointment::with(['patient', 'doctor', 'specialty'])->find($id);
+
+        if (!$appointment) {
+            return response()->json([
+                'message' => 'Consulta não encontrada.'
+            ], 404);
+        }
+
+        return response()->json($appointment, 200);
+    }
+
+    /**
+     * Atualizar consulta
+     * PUT/PATCH /api/appointments/{id}
+     */
+    public function update(UpdateAppointmentRequest $request, $id)
+    {
+        $appointment = Appointment::find($id);
+
+        if (!$appointment) {
+            return response()->json([
+                'message' => 'Consulta não encontrada.'
+            ], 404);
+        }
+
+        try {
+            $appointment->update($request->validated());
+
+            return response()->json([
+                'message' => 'Consulta atualizada com sucesso.',
+                'appointment' => $appointment->load(['patient', 'doctor', 'specialty'])
+            ], 200);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'message' => 'Erro ao atualizar consulta.',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Deletar consulta
+     * DELETE /api/appointments/{id}
+     */
+    public function destroy($id)
+    {
+        $appointment = Appointment::find($id);
+
+        if (!$appointment) {
+            return response()->json([
+                'message' => 'Consulta não encontrada.'
+            ], 404);
+        }
+
+        try {
+            $appointment->delete();
+
+            return response()->json([
+                'message' => 'Consulta deletada com sucesso.'
+            ], 200);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'message' => 'Erro ao deletar consulta.',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Confirmar consulta
+     * POST /api/appointments/{id}/confirm
+     */
+    public function confirm($id)
+    {
+        $appointment = Appointment::find($id);
+
+        if (!$appointment) {
+            return response()->json([
+                'message' => 'Consulta não encontrada.'
+            ], 404);
+        }
+
+        if ($appointment->status !== 'pending') {
+            return response()->json([
+                'message' => 'Apenas consultas pendentes podem ser confirmadas.'
+            ], 400);
+        }
+
+        try {
+            $appointment->confirm();
+
+            // Aqui você pode enviar email/notificação de confirmação
+
+            return response()->json([
+                'message' => 'Consulta confirmada com sucesso.',
+                'appointment' => $appointment->load(['patient', 'doctor', 'specialty'])
+            ], 200);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'message' => 'Erro ao confirmar consulta.',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Cancelar consulta
+     * POST /api/appointments/{id}/cancel
+     */
+    public function cancel(Request $request, $id)
+    {
+        $appointment = Appointment::find($id);
+
+        if (!$appointment) {
+            return response()->json([
+                'message' => 'Consulta não encontrada.'
+            ], 404);
+        }
+
+        if (!$appointment->canBeCancelled()) {
+            return response()->json([
+                'message' => 'Esta consulta não pode ser cancelada.'
+            ], 400);
+        }
+
         $request->validate([
-            'name' => 'required|string|max:255',
-            'email' => 'required|email|unique:users,email',
-            'password' => 'required|min:8|confirmed',
-            'cpf' => 'required|unique:users,cpf',
-            'phone' => 'required',
-            'birth_date' => 'required|date',
-            'gender' => 'nullable|in:M,F,Outro',
+            'cancellation_reason' => ['nullable', 'string', 'max:500']
         ]);
 
-        // Criar usuário
-        $user = User::create([
-            'name' => $request->name,
-            'email' => $request->email,
-            'password' => Hash::make($request->password),
-            'cpf' => $request->cpf,
-            'phone' => $request->phone,
-            'birth_date' => $request->birth_date,
-            'gender' => $request->gender,
-            'role' => 'patient',
-        ]);
+        try {
+            $appointment->cancel($request->cancellation_reason);
 
-        // Criar paciente
-        Patient::create([
-            'user_id' => $user->id,
-        ]);
+            // Aqui você pode enviar email/notificação de cancelamento
 
-        $token = $user->createToken('auth_token')->plainTextToken;
+            return response()->json([
+                'message' => 'Consulta cancelada com sucesso.',
+                'appointment' => $appointment->load(['patient', 'doctor', 'specialty'])
+            ], 200);
 
-        return response()->json([
-            'message' => 'Cadastro realizado com sucesso!',
-            'user' => $user,
-            'token' => $token,
-        ], 201);
+        } catch (\Exception $e) {
+            return response()->json([
+                'message' => 'Erro ao cancelar consulta.',
+                'error' => $e->getMessage()
+            ], 500);
+        }
     }
 
     /**
-     * Register - Médico (apenas Admin pode criar)
+     * Marcar consulta como realizada
+     * POST /api/appointments/{id}/complete
      */
-    public function registerDoctor(Request $request)
+    public function complete(Request $request, $id)
     {
-        $request->validate([
-            'name' => 'required|string|max:255',
-            'email' => 'required|email|unique:users,email',
-            'password' => 'required|min:8',
-            'cpf' => 'required|unique:users,cpf',
-            'phone' => 'required',
-            'birth_date' => 'required|date',
-            'gender' => 'nullable|in:M,F,Outro',
-            'specialty_id' => 'required|exists:specialties,id',
-            'crm' => 'required|unique:doctors,crm',
-            'crm_state' => 'required|size:2',
-            'bio' => 'nullable|string',
-            'consultation_price' => 'nullable|numeric',
-            'consultation_duration' => 'nullable|integer',
-            'years_experience' => 'nullable|integer',
-        ]);
+        $appointment = Appointment::find($id);
 
-        // Criar usuário
-        $user = User::create([
-            'name' => $request->name,
-            'email' => $request->email,
-            'password' => Hash::make($request->password),
-            'cpf' => $request->cpf,
-            'phone' => $request->phone,
-            'birth_date' => $request->birth_date,
-            'gender' => $request->gender,
-            'role' => 'doctor',
-        ]);
-
-        // Criar médico
-        Doctor::create([
-            'user_id' => $user->id,
-            'specialty_id' => $request->specialty_id,
-            'crm' => $request->crm,
-            'crm_state' => $request->crm_state,
-            'bio' => $request->bio,
-            'consultation_price' => $request->consultation_price,
-            'consultation_duration' => $request->consultation_duration ?? 30,
-            'years_experience' => $request->years_experience,
-        ]);
-
-        $user->load('doctor.specialty');
-
-        return response()->json([
-            'message' => 'Médico cadastrado com sucesso!',
-            'user' => $user,
-        ], 201);
-    }
-
-    /**
-     * Logout
-     */
-    public function logout(Request $request)
-    {
-        $request->user()->currentAccessToken()->delete();
-
-        return response()->json([
-            'message' => 'Logout realizado com sucesso!'
-        ]);
-    }
-
-    /**
-     * Get User Autenticado
-     */
-    public function me(Request $request)
-    {
-        $user = $request->user();
-
-        if ($user->isDoctor()) {
-            $user->load('doctor.specialty');
-        } elseif ($user->isPatient()) {
-            $user->load('patient');
+        if (!$appointment) {
+            return response()->json([
+                'message' => 'Consulta não encontrada.'
+            ], 404);
         }
 
-        return response()->json($user);
+        if ($appointment->status !== 'confirmed') {
+            return response()->json([
+                'message' => 'Apenas consultas confirmadas podem ser marcadas como realizadas.'
+            ], 400);
+        }
+
+        $request->validate([
+            'doctor_notes' => ['nullable', 'string', 'max:2000']
+        ]);
+
+        try {
+            if ($request->has('doctor_notes')) {
+                $appointment->doctor_notes = $request->doctor_notes;
+                $appointment->save();
+            }
+
+            $appointment->complete();
+
+            return response()->json([
+                'message' => 'Consulta marcada como realizada.',
+                'appointment' => $appointment->load(['patient', 'doctor', 'specialty'])
+            ], 200);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'message' => 'Erro ao marcar consulta como realizada.',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Reagendar consulta
+     * POST /api/appointments/{id}/reschedule
+     */
+    public function reschedule(Request $request, $id)
+    {
+        $appointment = Appointment::find($id);
+
+        if (!$appointment) {
+            return response()->json([
+                'message' => 'Consulta não encontrada.'
+            ], 404);
+        }
+
+        if (!$appointment->canBeRescheduled()) {
+            return response()->json([
+                'message' => 'Esta consulta não pode ser reagendada.'
+            ], 400);
+        }
+
+        $request->validate([
+            'appointment_date' => ['required', 'date', 'after_or_equal:today'],
+            'appointment_time' => ['required', 'date_format:H:i'],
+        ]);
+
+        // Verificar se o novo horário está disponível
+        $exists = Appointment::where('doctor_id', $appointment->doctor_id)
+            ->where('appointment_date', $request->appointment_date)
+            ->where('appointment_time', $request->appointment_time)
+            ->where('id', '!=', $id)
+            ->whereIn('status', ['pending', 'confirmed'])
+            ->exists();
+
+        if ($exists) {
+            return response()->json([
+                'message' => 'Este horário já está ocupado.'
+            ], 400);
+        }
+
+        try {
+            $appointment->update([
+                'appointment_date' => $request->appointment_date,
+                'appointment_time' => $request->appointment_time,
+                'status' => 'pending' // Volta para pendente após reagendar
+            ]);
+
+            // Aqui você pode enviar email/notificação de reagendamento
+
+            return response()->json([
+                'message' => 'Consulta reagendada com sucesso.',
+                'appointment' => $appointment->load(['patient', 'doctor', 'specialty'])
+            ], 200);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'message' => 'Erro ao reagendar consulta.',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Obter estatísticas de consultas
+     * GET /api/appointments/statistics
+     */
+    public function statistics(Request $request)
+    {
+        $query = Appointment::query();
+
+        // Filtrar por médico (se fornecido)
+        if ($request->has('doctor_id')) {
+            $query->where('doctor_id', $request->doctor_id);
+        }
+
+        // Filtrar por período
+        if ($request->has('date_from')) {
+            $query->where('appointment_date', '>=', $request->date_from);
+        }
+
+        if ($request->has('date_to')) {
+            $query->where('appointment_date', '<=', $request->date_to);
+        }
+
+        $total = $query->count();
+        $pending = (clone $query)->where('status', 'pending')->count();
+        $confirmed = (clone $query)->where('status', 'confirmed')->count();
+        $completed = (clone $query)->where('status', 'completed')->count();
+        $cancelled = (clone $query)->where('status', 'cancelled')->count();
+        $noShow = (clone $query)->where('status', 'no_show')->count();
+
+        return response()->json([
+            'total' => $total,
+            'pending' => $pending,
+            'confirmed' => $confirmed,
+            'completed' => $completed,
+            'cancelled' => $cancelled,
+            'no_show' => $noShow,
+        ], 200);
     }
 }
