@@ -78,7 +78,7 @@ export function LoginPage({ onSectionChange }: LoginPageProps) {
 
       setShowErrorModal(false);
 
-      const user = JSON.parse(localStorage.getItem('@ProMed:user') || '{}');
+      const user = JSON.parse(localStorage.getItem('user') || '{}');
 
       setSuccessMessage(`Bem-vindo, ${user.name}!`);
       setShowSuccessModal(true);
@@ -88,7 +88,7 @@ export function LoginPage({ onSectionChange }: LoginPageProps) {
 
       setTimeout(() => {
         setShowSuccessModal(false);
-
+        
         if (user.role === 'admin') {
           onSectionChange('admin-area');
         } else if (user.role === 'doctor') {
@@ -416,7 +416,7 @@ export function LoginPage({ onSectionChange }: LoginPageProps) {
           isOpen={showSuccessModal}
           onClose={() => {
             setShowSuccessModal(false);
-            const user = JSON.parse(localStorage.getItem('@ProMed:user') || '{}');
+            const user = JSON.parse(localStorage.getItem('user') || '{}');
             if (user.role === 'admin') {
               onSectionChange('admin-area');
             } else if (user.role === 'doctor') {

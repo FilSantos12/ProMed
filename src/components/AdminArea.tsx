@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
@@ -7,12 +7,13 @@ import { Badge } from './ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from './ui/table';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
-import { 
-  Shield, Users, Calendar, BarChart3, Settings, 
+import {
+  Shield, Users, Calendar, BarChart3, Settings,
   User, Stethoscope, Edit, Trash2, Plus, Search,
   Eye, TrendingUp, Clock, MapPin
 } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
+import Appointments from './Appointments';
 
 interface AdminAreaProps {
   onSectionChange?: (section: string) => void;
@@ -22,6 +23,46 @@ export function AdminArea({ onSectionChange }: AdminAreaProps) {
   const { user } = useAuth();
   const [activeTab, setActiveTab] = useState('dashboard');
   const [searchTerm, setSearchTerm] = useState('');
+
+  // ⚠️ PROTEÇÃO DE ACESSO - Apenas administradores podem acessar
+  useEffect(() => {
+    console.log('Verificando acesso - Usuário:', user);
+    
+    if (!user) {
+      console.log('❌ Usuário não autenticado - Redirecionando para login');
+      onSectionChange?.('login');
+      return;
+    }
+
+    console.log('Role do usuário:', user.role);
+
+    if (user.role !== 'admin') {
+      console.log('❌ Usuário não é admin - Redirecionando baseado no role');
+      // Redirecionar baseado no role
+      if (user.role === 'doctor') {
+        onSectionChange?.('doctor-area');
+      } else if (user.role === 'patient') {
+        onSectionChange?.('patient-area');
+      } else {
+        onSectionChange?.('home');
+      }
+    } else {
+      console.log('✅ Acesso permitido - Usuário é admin');
+    }
+  }, [user, onSectionChange]);
+
+  // Se não for admin, não renderiza nada (evita flash de conteúdo)
+  if (!user || user.role !== 'admin') {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <Shield className="w-16 h-16 text-red-500 mx-auto mb-4" />
+          <h2 className="text-2xl font-bold text-gray-900 mb-2">Acesso Negado</h2>
+          <p className="text-gray-600">Você não tem permissão para acessar esta área.</p>
+        </div>
+      </div>
+    );
+  }
 
   // Mock data - em produção viria do backend
   const stats = {
@@ -455,91 +496,7 @@ export function AdminArea({ onSectionChange }: AdminAreaProps) {
 
           {/* Agendamentos Tab */}
           <TabsContent value="agendamentos" className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center space-x-2">
-                  <Calendar className="w-5 h-5 text-blue-600" />
-                  <span>Gerenciar Agendamentos</span>
-                </CardTitle>
-                <CardDescription>
-                  Visualize e gerencie todos os agendamentos do sistema
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  <div className="flex space-x-4">
-                    <Select defaultValue="todos">
-                      <SelectTrigger className="w-48">
-                        <SelectValue placeholder="Filtrar por status" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="todos">Todos os status</SelectItem>
-                        <SelectItem value="agendado">Agendado</SelectItem>
-                        <SelectItem value="confirmado">Confirmado</SelectItem>
-                        <SelectItem value="em_andamento">Em andamento</SelectItem>
-                        <SelectItem value="concluido">Concluído</SelectItem>
-                        <SelectItem value="cancelado">Cancelado</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    
-                    <Select defaultValue="hoje">
-                      <SelectTrigger className="w-48">
-                        <SelectValue placeholder="Filtrar por data" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="hoje">Hoje</SelectItem>
-                        <SelectItem value="semana">Esta semana</SelectItem>
-                        <SelectItem value="mes">Este mês</SelectItem>
-                        <SelectItem value="todos">Todos</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Data/Hora</TableHead>
-                        <TableHead>Paciente</TableHead>
-                        <TableHead>Médico</TableHead>
-                        <TableHead>Especialidade</TableHead>
-                        <TableHead>Status</TableHead>
-                        <TableHead>Ações</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {recentAppointments.map((appointment) => (
-                        <TableRow key={appointment.id}>
-                          <TableCell>
-                            <div>
-                              <div className="font-medium">Hoje</div>
-                              <div className="text-sm text-gray-600">{appointment.time}</div>
-                            </div>
-                          </TableCell>
-                          <TableCell className="font-medium">{appointment.patient}</TableCell>
-                          <TableCell>{appointment.doctor}</TableCell>
-                          <TableCell>{appointment.specialty}</TableCell>
-                          <TableCell>
-                            <Badge className={getStatusColor(appointment.status)}>
-                              {getStatusLabel(appointment.status)}
-                            </Badge>
-                          </TableCell>
-                          <TableCell>
-                            <div className="flex space-x-2">
-                              <Button size="sm" variant="outline">
-                                <Edit className="w-4 h-4" />
-                              </Button>
-                              <Button size="sm" variant="outline">
-                                <Eye className="w-4 h-4" />
-                              </Button>
-                            </div>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </div>
-              </CardContent>
-            </Card>
+            <Appointments />
           </TabsContent>
 
           {/* Configurações Tab */}
@@ -567,7 +524,7 @@ export function AdminArea({ onSectionChange }: AdminAreaProps) {
                       <Input id="clinic-phone" defaultValue="(11) 3456-7890" />
                     </div>
                   </div>
-                  
+
                   <div className="space-y-2">
                     <Label htmlFor="clinic-address">Endereço</Label>
                     <Input id="clinic-address" defaultValue="Av. Paulista, 1234 - Bela Vista, São Paulo - SP" />

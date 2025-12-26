@@ -33,31 +33,33 @@ export function AuthProvider({ children }: AuthProviderProps) {
     if (storedToken && storedUser) {
       setToken(storedToken);
       setUser(JSON.parse(storedUser));
+      api.defaults.headers.common['Authorization'] = `Bearer ${storedToken}`;
     }
     setLoading(false);
   }, []);
 
+  const login = async (email: string, password: string, expectedRole: string) => {
+    try {
+      const response = await api.post('/login', {
+        email,
+        password,
+        expected_role: expectedRole,
+      });
 
-const login = async (email: string, password: string, expectedRole: string) => {
-  try {
-    const response = await api.post('/login', {
-      email,
-      password,
-      expected_role: expectedRole,
-    });
+      const { token, user } = response.data;
 
-    const { token, user } = response.data;
+      // CORREÇÃO: Removido o prefixo @ProMed: para padronizar
+      localStorage.setItem('token', token);
+      localStorage.setItem('user', JSON.stringify(user));
 
-    localStorage.setItem('@ProMed:token', token);
-    localStorage.setItem('@ProMed:user', JSON.stringify(user));
+      api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
 
-    api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
-
-    setUser(user);
-  } catch (error: any) {
-    throw error;
-  }
-};
+      setToken(token);
+      setUser(user);
+    } catch (error: any) {
+      throw error;
+    }
+  };
 
   // Registro
   const register = async (data: RegisterData) => {
@@ -67,6 +69,8 @@ const login = async (email: string, password: string, expectedRole: string) => {
 
       localStorage.setItem('token', token);
       localStorage.setItem('user', JSON.stringify(user));
+
+      api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
 
       setToken(token);
       setUser(user);
@@ -80,11 +84,12 @@ const login = async (email: string, password: string, expectedRole: string) => {
     try {
       await api.post('/logout');
     } catch (error) {
-
+      // Ignorar erros ao fazer logout
     } finally {
-      localStorage.removeItem('@ProMed:token');
-      localStorage.removeItem('@ProMed:user');
-      delete api.defaults.headers.common['Authorization']
+      // CORREÇÃO: Removido o prefixo @ProMed: para padronizar
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+      delete api.defaults.headers.common['Authorization'];
       setToken(null);
       setUser(null);
     }
