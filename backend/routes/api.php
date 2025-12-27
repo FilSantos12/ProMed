@@ -7,6 +7,7 @@ use App\Http\Controllers\Api\AppointmentController;
 use App\Http\Controllers\Api\SpecialtyController; 
 use App\Http\Controllers\Api\PasswordResetController;
 use App\Http\Controllers\Api\ScheduleController;
+use App\Http\Controllers\Api\PatientController;
 
 
 Route::get('/health', function () {
@@ -16,48 +17,48 @@ Route::get('/health', function () {
     ]);
 });
 
-Route::prefix('v1')->group(function () {
-    // ==========================================
-    // ROTAS PÚBLICAS (sem autenticação)
-    // ==========================================
-    Route::post('/login', [AuthController::class, 'login']);
-    Route::post('/register', [AuthController::class, 'register']);
-    
-    // Especialidades - PÚBLICA (para formulário de cadastro)
-    Route::get('/specialties', [SpecialtyController::class, 'index']);
+            Route::prefix('v1')->group(function () {
+                // ==========================================
+                // ROTAS PÚBLICAS (sem autenticação)
+                // ==========================================
+                Route::post('/login', [AuthController::class, 'login']);
+                Route::post('/register', [AuthController::class, 'register']);
+                
+                // Especialidades - PÚBLICA (para formulário de cadastro)
+                Route::get('/specialties', [SpecialtyController::class, 'index']);
 
-        // ADMIN – públicas
-        Route::prefix('admin')->group(function () {
-        Route::post('/forgot-password', [PasswordResetController::class, 'forgotPassword']);
-        Route::post('/reset-password', [PasswordResetController::class, 'resetPassword']);
-    });
-    
-    // ==========================================
-    // ROTAS PROTEGIDAS (requer autenticação)
-    // ==========================================
-    Route::middleware('auth:sanctum')->group(function () {
-        // Auth
-        Route::post('/logout', [AuthController::class, 'logout']);
-        Route::get('/me', [AuthController::class, 'me']);
-        
-        // Doctors
-        Route::get('/doctors', [DoctorController::class, 'index']);
-        Route::get('/doctors/{id}', [DoctorController::class, 'show']);
-        
-        // Appointments
-        Route::get('/appointments', [AppointmentController::class, 'index']);
-        Route::post('/appointments', [AppointmentController::class, 'store']);
-        Route::get('/appointments/{id}', [AppointmentController::class, 'show']);
-        Route::put('/appointments/{id}', [AppointmentController::class, 'update']);
-        Route::delete('/appointments/{id}', [AppointmentController::class, 'destroy']);
-        
-        // ==========================================
-        // ROTAS DE ADMIN
-        // ==========================================
-        Route::middleware('role:admin')->prefix('admin')->group(function () {
-            Route::get('/doctors', [DoctorController::class, 'adminIndex']);
-            Route::put('/doctors/{id}/approve', [DoctorController::class, 'approve']);
-            Route::put('/doctors/{id}/reject', [DoctorController::class, 'reject']);
+                    // ADMIN – públicas
+                    Route::prefix('admin')->group(function () {
+                    Route::post('/forgot-password', [PasswordResetController::class, 'forgotPassword']);
+                    Route::post('/reset-password', [PasswordResetController::class, 'resetPassword']);
+                });
+                
+                // ==========================================
+                // ROTAS PROTEGIDAS (requer autenticação)
+                // ==========================================
+                Route::middleware('auth:sanctum')->group(function () {
+                    // Auth
+                    Route::post('/logout', [AuthController::class, 'logout']);
+                    Route::get('/me', [AuthController::class, 'me']);
+                    
+                    // Doctors
+                    Route::get('/doctors', [DoctorController::class, 'index']);
+                    Route::get('/doctors/{id}', [DoctorController::class, 'show']);
+                    
+                    // Appointments
+                    Route::get('/appointments', [AppointmentController::class, 'index']);
+                    Route::post('/appointments', [AppointmentController::class, 'store']);
+                    Route::get('/appointments/{id}', [AppointmentController::class, 'show']);
+                    Route::put('/appointments/{id}', [AppointmentController::class, 'update']);
+                    Route::delete('/appointments/{id}', [AppointmentController::class, 'destroy']);
+                    
+                    // ==========================================
+                    // ROTAS DE ADMIN
+                    // ==========================================
+                    Route::middleware('role:admin')->prefix('admin')->group(function () {
+                        Route::get('/doctors', [DoctorController::class, 'adminIndex']);
+                        Route::put('/doctors/{id}/approve', [DoctorController::class, 'approve']);
+                        Route::put('/doctors/{id}/reject', [DoctorController::class, 'reject']);
 
 
                 // Rotas públicas (sem autenticação)
@@ -101,6 +102,19 @@ Route::prefix('v1')->group(function () {
                     // Estatísticas
                     Route::get('appointments-statistics', [AppointmentController::class, 'statistics']);
                     
+                });
+                // ============================================
+                // Rotas de Pacientes (Admin)
+                // ============================================
+                
+                    Route::middleware(['auth:sanctum'])->group(function () {
+                        
+                        // Pacientes
+                        Route::get('patients', [PatientController::class, 'index']); // Listar todos
+                        Route::get('patients/{id}', [PatientController::class, 'show']); // Ver detalhes
+                        Route::put('patients/{id}', [PatientController::class, 'update']); // Editar
+                        Route::patch('patients/{id}/toggle-status', [PatientController::class, 'toggleStatus']); // Ativar/Desativar
+                        Route::get('patients/{id}/appointments', [PatientController::class, 'appointments']); // Histórico de consultas
                 });
             });
         });

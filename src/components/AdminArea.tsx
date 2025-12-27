@@ -14,6 +14,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 import Appointments from './Appointments';
+import Patients from './Patients';
 
 interface AdminAreaProps {
   onSectionChange?: (section: string) => void;
@@ -145,22 +146,24 @@ export function AdminArea({ onSectionChange }: AdminAreaProps) {
     {
       id: 2,
       name: 'João Santos',
-      cpf: '987.654.321-00',
+      cpf: '234.567.890-11',
       email: 'joao@email.com',
       phone: '(11) 88888-8888',
-      lastVisit: '2024-01-12',
+      lastVisit: '2024-01-10',
       status: 'ativo'
     },
     {
       id: 3,
       name: 'Ana Costa',
-      cpf: '456.789.123-00',
+      cpf: '345.678.901-22',
       email: 'ana@email.com',
       phone: '(11) 77777-7777',
-      lastVisit: '2024-01-10',
+      lastVisit: '2024-01-05',
       status: 'inativo'
     },
   ];
+
+
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -421,78 +424,10 @@ export function AdminArea({ onSectionChange }: AdminAreaProps) {
             </Card>
           </TabsContent>
 
-          {/* Pacientes Tab */}
-          <TabsContent value="pacientes" className="space-y-6">
-            <Card>
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <CardTitle className="flex items-center space-x-2">
-                      <Users className="w-5 h-5 text-blue-600" />
-                      <span>Gerenciar Pacientes</span>
-                    </CardTitle>
-                    <CardDescription>
-                      Administre o cadastro e informações dos pacientes
-                    </CardDescription>
-                  </div>
-                  <Button>
-                    <Plus className="w-4 h-4 mr-2" />
-                    Adicionar Paciente
-                  </Button>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <Search className="w-4 h-4 text-gray-400" />
-                  <Input
-                    placeholder="Buscar paciente..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="max-w-sm"
-                  />
-                </div>
-              </CardHeader>
-              <CardContent>
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Nome</TableHead>
-                      <TableHead>CPF</TableHead>
-                      <TableHead>Email</TableHead>
-                      <TableHead>Telefone</TableHead>
-                      <TableHead>Última Consulta</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead>Ações</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {filteredPatients.map((patient) => (
-                      <TableRow key={patient.id}>
-                        <TableCell className="font-medium">{patient.name}</TableCell>
-                        <TableCell>{patient.cpf}</TableCell>
-                        <TableCell>{patient.email}</TableCell>
-                        <TableCell>{patient.phone}</TableCell>
-                        <TableCell>{patient.lastVisit}</TableCell>
-                        <TableCell>
-                          <Badge className={getStatusColor(patient.status)}>
-                            {getStatusLabel(patient.status)}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex space-x-2">
-                            <Button size="sm" variant="outline">
-                              <Edit className="w-4 h-4" />
-                            </Button>
-                            <Button size="sm" variant="outline">
-                              <Eye className="w-4 h-4" />
-                            </Button>
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </CardContent>
-            </Card>
-          </TabsContent>
+              {/* Pacientes Tab */}
+              <TabsContent value="pacientes" className="space-y-6">
+                <Patients />
+              </TabsContent>
 
           {/* Agendamentos Tab */}
           <TabsContent value="agendamentos" className="space-y-6">
