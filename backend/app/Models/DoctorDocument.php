@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Facades\Log;
 
 class DoctorDocument extends Model
 {
@@ -23,8 +24,10 @@ class DoctorDocument extends Model
     ];
 
     protected $casts = [
-        'file_size' => 'integer',
         'verified_at' => 'datetime',
+        'created_at' => 'datetime',
+        'updated_at' => 'datetime',
+        'deleted_at' => 'datetime'
     ];
 
     /**
@@ -65,5 +68,39 @@ class DoctorDocument extends Model
     public function isPending()
     {
         return $this->status === 'pending';
+    }
+
+    /**
+ * Visualizar documento com token na URL (para tags img)
+ */
+    public function viewDocumentPublic($doctorId, $documentId, $token)
+    {
+        try {
+            // Validar token
+            $user = \Laravel\Sanctum\PersonalAccessToken::findToken($token)?->tokenable;
+            
+            if (!$user || $user->role !== 'admin') {
+                return response()->json(['message' => 'Não autorizado'], 401);
+            }
+
+            $document = DoctorDocument::where('doctor_id', $doctorId)
+                ->where('id', $documentId)
+                ->firstOrFail();
+
+            $filePath = storage_path('app/public/' . $document->file_path);
+
+            if (!file_exists($filePath)) {
+                return response()->json(['message' => 'Arquivo não encontrado'], 404);
+            }
+
+            return response()->file($filePath, [
+                'Content-Type' => $document->mime_type,
+                'Content-Disposition' => 'inline'
+            ]);
+            
+        } catch (\Exception $e) {
+            Log::error('Erro ao visualizar documento público: ' . $e->getMessage());
+            return response()->json(['message' => 'Erro ao carregar documento'], 500);
+        }
     }
 }

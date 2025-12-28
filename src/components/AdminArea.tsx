@@ -15,6 +15,7 @@ import {
 import { useAuth } from '../hooks/useAuth';
 import Appointments from './Appointments';
 import Patients from './Patients';
+import Doctors from './Doctors';
 
 interface AdminAreaProps {
   onSectionChange?: (section: string) => void;
@@ -351,152 +352,84 @@ export function AdminArea({ onSectionChange }: AdminAreaProps) {
             </Card>
           </TabsContent>
 
-          {/* Médicos Tab */}
-          <TabsContent value="medicos" className="space-y-6">
-            <Card>
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <CardTitle className="flex items-center space-x-2">
-                      <Stethoscope className="w-5 h-5 text-blue-600" />
-                      <span>Gerenciar Médicos</span>
-                    </CardTitle>
-                    <CardDescription>
-                      Administre o cadastro e informações dos médicos
-                    </CardDescription>
-                  </div>
-                  <Button>
-                    <Plus className="w-4 h-4 mr-2" />
-                    Adicionar Médico
-                  </Button>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <Search className="w-4 h-4 text-gray-400" />
-                  <Input
-                    placeholder="Buscar médico..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="max-w-sm"
-                  />
-                </div>
-              </CardHeader>
-              <CardContent>
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Nome</TableHead>
-                      <TableHead>Especialidade</TableHead>
-                      <TableHead>CRM</TableHead>
-                      <TableHead>Email</TableHead>
-                      <TableHead>Pacientes</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead>Ações</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {filteredDoctors.map((doctor) => (
-                      <TableRow key={doctor.id}>
-                        <TableCell className="font-medium">{doctor.name}</TableCell>
-                        <TableCell>{doctor.specialty}</TableCell>
-                        <TableCell>{doctor.crm}</TableCell>
-                        <TableCell>{doctor.email}</TableCell>
-                        <TableCell>{doctor.patients}</TableCell>
-                        <TableCell>
-                          <Badge className={getStatusColor(doctor.status)}>
-                            {getStatusLabel(doctor.status)}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex space-x-2">
-                            <Button size="sm" variant="outline">
-                              <Edit className="w-4 h-4" />
-                            </Button>
-                            <Button size="sm" variant="outline">
-                              <Trash2 className="w-4 h-4" />
-                            </Button>
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </CardContent>
-            </Card>
-          </TabsContent>
+              {/* Médicos Tab */}
+                {activeTab === 'medicos' && (
+                  <Doctors />
+                )}
 
               {/* Pacientes Tab */}
-              <TabsContent value="pacientes" className="space-y-6">
-                <Patients />
-              </TabsContent>
+                <TabsContent value="pacientes" className="space-y-6">
+                  <Patients />
+                </TabsContent>
 
-          {/* Agendamentos Tab */}
-          <TabsContent value="agendamentos" className="space-y-6">
-            <Appointments />
-          </TabsContent>
+              {/* Agendamentos Tab */}
+                <TabsContent value="agendamentos" className="space-y-6">
+                  <Appointments />
+                </TabsContent>
 
-          {/* Configurações Tab */}
-          <TabsContent value="configuracoes" className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center space-x-2">
-                  <Settings className="w-5 h-5 text-blue-600" />
-                  <span>Configurações do Sistema</span>
-                </CardTitle>
-                <CardDescription>
-                  Configure as preferências e parâmetros do sistema
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                <div className="space-y-4">
-                  <h3 className="text-lg font-semibold">Informações da Clínica</h3>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="clinic-name">Nome da Clínica</Label>
-                      <Input id="clinic-name" defaultValue="ProMed" />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="clinic-phone">Telefone</Label>
-                      <Input id="clinic-phone" defaultValue="(11) 3456-7890" />
-                    </div>
-                  </div>
+              {/* Configurações Tab */}
+                <TabsContent value="configuracoes" className="space-y-6">
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center space-x-2">
+                        <Settings className="w-5 h-5 text-blue-600" />
+                        <span>Configurações do Sistema</span>
+                      </CardTitle>
+                      <CardDescription>
+                        Configure as preferências e parâmetros do sistema
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-6">
+                      <div className="space-y-4">
+                        <h3 className="text-lg font-semibold">Informações da Clínica</h3>
+                        <div className="grid grid-cols-2 gap-4">
+                          <div className="space-y-2">
+                            <Label htmlFor="clinic-name">Nome da Clínica</Label>
+                            <Input id="clinic-name" defaultValue="ProMed" />
+                          </div>
+                          <div className="space-y-2">
+                            <Label htmlFor="clinic-phone">Telefone</Label>
+                            <Input id="clinic-phone" defaultValue="(11) 3456-7890" />
+                          </div>
+                        </div>
 
-                  <div className="space-y-2">
-                    <Label htmlFor="clinic-address">Endereço</Label>
-                    <Input id="clinic-address" defaultValue="Av. Paulista, 1234 - Bela Vista, São Paulo - SP" />
-                  </div>
-                </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="clinic-address">Endereço</Label>
+                          <Input id="clinic-address" defaultValue="Av. Paulista, 1234 - Bela Vista, São Paulo - SP" />
+                        </div>
+                      </div>
 
-                <div className="space-y-4">
-                  <h3 className="text-lg font-semibold">Horários de Funcionamento</h3>
-                  <div className="grid grid-cols-3 gap-4">
-                    <div className="space-y-2">
-                      <Label>Dias da Semana</Label>
-                      <Input defaultValue="Segunda a Sexta" />
-                    </div>
-                    <div className="space-y-2">
-                      <Label>Horário de Início</Label>
-                      <Input type="time" defaultValue="07:00" />
-                    </div>
-                    <div className="space-y-2">
-                      <Label>Horário de Fim</Label>
-                      <Input type="time" defaultValue="19:00" />
-                    </div>
-                  </div>
-                </div>
+                      <div className="space-y-4">
+                        <h3 className="text-lg font-semibold">Horários de Funcionamento</h3>
+                        <div className="grid grid-cols-3 gap-4">
+                          <div className="space-y-2">
+                            <Label>Dias da Semana</Label>
+                            <Input defaultValue="Segunda a Sexta" />
+                          </div>
+                          <div className="space-y-2">
+                            <Label>Horário de Início</Label>
+                            <Input type="time" defaultValue="07:00" />
+                          </div>
+                          <div className="space-y-2">
+                            <Label>Horário de Fim</Label>
+                            <Input type="time" defaultValue="19:00" />
+                          </div>
+                        </div>
+                      </div>
 
-                <div className="space-y-4">
-                  <h3 className="text-lg font-semibold">Configurações de Agendamento</h3>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label>Duração padrão da consulta (min)</Label>
-                      <Input type="number" defaultValue="30" />
-                    </div>
-                    <div className="space-y-2">
-                      <Label>Antecedência mínima para agendamento (horas)</Label>
-                      <Input type="number" defaultValue="2" />
-                    </div>
-                  </div>
-                </div>
+                      <div className="space-y-4">
+                        <h3 className="text-lg font-semibold">Configurações de Agendamento</h3>
+                        <div className="grid grid-cols-2 gap-4">
+                          <div className="space-y-2">
+                            <Label>Duração padrão da consulta (min)</Label>
+                            <Input type="number" defaultValue="30" />
+                          </div>
+                          <div className="space-y-2">
+                            <Label>Antecedência mínima para agendamento (horas)</Label>
+                            <Input type="number" defaultValue="2" />
+                          </div>
+                        </div>
+                      </div>
 
                 <Button className="w-full">
                   Salvar Configurações

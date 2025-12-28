@@ -20,6 +20,8 @@ class Doctor extends Model
         'consultation_duration',
         'formation',
         'years_experience',
+        'status',
+        'rejection_notes',
     ];
 
     protected $casts = [
