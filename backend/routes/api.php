@@ -8,7 +8,15 @@ use App\Http\Controllers\Api\SpecialtyController;
 use App\Http\Controllers\Api\PasswordResetController;
 use App\Http\Controllers\Api\ScheduleController;
 use App\Http\Controllers\Api\PatientController;
+use App\Http\Controllers\Api\DashboardController;
 
+/*
+|--------------------------------------------------------------------------
+| API Routes
+|--------------------------------------------------------------------------
+*/
+
+// Health check (sem prefixo)
 Route::get('/health', function () {
     return response()->json([
         'status' => 'ok',
@@ -16,20 +24,12 @@ Route::get('/health', function () {
     ]);
 });
 
-// Rotas públicas de documentos (com token na URL)
-Route::get('/public/doctors/{doctorId}/documents/{documentId}/view/{token}', 
-    [DoctorController::class, 'viewDocumentPublic']
-);
-
-Route::get('/public/doctors/{doctorId}/documents/{documentId}/download/{token}', 
-    [DoctorController::class, 'downloadDocumentPublic']
-);
-
+// ========================================
+// ROTAS PÚBLICAS (sem autenticação)
+// ========================================
 Route::prefix('v1')->group(function () {
     
-    // ========================================
-    // ROTAS PÚBLICAS (sem autenticação)
-    // ========================================
+    // Auth
     Route::post('/login', [AuthController::class, 'login']);
     Route::post('/register', [AuthController::class, 'register']);
     Route::post('/forgot-password', [PasswordResetController::class, 'forgotPassword']);
@@ -38,84 +38,95 @@ Route::prefix('v1')->group(function () {
     // Especialidades - PÚBLICA
     Route::get('/specialties', [SpecialtyController::class, 'index']);
     
+    // Rotas públicas de documentos (com token na URL)
+    Route::get('/public/doctors/{doctorId}/documents/{documentId}/view/{token}', 
+        [DoctorController::class, 'viewDocumentPublic']);
+    Route::get('/public/doctors/{doctorId}/documents/{documentId}/download/{token}', 
+        [DoctorController::class, 'downloadDocumentPublic']);
+});
+
+// ========================================
+// ROTAS PROTEGIDAS (requer autenticação)
+// ========================================
+Route::middleware('auth:sanctum')->prefix('v1')->group(function () {
+    
     // ========================================
-    // ROTAS PROTEGIDAS (requer autenticação)
+    // AUTH (autenticado)
     // ========================================
-    Route::middleware('auth:sanctum')->group(function () {
-        
-        // Auth
-        Route::post('/logout', [AuthController::class, 'logout']);
-        Route::get('/me', [AuthController::class, 'me']);
-        Route::get('/user', [AuthController::class, 'user']);
+    Route::post('/logout', [AuthController::class, 'logout']);
+    Route::get('/me', [AuthController::class, 'me']);
+    Route::get('/user', [AuthController::class, 'user']);
+    
+    // ========================================
+    // DOCTORS (público autenticado)
+    // ========================================
+    Route::get('/doctors', [DoctorController::class, 'index']);
+    Route::get('/doctors/{id}', [DoctorController::class, 'show']);
+    
+    // ========================================
+    // APPOINTMENTS (público autenticado)
+    // ========================================
+    Route::get('/appointments', [AppointmentController::class, 'index']);
+    Route::post('/appointments', [AppointmentController::class, 'store']);
+    Route::get('/appointments/{id}', [AppointmentController::class, 'show']);
+    Route::put('/appointments/{id}', [AppointmentController::class, 'update']);
+    Route::delete('/appointments/{id}', [AppointmentController::class, 'destroy']);
+    
+    // ========================================
+    // SCHEDULES (público autenticado)
+    // ========================================
+    Route::apiResource('schedules', ScheduleController::class);
+    Route::get('schedules/{id}/slots', [ScheduleController::class, 'getAvailableSlots']);
+    
+    // ========================================
+    // ROTAS DE ADMIN
+    // ========================================
+    Route::middleware('role:admin')->prefix('admin')->group(function () {
         
         // ========================================
-        // DOCTORS (público autenticado)
+        // DASHBOARD
         // ========================================
-        Route::get('/doctors', [DoctorController::class, 'index']);
-        Route::get('/doctors/{id}', [DoctorController::class, 'show']);
+        Route::get('/dashboard/stats', [DashboardController::class, 'getStats']);
         
         // ========================================
-        // APPOINTMENTS (público autenticado)
+        // DOCTORS (Admin)
+        // ========================================
+        Route::get('/doctors', [DoctorController::class, 'adminIndex']); // Listar todos
+        Route::get('/doctors/{id}', [DoctorController::class, 'show']); // Ver detalhes
+        Route::put('/doctors/{id}', [DoctorController::class, 'update']); // Editar
+        Route::put('/doctors/{id}/approve', [DoctorController::class, 'approve']); // Aprovar
+        Route::put('/doctors/{id}/reject', [DoctorController::class, 'reject']); // Rejeitar
+        Route::patch('/doctors/{id}/toggle-status', [DoctorController::class, 'toggleStatus']); // Ativar/Desativar
+        Route::get('/doctors/{id}/appointments', [DoctorController::class, 'appointments']); // Histórico
+        
+        // Documentos dos médicos
+        Route::get('/doctors/{id}/documents', [DoctorController::class, 'documents']);
+        Route::get('/doctors/{doctorId}/documents/{documentId}/view', [DoctorController::class, 'viewDocument']);
+        Route::get('/doctors/{doctorId}/documents/{documentId}/download', [DoctorController::class, 'downloadDocument']);
+        Route::put('/doctors/{doctorId}/documents/{documentId}/approve', [DoctorController::class, 'approveDocument']);
+        Route::put('/doctors/{doctorId}/documents/{documentId}/reject', [DoctorController::class, 'rejectDocument']);
+        
+        // ========================================
+        // PATIENTS (Admin)
+        // ========================================
+        Route::get('/patients', [PatientController::class, 'index']); // Listar todos
+        Route::get('/patients/{id}', [PatientController::class, 'show']); // Ver detalhes
+        Route::put('/patients/{id}', [PatientController::class, 'update']); // Editar
+        Route::patch('/patients/{id}/toggle-status', [PatientController::class, 'toggleStatus']); // Ativar/Desativar
+        Route::get('/patients/{id}/appointments', [PatientController::class, 'appointments']); // Histórico
+        
+        // ========================================
+        // APPOINTMENTS (Admin)
         // ========================================
         Route::get('/appointments', [AppointmentController::class, 'index']);
         Route::post('/appointments', [AppointmentController::class, 'store']);
         Route::get('/appointments/{id}', [AppointmentController::class, 'show']);
         Route::put('/appointments/{id}', [AppointmentController::class, 'update']);
         Route::delete('/appointments/{id}', [AppointmentController::class, 'destroy']);
-        
-        // ========================================
-        // SCHEDULES (público autenticado)
-        // ========================================
-        Route::apiResource('schedules', ScheduleController::class);
-        Route::get('schedules/{id}/slots', [ScheduleController::class, 'getAvailableSlots']);
-        
-        // ========================================
-        // ROTAS DE ADMIN
-        // ========================================
-        Route::middleware('role:admin')->prefix('admin')->group(function () {
-            
-            // ========================================
-            // DOCTORS (Admin)
-            // ========================================
-            Route::get('/doctors', [DoctorController::class, 'adminIndex']); // Listar todos
-            Route::get('/doctors/{id}', [DoctorController::class, 'show']); // Ver detalhes
-            Route::put('/doctors/{id}', [DoctorController::class, 'update']); // Editar
-            Route::put('/doctors/{id}/approve', [DoctorController::class, 'approve']); // Aprovar
-            Route::put('/doctors/{id}/reject', [DoctorController::class, 'reject']); // Rejeitar
-            Route::patch('/doctors/{id}/toggle-status', [DoctorController::class, 'toggleStatus']); // Ativar/Desativar
-            Route::get('/doctors/{id}/appointments', [DoctorController::class, 'appointments']); // Histórico
-
-            // Documentos dos médicos 
-            Route::get('/doctors/{id}/documents', [DoctorController::class, 'documents']);
-            Route::get('/doctors/{doctorId}/documents/{documentId}/view', [DoctorController::class, 'viewDocument']);
-            Route::get('/doctors/{doctorId}/documents/{documentId}/download', [DoctorController::class, 'downloadDocument']);
-            Route::put('/doctors/{doctorId}/documents/{documentId}/approve', [DoctorController::class, 'approveDocument']);
-            Route::put('/doctors/{doctorId}/documents/{documentId}/reject', [DoctorController::class, 'rejectDocument']);
-    
-            
-            // ========================================
-            // PATIENTS (Admin)
-            // ========================================
-            Route::get('/patients', [PatientController::class, 'index']); // Listar todos
-            Route::get('/patients/{id}', [PatientController::class, 'show']); // Ver detalhes
-            Route::put('/patients/{id}', [PatientController::class, 'update']); // Editar
-            Route::patch('/patients/{id}/toggle-status', [PatientController::class, 'toggleStatus']); // Ativar/Desativar
-            Route::get('/patients/{id}/appointments', [PatientController::class, 'appointments']); // Histórico
-            
-            // ========================================
-            // APPOINTMENTS (Admin)
-            // ========================================
-            Route::get('/appointments', [AppointmentController::class, 'index']);
-            Route::post('/appointments', [AppointmentController::class, 'store']);
-            Route::get('/appointments/{id}', [AppointmentController::class, 'show']);
-            Route::put('/appointments/{id}', [AppointmentController::class, 'update']);
-            Route::delete('/appointments/{id}', [AppointmentController::class, 'destroy']);
-            Route::post('/appointments/{id}/confirm', [AppointmentController::class, 'confirm']);
-            Route::post('/appointments/{id}/cancel', [AppointmentController::class, 'cancel']);
-            Route::post('/appointments/{id}/complete', [AppointmentController::class, 'complete']);
-            Route::post('/appointments/{id}/reschedule', [AppointmentController::class, 'reschedule']);
-            Route::get('/appointments-statistics', [AppointmentController::class, 'statistics']);
-            
-        });
+        Route::post('/appointments/{id}/confirm', [AppointmentController::class, 'confirm']);
+        Route::post('/appointments/{id}/cancel', [AppointmentController::class, 'cancel']);
+        Route::post('/appointments/{id}/complete', [AppointmentController::class, 'complete']);
+        Route::post('/appointments/{id}/reschedule', [AppointmentController::class, 'reschedule']);
+        Route::get('/appointments-statistics', [AppointmentController::class, 'statistics']);
     });
 });

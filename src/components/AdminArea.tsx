@@ -16,6 +16,7 @@ import { useAuth } from '../hooks/useAuth';
 import Appointments from './Appointments';
 import Patients from './Patients';
 import Doctors from './Doctors';
+import Dashboard from './Dashboard';
 
 interface AdminAreaProps {
   onSectionChange?: (section: string) => void;
@@ -25,11 +26,25 @@ export function AdminArea({ onSectionChange }: AdminAreaProps) {
   const { user } = useAuth();
   const [activeTab, setActiveTab] = useState('dashboard');
   const [searchTerm, setSearchTerm] = useState('');
+  const [doctorsFilter, setDoctorsFilter] = useState<string>('all');
+
+  // ✅ FUNÇÃO PARA VER MÉDICOS PENDENTES (LUGAR CORRETO)
+  const handleViewPendingDoctors = () => {
+    setDoctorsFilter('pending');
+    setActiveTab('medicos');
+  };
+
+  // ✅ USEEFFECT PARA RESETAR FILTRO AO TROCAR DE ABA
+  useEffect(() => {
+    if (activeTab !== 'medicos') {
+      setDoctorsFilter('all');
+    }
+  }, [activeTab]);
 
   // ⚠️ PROTEÇÃO DE ACESSO - Apenas administradores podem acessar
   useEffect(() => {
     console.log('Verificando acesso - Usuário:', user);
-    
+
     if (!user) {
       console.log('❌ Usuário não autenticado - Redirecionando para login');
       onSectionChange?.('login');
@@ -66,106 +81,6 @@ export function AdminArea({ onSectionChange }: AdminAreaProps) {
     );
   }
 
-  // Mock data - em produção viria do backend
-  const stats = {
-    totalPatients: 1247,
-    totalDoctors: 52,
-    appointmentsToday: 89,
-    revenue: 45320
-  };
-
-  const recentAppointments = [
-    {
-      id: 1,
-      time: '09:00',
-      patient: 'Maria Silva',
-      doctor: 'Dr. Roberto Silva',
-      specialty: 'Cardiologia',
-      status: 'confirmado'
-    },
-    {
-      id: 2,
-      time: '10:30',
-      patient: 'João Santos',
-      doctor: 'Dra. Ana Costa',
-      specialty: 'Pediatria',
-      status: 'em_andamento'
-    },
-    {
-      id: 3,
-      time: '14:00',
-      patient: 'Ana Costa',
-      doctor: 'Dr. Carlos Oliveira',
-      specialty: 'Neurologia',
-      status: 'agendado'
-    },
-  ];
-
-  const doctors = [
-    {
-      id: 1,
-      name: 'Dr. Roberto Silva',
-      specialty: 'Cardiologia',
-      crm: 'CRM 12345-SP',
-      email: 'roberto@promed.com',
-      phone: '(11) 99999-9999',
-      status: 'ativo',
-      patients: 156
-    },
-    {
-      id: 2,
-      name: 'Dra. Maria Santos',
-      specialty: 'Cardiologia',
-      crm: 'CRM 23456-SP',
-      email: 'maria@promed.com',
-      phone: '(11) 88888-8888',
-      status: 'ativo',
-      patients: 142
-    },
-    {
-      id: 3,
-      name: 'Dr. Carlos Oliveira',
-      specialty: 'Neurologia',
-      crm: 'CRM 34567-SP',
-      email: 'carlos@promed.com',
-      phone: '(11) 77777-7777',
-      status: 'inativo',
-      patients: 98
-    },
-  ];
-
-  const patients = [
-    {
-      id: 1,
-      name: 'Maria Silva',
-      cpf: '123.456.789-00',
-      email: 'maria@email.com',
-      phone: '(11) 99999-9999',
-      lastVisit: '2024-01-15',
-      status: 'ativo'
-    },
-    {
-      id: 2,
-      name: 'João Santos',
-      cpf: '234.567.890-11',
-      email: 'joao@email.com',
-      phone: '(11) 88888-8888',
-      lastVisit: '2024-01-10',
-      status: 'ativo'
-    },
-    {
-      id: 3,
-      name: 'Ana Costa',
-      cpf: '345.678.901-22',
-      email: 'ana@email.com',
-      phone: '(11) 77777-7777',
-      lastVisit: '2024-01-05',
-      status: 'inativo'
-    },
-  ];
-
-
-
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'ativo': case 'confirmado': case 'em_andamento': return 'bg-green-100 text-green-800';
@@ -187,16 +102,6 @@ export function AdminArea({ onSectionChange }: AdminAreaProps) {
     }
   };
 
-  const filteredDoctors = doctors.filter(doctor =>
-    doctor.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    doctor.specialty.toLowerCase().includes(searchTerm.toLowerCase())
-  );
-
-  const filteredPatients = patients.filter(patient =>
-    patient.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    patient.cpf.includes(searchTerm)
-  );
-
   return (
     <div className="min-h-screen bg-gray-50 py-8">
       <div className="container mx-auto px-4">
@@ -212,7 +117,7 @@ export function AdminArea({ onSectionChange }: AdminAreaProps) {
 
         {/* Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="grid w-full grid-cols-5">
+          <TabsList className="grid w-full grid-cols-4 md:grid-cols-4 lg:grid-cols-6 gap-2 mb-6">
             <TabsTrigger value="dashboard" className="flex items-center space-x-2">
               <BarChart3 className="w-4 h-4" />
               <span>Dashboard</span>
@@ -229,214 +134,102 @@ export function AdminArea({ onSectionChange }: AdminAreaProps) {
               <Calendar className="w-4 h-4" />
               <span>Agendamentos</span>
             </TabsTrigger>
-            <TabsTrigger value="configuracoes" className="flex items-center space-x-2">
+            {/*<TabsTrigger value="configuracoes" className="flex items-center space-x-2">
               <Settings className="w-4 h-4" />
               <span>Configurações</span>
-            </TabsTrigger>
+            </TabsTrigger>*/}
           </TabsList>
 
           {/* Dashboard Tab */}
           <TabsContent value="dashboard" className="space-y-6">
-            {/* Stats Cards */}
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
-              <Card>
-                <CardContent className="p-6">
-                  <div className="flex items-center space-x-2">
-                    <Users className="w-8 h-8 text-blue-600" />
-                    <div>
-                      <p className="text-2xl font-bold text-gray-900">{stats.totalPatients}</p>
-                      <p className="text-sm text-gray-600">Pacientes</p>
-                    </div>
-                  </div>
-                  <div className="mt-2 flex items-center text-sm text-green-600">
-                    <TrendingUp className="w-4 h-4 mr-1" />
-                    +12% este mês
-                  </div>
-                </CardContent>
-              </Card>
+            <Dashboard onViewPendingDoctors={handleViewPendingDoctors} />
+          </TabsContent>
 
-              <Card>
-                <CardContent className="p-6">
-                  <div className="flex items-center space-x-2">
-                    <Stethoscope className="w-8 h-8 text-green-600" />
-                    <div>
-                      <p className="text-2xl font-bold text-gray-900">{stats.totalDoctors}</p>
-                      <p className="text-sm text-gray-600">Médicos</p>
-                    </div>
-                  </div>
-                  <div className="mt-2 flex items-center text-sm text-green-600">
-                    <TrendingUp className="w-4 h-4 mr-1" />
-                    +3 novos
-                  </div>
-                </CardContent>
-              </Card>
+          {/* Médicos Tab */}
+          {activeTab === 'medicos' && (
+            <Doctors initialFilterStatus={doctorsFilter} />
+          )}
 
-              <Card>
-                <CardContent className="p-6">
-                  <div className="flex items-center space-x-2">
-                    <Calendar className="w-8 h-8 text-yellow-600" />
-                    <div>
-                      <p className="text-2xl font-bold text-gray-900">{stats.appointmentsToday}</p>
-                      <p className="text-sm text-gray-600">Consultas Hoje</p>
-                    </div>
-                  </div>
-                  <div className="mt-2 flex items-center text-sm text-yellow-600">
-                    <Clock className="w-4 h-4 mr-1" />
-                    18 pendentes
-                  </div>
-                </CardContent>
-              </Card>
+          {/* Pacientes Tab */}
+          <TabsContent value="pacientes" className="space-y-6">
+            <Patients />
+          </TabsContent>
 
-              <Card>
-                <CardContent className="p-6">
-                  <div className="flex items-center space-x-2">
-                    <BarChart3 className="w-8 h-8 text-purple-600" />
-                    <div>
-                      <p className="text-2xl font-bold text-gray-900">R$ {stats.revenue.toLocaleString()}</p>
-                      <p className="text-sm text-gray-600">Receita Mensal</p>
-                    </div>
-                  </div>
-                  <div className="mt-2 flex items-center text-sm text-green-600">
-                    <TrendingUp className="w-4 h-4 mr-1" />
-                    +8% vs mês anterior
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
+          {/* Agendamentos Tab */}
+          <TabsContent value="agendamentos" className="space-y-6">
+            <Appointments />
+          </TabsContent>
 
-            {/* Recent Appointments */}
+          {/* Configurações Tab */}
+          {/*<TabsContent value="configuracoes" className="space-y-6">
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center space-x-2">
-                  <Calendar className="w-5 h-5 text-blue-600" />
-                  <span>Agendamentos de Hoje</span>
+                  <Settings className="w-5 h-5 text-blue-600" />
+                  <span>Configurações do Sistema</span>
                 </CardTitle>
                 <CardDescription>
-                  Acompanhe os agendamentos do dia em tempo real
+                  Configure as preferências e parâmetros do sistema
                 </CardDescription>
               </CardHeader>
-              <CardContent>
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Horário</TableHead>
-                      <TableHead>Paciente</TableHead>
-                      <TableHead>Médico</TableHead>
-                      <TableHead>Especialidade</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead>Ações</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {recentAppointments.map((appointment) => (
-                      <TableRow key={appointment.id}>
-                        <TableCell className="font-medium">{appointment.time}</TableCell>
-                        <TableCell>{appointment.patient}</TableCell>
-                        <TableCell>{appointment.doctor}</TableCell>
-                        <TableCell>{appointment.specialty}</TableCell>
-                        <TableCell>
-                          <Badge className={getStatusColor(appointment.status)}>
-                            {getStatusLabel(appointment.status)}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>
-                          <Button size="sm" variant="outline">
-                            <Eye className="w-4 h-4" />
-                          </Button>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </CardContent>
-            </Card>
-          </TabsContent>
+              <CardContent className="space-y-6">
+                <div className="space-y-4">
+                  <h3 className="text-lg font-semibold">Informações da Clínica</h3>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="clinic-name">Nome da Clínica</Label>
+                      <Input id="clinic-name" defaultValue="ProMed" />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="clinic-phone">Telefone</Label>
+                      <Input id="clinic-phone" defaultValue="(11) 3456-7890" />
+                    </div>
+                  </div>
 
-              {/* Médicos Tab */}
-                {activeTab === 'medicos' && (
-                  <Doctors />
-                )}
+                  <div className="space-y-2">
+                    <Label htmlFor="clinic-address">Endereço</Label>
+                    <Input id="clinic-address" defaultValue="Av. Paulista, 1234 - Bela Vista, São Paulo - SP" />
+                  </div>
+                </div>
 
-              {/* Pacientes Tab */}
-                <TabsContent value="pacientes" className="space-y-6">
-                  <Patients />
-                </TabsContent>
+                <div className="space-y-4">
+                  <h3 className="text-lg font-semibold">Horários de Funcionamento</h3>
+                  <div className="grid grid-cols-3 gap-4">
+                    <div className="space-y-2">
+                      <Label>Dias da Semana</Label>
+                      <Input defaultValue="Segunda a Sexta" />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Horário de Início</Label>
+                      <Input type="time" defaultValue="07:00" />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Horário de Fim</Label>
+                      <Input type="time" defaultValue="19:00" />
+                    </div>
+                  </div>
+                </div>
 
-              {/* Agendamentos Tab */}
-                <TabsContent value="agendamentos" className="space-y-6">
-                  <Appointments />
-                </TabsContent>
-
-              {/* Configurações Tab */}
-                <TabsContent value="configuracoes" className="space-y-6">
-                  <Card>
-                    <CardHeader>
-                      <CardTitle className="flex items-center space-x-2">
-                        <Settings className="w-5 h-5 text-blue-600" />
-                        <span>Configurações do Sistema</span>
-                      </CardTitle>
-                      <CardDescription>
-                        Configure as preferências e parâmetros do sistema
-                      </CardDescription>
-                    </CardHeader>
-                    <CardContent className="space-y-6">
-                      <div className="space-y-4">
-                        <h3 className="text-lg font-semibold">Informações da Clínica</h3>
-                        <div className="grid grid-cols-2 gap-4">
-                          <div className="space-y-2">
-                            <Label htmlFor="clinic-name">Nome da Clínica</Label>
-                            <Input id="clinic-name" defaultValue="ProMed" />
-                          </div>
-                          <div className="space-y-2">
-                            <Label htmlFor="clinic-phone">Telefone</Label>
-                            <Input id="clinic-phone" defaultValue="(11) 3456-7890" />
-                          </div>
-                        </div>
-
-                        <div className="space-y-2">
-                          <Label htmlFor="clinic-address">Endereço</Label>
-                          <Input id="clinic-address" defaultValue="Av. Paulista, 1234 - Bela Vista, São Paulo - SP" />
-                        </div>
-                      </div>
-
-                      <div className="space-y-4">
-                        <h3 className="text-lg font-semibold">Horários de Funcionamento</h3>
-                        <div className="grid grid-cols-3 gap-4">
-                          <div className="space-y-2">
-                            <Label>Dias da Semana</Label>
-                            <Input defaultValue="Segunda a Sexta" />
-                          </div>
-                          <div className="space-y-2">
-                            <Label>Horário de Início</Label>
-                            <Input type="time" defaultValue="07:00" />
-                          </div>
-                          <div className="space-y-2">
-                            <Label>Horário de Fim</Label>
-                            <Input type="time" defaultValue="19:00" />
-                          </div>
-                        </div>
-                      </div>
-
-                      <div className="space-y-4">
-                        <h3 className="text-lg font-semibold">Configurações de Agendamento</h3>
-                        <div className="grid grid-cols-2 gap-4">
-                          <div className="space-y-2">
-                            <Label>Duração padrão da consulta (min)</Label>
-                            <Input type="number" defaultValue="30" />
-                          </div>
-                          <div className="space-y-2">
-                            <Label>Antecedência mínima para agendamento (horas)</Label>
-                            <Input type="number" defaultValue="2" />
-                          </div>
-                        </div>
-                      </div>
+                <div className="space-y-4">
+                  <h3 className="text-lg font-semibold">Configurações de Agendamento</h3>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label>Duração padrão da consulta (min)</Label>
+                      <Input type="number" defaultValue="30" />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Antecedência mínima para agendamento (horas)</Label>
+                      <Input type="number" defaultValue="2" />
+                    </div>
+                  </div>
+                </div>
 
                 <Button className="w-full">
                   Salvar Configurações
                 </Button>
               </CardContent>
             </Card>
-          </TabsContent>
+          </TabsContent>*/}
         </Tabs>
       </div>
     </div>

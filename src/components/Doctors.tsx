@@ -43,12 +43,16 @@ interface Doctor {
   specialty: Specialty;
 }
 
-const Doctors: React.FC = () => {
+interface DoctorsProps {
+  initialFilterStatus?: string;
+}
+
+const Doctors: React.FC<DoctorsProps> = ({ initialFilterStatus }) => {
   const [doctors, setDoctors] = useState<Doctor[]>([]);
   const [specialties, setSpecialties] = useState<Specialty[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [filterStatus, setFilterStatus] = useState('all');
+  const [filterStatus, setFilterStatus] = useState(initialFilterStatus || 'all');
   const [filterSpecialty, setFilterSpecialty] = useState('all');
   const [searchTerm, setSearchTerm] = useState('');
   const [searchInput, setSearchInput] = useState('');
@@ -86,6 +90,12 @@ const Doctors: React.FC = () => {
 
   const toast = useToast();
   const API_URL = 'http://localhost:8000/api/v1/admin';
+
+  useEffect(() => {
+  if (initialFilterStatus) {
+    setFilterStatus(initialFilterStatus);
+  }
+}, [initialFilterStatus]);
 
   useEffect(() => {
     const timer = setTimeout(() => setSearchTerm(searchInput), 500);
