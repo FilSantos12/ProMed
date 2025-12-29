@@ -13,6 +13,7 @@ import { PatientArea } from './components/PatientArea';
 import { AdminArea } from './components/AdminArea';
 import { CadastroPages } from './components/CadastroPages';
 import { ResetPasswordPage } from './components/ResetPasswordPage';
+import './utils/axiosConfig';
 
 function AppContent() {
   const [currentSection, setCurrentSection] = useState('home');

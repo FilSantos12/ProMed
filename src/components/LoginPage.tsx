@@ -9,6 +9,7 @@ import { useAuth } from '../hooks/useAuth';
 import { LoadingSpinner } from './ui/loading-spinner';
 import { ErrorModal } from './ui/error-modal';
 import { SuccessModal } from './ui/success-modal';
+import { StatusModal } from './ui/status-modal';
 import { ValidatedInput } from './ValidatedInput';
 import { useFormValidation } from '../hooks/useFormValidation';
 import { validateEmail, validatePassword } from '../utils/validators';
@@ -34,6 +35,14 @@ export function LoginPage({ onSectionChange }: LoginPageProps) {
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
   const [showForgotPasswordModal, setShowForgotPasswordModal] = useState(false);
+  
+  // Novos estados para o StatusModal
+  const [showStatusModal, setShowStatusModal] = useState(false);
+  const [statusInfo, setStatusInfo] = useState<{
+    status: 'pending' | 'rejected' | 'inactive' | 'error';
+    message: string;
+    rejectionNotes?: string;
+  } | null>(null);
 
   // Hook de validação
   const {
@@ -52,7 +61,7 @@ export function LoginPage({ onSectionChange }: LoginPageProps) {
   const handleInputChange = (field: string, value: string) => {
     setLoginData(prev => ({ ...prev, [field]: value }));
     setErrorMessage('');
-    
+
     // Valida em tempo real
     validateField(field, value);
   };
@@ -82,13 +91,10 @@ export function LoginPage({ onSectionChange }: LoginPageProps) {
 
       setSuccessMessage(`Bem-vindo, ${user.name}!`);
       setShowSuccessModal(true);
-      
-      // Toast de sucesso
-      //toast.success(`Login realizado com sucesso! Bem-vindo, ${user.name}!`);
 
       setTimeout(() => {
         setShowSuccessModal(false);
-        
+
         if (user.role === 'admin') {
           onSectionChange('admin-area');
         } else if (user.role === 'doctor') {
@@ -104,13 +110,29 @@ export function LoginPage({ onSectionChange }: LoginPageProps) {
 
       setShowSuccessModal(false);
 
-      const errorMsg = err.response?.data?.message || 'Email ou senha incorretos.';
+      const status = err.response?.data?.status;
+      const message = err.response?.data?.message;
+      const rejectionNotes = err.response?.data?.rejection_notes;
 
-      setErrorMessage(errorMsg);
-      setShowErrorModal(true);
-      
-      // Toast de erro
-      //toast.error(errorMsg);
+      // Verificar se é um erro de status (pending, rejected, inactive)
+      if (err.response?.status === 403 && status) {
+        setStatusInfo({
+          status: status as 'pending' | 'rejected' | 'inactive' | 'error',
+          message: message || 'Acesso negado.',
+          rejectionNotes: rejectionNotes
+        });
+        setShowStatusModal(true);
+      } 
+      // Erro de credenciais inválidas (401)
+      else if (err.response?.status === 401) {
+        setErrorMessage(message || 'Email ou senha incorretos.');
+        setShowErrorModal(true);
+      }
+      // Outros erros
+      else {
+        setErrorMessage(message || 'Erro ao fazer login. Tente novamente.');
+        setShowErrorModal(true);
+      }
 
       return false;
 
@@ -137,6 +159,7 @@ export function LoginPage({ onSectionChange }: LoginPageProps) {
           <h1 className="text-3xl font-bold text-gray-900 mb-2">Login</h1>
           <p className="text-gray-600">Acesse sua conta na ProMed</p>
         </div>
+
         <Tabs defaultValue="patient" className="space-y-6">
           <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="patient" className="flex items-center space-x-2">
@@ -197,9 +220,9 @@ export function LoginPage({ onSectionChange }: LoginPageProps) {
                       isValid={isFieldValid('password')}
                     />
                   </div>
-                  <Button 
-                    type="submit" 
-                    className="w-full" 
+                  <Button
+                    type="submit"
+                    className="w-full"
                     disabled={loading || !isFormValid()}
                   >
                     <User className="w-4 h-4 mr-2" />
@@ -220,18 +243,18 @@ export function LoginPage({ onSectionChange }: LoginPageProps) {
                       Não tem conta? Cadastre-se
                     </Button>
 
-                      <Button 
-                        variant="link" 
-                        className="text-sm"
-                        onClick={() => setShowForgotPasswordModal(true)}
-                      >
-                        Esqueceu sua senha?
-                      </Button>
+                    <Button
+                      variant="link"
+                      className="text-sm"
+                      onClick={() => setShowForgotPasswordModal(true)}
+                    >
+                      Esqueceu sua senha?
+                    </Button>
                   </div>
-                      <ForgotPasswordModal
-                        isOpen={showForgotPasswordModal}
-                        onClose={() => setShowForgotPasswordModal(false)}
-                      />
+                  <ForgotPasswordModal
+                    isOpen={showForgotPasswordModal}
+                    onClose={() => setShowForgotPasswordModal(false)}
+                  />
                 </div>
               </CardContent>
             </Card>
@@ -281,8 +304,8 @@ export function LoginPage({ onSectionChange }: LoginPageProps) {
                       isValid={isFieldValid('password')}
                     />
                   </div>
-                  <Button 
-                    type="submit" 
+                  <Button
+                    type="submit"
                     className="w-full"
                     disabled={loading || !isFormValid()}
                   >
@@ -303,18 +326,18 @@ export function LoginPage({ onSectionChange }: LoginPageProps) {
                       Não tem conta? Cadastre-se
                     </Button>
                     <br />
-                      <Button 
-                        variant="link" 
-                        className="text-sm"
-                        onClick={() => setShowForgotPasswordModal(true)}
-                      >
-                        Esqueceu sua senha?
-                      </Button>
+                    <Button
+                      variant="link"
+                      className="text-sm"
+                      onClick={() => setShowForgotPasswordModal(true)}
+                    >
+                      Esqueceu sua senha?
+                    </Button>
                   </div>
-                    <ForgotPasswordModal
-                      isOpen={showForgotPasswordModal}
-                      onClose={() => setShowForgotPasswordModal(false)}
-                    />
+                  <ForgotPasswordModal
+                    isOpen={showForgotPasswordModal}
+                    onClose={() => setShowForgotPasswordModal(false)}
+                  />
                 </div>
               </CardContent>
             </Card>
@@ -364,8 +387,8 @@ export function LoginPage({ onSectionChange }: LoginPageProps) {
                       isValid={isFieldValid('password')}
                     />
                   </div>
-                  <Button 
-                    type="submit" 
+                  <Button
+                    type="submit"
                     className="w-full"
                     disabled={loading || !isFormValid()}
                   >
@@ -378,18 +401,18 @@ export function LoginPage({ onSectionChange }: LoginPageProps) {
 
                 <div className="space-y-2">
                   <div className="text-center">
-                      <Button 
-                        variant="link" 
-                        className="text-sm"
-                        onClick={() => setShowForgotPasswordModal(true)}
-                      >
-                        Esqueceu sua senha?
-                      </Button>
+                    <Button
+                      variant="link"
+                      className="text-sm"
+                      onClick={() => setShowForgotPasswordModal(true)}
+                    >
+                      Esqueceu sua senha?
+                    </Button>
                   </div>
-                      <ForgotPasswordModal
-                        isOpen={showForgotPasswordModal}
-                        onClose={() => setShowForgotPasswordModal(false)}
-                      />
+                  <ForgotPasswordModal
+                    isOpen={showForgotPasswordModal}
+                    onClose={() => setShowForgotPasswordModal(false)}
+                  />
                 </div>
               </CardContent>
             </Card>
@@ -406,12 +429,25 @@ export function LoginPage({ onSectionChange }: LoginPageProps) {
           </CardContent>
         </Card>
 
-         <ErrorModal
+        {/* Modal de Status (pending, rejected, inactive) */}
+        {statusInfo && (
+          <StatusModal
+            isOpen={showStatusModal}
+            onClose={() => setShowStatusModal(false)}
+            status={statusInfo.status}
+            message={statusInfo.message}
+            rejectionNotes={statusInfo.rejectionNotes}
+          />
+        )}
+
+        {/* Modal de Erro (credenciais inválidas) */}
+        <ErrorModal
           isOpen={showErrorModal}
           onClose={() => setShowErrorModal(false)}
           message={errorMessage}
         />
 
+        {/* Modal de Sucesso */}
         <SuccessModal
           isOpen={showSuccessModal}
           onClose={() => {

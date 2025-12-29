@@ -18,10 +18,9 @@ use Illuminate\Database\Eloquent\Model;
 class AuthController extends Controller
 {
 
-    public function login(Request $request)
-    
-    {
-        // Validar campos
+public function login(Request $request)
+{
+    // Validar campos
     $request->validate([
         'email' => 'required|email',
         'password' => 'required',
@@ -43,13 +42,13 @@ class AuthController extends Controller
     // VALIDAR SE O ROLE BATE
     if ($user->role !== $request->expected_role) {
         Auth::logout();
-        
+
         $roles = [
             'patient' => 'pacientes',
             'doctor' => 'médicos',
             'admin' => 'administradores',
         ];
-        
+
         return response()->json([
             'message' => "Esta área é exclusiva para {$roles[$request->expected_role]}."
         ], 403);
@@ -58,16 +57,42 @@ class AuthController extends Controller
     // VALIDAR SE ESTÁ ATIVO
     if (!$user->is_active) {
         Auth::logout();
+        return response()->json([
+            'message' => 'Sua conta está inativa. Entre em contato com o administrador.'
+        ], 403);
+    }
+
+    // SE FOR MÉDICO, verificar status de aprovação
+    if ($user->role === 'doctor') {
+        $doctor = Doctor::where('user_id', $user->id)->first();
         
-        if ($user->role === 'doctor') {
+        if (!$doctor) {
+            Auth::logout();
             return response()->json([
-                'message' => 'Seu cadastro está em análise.'
+                'message' => 'Cadastro de médico não encontrado. Entre em contato com o administrador.',
+                'status' => 'error'
             ], 403);
         }
-        
-        return response()->json([
-            'message' => 'Sua conta está inativa.'
-        ], 403);
+
+        // Verificar status do médico
+        if ($doctor->status === 'pending') {
+            Auth::logout();
+            return response()->json([
+                'message' => 'Seu cadastro está aguardando aprovação. Você receberá um email quando for aprovado.',
+                'status' => 'pending'
+            ], 403);
+        }
+
+        if ($doctor->status === 'rejected') {
+            Auth::logout();
+            return response()->json([
+                'message' => 'Seu cadastro foi rejeitado.',
+                'status' => 'rejected',
+                'rejection_notes' => $doctor->rejection_notes ?? 'Motivo não especificado.'
+            ], 403);
+        }
+
+        // Se chegou aqui, o médico está aprovado (status = 'approved')
     }
 
     // Criar token
@@ -85,6 +110,7 @@ class AuthController extends Controller
         'user' => $user,
         'token' => $token,
     ]);
+
     
         {/*$request->validate([
             'email' => 'required|email',

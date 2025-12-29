@@ -214,21 +214,19 @@ const Doctors: React.FC = () => {
     }
   };
 
+
   const handleApprovalAction = (doctor: Doctor, action: 'approve' | 'reject') => {
-  setSelectedDoctor(doctor);
-  
-  if (action === 'reject') {
-    // Abrir modal de rejeição com justificativa
-    setRejectNotes('');
-    setShowRejectMedicalModal(true);
-  } else {
-    setShowApproveMedicalModal(true);
-    // Aprovar direto com confirmação simples
-    if (window.confirm(`Deseja aprovar o médico ${doctor.user.name}?`)) {
-      confirmApproveMedical(doctor);
+    setSelectedDoctor(doctor);
+
+    if (action === 'reject') {
+      // Abrir modal de rejeição com justificativa
+      setRejectNotes('');
+      setShowRejectMedicalModal(true);
+    } else {
+      // Abrir modal de aprovação (SEM window.confirm)
+      setShowApproveMedicalModal(true);
     }
-  }
-};
+  };
 
     const confirmApproveMedical = async (doctor: Doctor) => {
     try {
