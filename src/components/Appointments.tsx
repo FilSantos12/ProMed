@@ -433,15 +433,15 @@ const Appointments: React.FC = () => {
 
       {/* Modal de Visualização */}
       {showViewModal && selectedAppointment && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 animate-fade-in">
           {/* Overlay */}
-          <div 
-            className="absolute inset-0 bg-black/50 backdrop-blur-sm" 
+          <div
+            className="absolute inset-0 bg-black/50 backdrop-blur-sm"
             onClick={closeModals}
           />
-          
+
           {/* Modal Content */}
-          <div className="relative bg-white rounded-lg shadow-2xl w-full max-w-3xl">
+          <div className="relative bg-white rounded-lg shadow-2xl w-full max-w-3xl animate-zoom-in">
             {/* Header - Fixo */}
             <div className="flex items-center justify-between p-6 border-b bg-gradient-to-r from-blue-50 to-white">
               <div className="flex items-center space-x-3">
@@ -464,15 +464,15 @@ const Appointments: React.FC = () => {
               <div className="grid grid-cols-2 gap-6">
                 <div className="bg-blue-50 p-4 rounded-lg">
                   <label className="block text-sm font-semibold text-blue-900 mb-2">Paciente</label>
-                  <p className="text-gray-900 font-medium">{selectedAppointment.patient.name}</p>
-                  <p className="text-sm text-gray-600 mt-1">{selectedAppointment.patient.email}</p>
-                  <p className="text-sm text-gray-600">CPF: {selectedAppointment.patient.cpf}</p>
+                  <p className="text-gray-900 font-medium">{selectedAppointment.patient?.name || 'N/A'}</p>
+                  <p className="text-sm text-gray-600 mt-1">{selectedAppointment.patient?.email || 'N/A'}</p>
+                  <p className="text-sm text-gray-600">CPF: {selectedAppointment.patient?.cpf || 'N/A'}</p>
                 </div>
-                
+
                 <div className="bg-green-50 p-4 rounded-lg">
                   <label className="block text-sm font-semibold text-green-900 mb-2">Médico</label>
-                  <p className="text-gray-900 font-medium">{selectedAppointment.doctor.name}</p>
-                  <p className="text-sm text-gray-600 mt-1">{selectedAppointment.doctor.email}</p>
+                  <p className="text-gray-900 font-medium">{selectedAppointment.doctor?.name || 'N/A'}</p>
+                  <p className="text-sm text-gray-600 mt-1">{selectedAppointment.doctor?.email || 'N/A'}</p>
                 </div>
               </div>
 
@@ -481,9 +481,9 @@ const Appointments: React.FC = () => {
                 <div className="bg-purple-50 p-4 rounded-lg">
                   <label className="block text-sm font-semibold text-purple-900 mb-2">Especialidade</label>
                   <p className="text-gray-900 font-medium">
-                    {selectedAppointment.specialty.icon} {selectedAppointment.specialty.name}
+                    {selectedAppointment.specialty?.icon} {selectedAppointment.specialty?.name || 'N/A'}
                   </p>
-                  {selectedAppointment.specialty.description && (
+                  {selectedAppointment.specialty?.description && (
                     <p className="text-sm text-gray-600 mt-1">{selectedAppointment.specialty.description}</p>
                   )}
                 </div>
@@ -574,15 +574,15 @@ const Appointments: React.FC = () => {
 
       {/* Modal de Edição */}
       {showEditModal && selectedAppointment && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 animate-fade-in">
           {/* Overlay */}
-          <div 
-            className="absolute inset-0 bg-black/50 backdrop-blur-sm" 
+          <div
+            className="absolute inset-0 bg-black/50 backdrop-blur-sm"
             onClick={closeModals}
           />
-          
+
           {/* Modal Content */}
-          <div className="relative bg-white rounded-lg shadow-2xl w-full max-w-3xl">
+          <div className="relative bg-white rounded-lg shadow-2xl w-full max-w-3xl animate-zoom-in">
             {/* Header - Fixo */}
             <div className="flex items-center justify-between p-6 border-b bg-gradient-to-r from-blue-50 to-white">
               <div className="flex items-center space-x-3">
@@ -607,11 +607,11 @@ const Appointments: React.FC = () => {
                   <div className="grid grid-cols-2 gap-4">
                     <div>
                       <span className="text-xs font-medium text-blue-900">Paciente:</span>
-                      <p className="text-gray-900 font-medium">{selectedAppointment.patient.name}</p>
+                      <p className="text-gray-900 font-medium">{selectedAppointment.patient?.name || 'N/A'}</p>
                     </div>
                     <div>
                       <span className="text-xs font-medium text-purple-900">Médico:</span>
-                      <p className="text-gray-900 font-medium">{selectedAppointment.doctor.name}</p>
+                      <p className="text-gray-900 font-medium">{selectedAppointment.doctor?.name || 'N/A'}</p>
                     </div>
                   </div>
                 </div>

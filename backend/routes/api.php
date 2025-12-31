@@ -9,6 +9,7 @@ use App\Http\Controllers\Api\PasswordResetController;
 use App\Http\Controllers\Api\ScheduleController;
 use App\Http\Controllers\Api\PatientController;
 use App\Http\Controllers\Api\DashboardController;
+use App\Http\Controllers\Api\DoctorProfileController;
 
 /*
 |--------------------------------------------------------------------------
@@ -129,4 +130,28 @@ Route::middleware('auth:sanctum')->prefix('v1')->group(function () {
         Route::post('/appointments/{id}/reschedule', [AppointmentController::class, 'reschedule']);
         Route::get('/appointments-statistics', [AppointmentController::class, 'statistics']);
     });
+
+    // ============================================
+    // ROTAS DA ÁREA DO MÉDICO (role: doctor)
+    // ============================================
+    Route::middleware('role:doctor')->prefix('doctor')->group(function () {
+
+        // Perfil
+        Route::get('/profile', [DoctorProfileController::class, 'show']);
+        Route::put('/profile', [DoctorProfileController::class, 'update']);
+        Route::post('/profile/avatar', [DoctorProfileController::class, 'uploadAvatar']);
+        Route::post('/profile/change-password', [DoctorProfileController::class, 'changePassword']);
+
+        // Horários
+        Route::get('/schedules', [DoctorProfileController::class, 'getSchedules']);
+        Route::post('/schedules', [DoctorProfileController::class, 'addSchedule']);
+        Route::put('/schedules/{scheduleId}', [DoctorProfileController::class, 'updateSchedule']);
+        Route::delete('/schedules/{scheduleId}', [DoctorProfileController::class, 'deleteSchedule']);
+
+        // Documentos
+        Route::get('/documents', [DoctorProfileController::class, 'getDocuments']);
+        Route::post('/documents', [DoctorProfileController::class, 'uploadDocument']);
+        Route::delete('/documents/{documentId}', [DoctorProfileController::class, 'deleteDocument']);
+    });
+
 });

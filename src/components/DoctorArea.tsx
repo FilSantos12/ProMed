@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
@@ -7,8 +7,12 @@ import { Badge } from './ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from './ui/table';
 import { Textarea } from './ui/textarea';
-import { Calendar, Clock, User, FileText, Phone, Edit, Check, X, Mail, Plus, Camera } from 'lucide-react';
+import { Calendar, Clock, User, FileText, Phone, Edit, Check, X, Mail, Plus, Camera, AlertCircle, Trash2, Power } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
+import { useToast } from '../contexts/ToastContext';
+import { doctorService, DoctorProfile, DoctorAppointment, DoctorSchedule, DoctorStats } from '../services/doctorService';
+import { LoadingSpinner } from './ui/loading-spinner';
+import { Alert, AlertDescription } from './ui/alert';
 
 interface DoctorAreaProps {
   onSectionChange?: (section: string) => void;
@@ -16,83 +20,478 @@ interface DoctorAreaProps {
 
 export function DoctorArea({ onSectionChange }: DoctorAreaProps) {
   const { user } = useAuth();
+  const toast = useToast();
   const [activeTab, setActiveTab] = useState('agenda');
+
+  // Estados para dados do backend
+  const [profile, setProfile] = useState<DoctorProfile | null>(null);
+  const [appointments, setAppointments] = useState<DoctorAppointment[]>([]);
+  const [schedules, setSchedules] = useState<DoctorSchedule[]>([]);
+  const [stats, setStats] = useState<DoctorStats | null>(null);
+
+  // Estados de loading e erro
+  const [loading, setLoading] = useState(true);
+  const [loadingAppointments, setLoadingAppointments] = useState(false);
+  const [loadingSchedules, setLoadingSchedules] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  // Estados para formulários
   const [profilePhoto, setProfilePhoto] = useState<string>('');
+  const [editingProfile, setEditingProfile] = useState(false);
+  const [profileData, setProfileData] = useState({
+    bio: '',
+    consultation_price: 0,
+    consultation_duration: 30,
+    years_experience: 0,
+  });
 
-  // Mock data - em produção viria do backend
-  const agendamentos = [
-    {
-      id: 1,
-      date: '2024-01-15',
-      time: '09:00',
-      patient: 'Maria Silva',
-      phone: '(11) 99999-9999',
-      type: 'Consulta',
-      status: 'confirmado',
-      observations: 'Paciente com dores no peito'
-    },
-    {
-      id: 2,
-      date: '2024-01-15',
-      time: '10:30',
-      patient: 'João Santos',
-      phone: '(11) 88888-8888',
-      type: 'Retorno',
-      status: 'pendente',
-      observations: 'Acompanhamento cardiológico'
-    },
-    {
-      id: 3,
-      date: '2024-01-15',
-      time: '14:00',
-      patient: 'Ana Costa',
-      phone: '(11) 77777-7777',
-      type: 'Consulta',
-      status: 'confirmado',
-      observations: 'Check-up anual'
-    },
-  ];
+  // Estados para Controle de Agenda
+  const [scheduleForm, setScheduleForm] = useState({
+    start_date: '',
+    end_date: '',
+    start_time: '08:00',
+    end_time: '18:00',
+    days_of_week: [] as number[],
+    consultation_duration: 30,
+    break_time: 0,
+    lunch_break: '12:00-13:00',
+  });
+  const [editingSchedule, setEditingSchedule] = useState<number | null>(null);
 
-  const estatisticas = {
-    consultasHoje: 5,
-    consultasSemana: 28,
-    consultasMes: 120,
-    pacientesAtivos: 156
-  };
+  // Estados para modal de confirmação
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [scheduleToDelete, setScheduleToDelete] = useState<number | null>(null);
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'confirmado': return 'bg-green-100 text-green-800';
-      case 'pendente': return 'bg-yellow-100 text-yellow-800';
-      case 'cancelado': return 'bg-red-100 text-red-800';
-      default: return 'bg-gray-100 text-gray-800';
+  // Estados para edição de horários
+  const [editingScheduleId, setEditingScheduleId] = useState<number | null>(null);
+  const [editForm, setEditForm] = useState({
+    start_time: '',
+    end_time: '',
+  });
+
+  // Carregar dados iniciais
+  useEffect(() => {
+    loadInitialData();
+  }, []);
+
+  const loadInitialData = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+
+      const [profileData, statsData, appointmentsData] = await Promise.all([
+        doctorService.getProfile(),
+        doctorService.getStats(),
+        doctorService.getTodayAppointments(),
+      ]);
+
+      setProfile(profileData);
+      setStats(statsData);
+      setAppointments(appointmentsData);
+
+      // Atualizar estados do formulário
+      setProfileData({
+        bio: profileData?.bio || '',
+        consultation_price: profileData?.consultation_price || 0,
+        consultation_duration: profileData?.consultation_duration || 30,
+        years_experience: profileData?.years_experience || 0,
+      });
+
+      // Carregar avatar do backend (se existir)
+      if (profileData?.user?.avatar) {
+        // Se o avatar começar com http, usar direto, senão adicionar o prefixo do storage
+        const avatarUrl = profileData.user.avatar.startsWith('http')
+          ? profileData.user.avatar
+          : `http://localhost:8000/storage/${profileData.user.avatar}`;
+        setProfilePhoto(avatarUrl);
+      }
+    } catch (err: any) {
+      console.error('Erro ao carregar dados:', err);
+      setError(err.response?.data?.message || 'Erro ao carregar dados do médico');
+      toast.error('Erro ao carregar dados', 6000);
+    } finally {
+      setLoading(false);
     }
   };
 
-  const getStatusLabel = (status: string) => {
-    switch (status) {
-      case 'confirmado': return 'Confirmado';
-      case 'pendente': return 'Pendente';
-      case 'cancelado': return 'Cancelado';
-      default: return status;
+  // Carregar horários
+  const loadSchedules = async () => {
+    try {
+      setLoadingSchedules(true);
+      const schedulesData = await doctorService.getSchedules();
+      setSchedules(schedulesData);
+    } catch (err: any) {
+      console.error('Erro ao carregar horários:', err);
+      toast.error('Erro ao carregar horários', 6000);
+    } finally {
+      setLoadingSchedules(false);
     }
   };
 
-  const handleStatusChange = (appointmentId: number, newStatus: string) => {
-    // Aqui seria feita a atualização no backend
-    console.log(`Alterando status do agendamento ${appointmentId} para ${newStatus}`);
+  useEffect(() => {
+    if (activeTab === 'controle-agenda') {
+      loadSchedules();
+    }
+  }, [activeTab]);
+
+  // Funções de manipulação de consultas
+  const handleConfirmAppointment = async (appointmentId: number) => {
+    try {
+      await doctorService.confirmAppointment(appointmentId);
+      toast.success('Consulta confirmada com sucesso!', 3000);
+
+      // Atualizar lista de consultas
+      setAppointments(prev =>
+        prev.map(appt =>
+          appt.id === appointmentId ? { ...appt, status: 'confirmed' } : appt
+        )
+      );
+    } catch (err: any) {
+      console.error('Erro ao confirmar consulta:', err);
+      toast.error('Erro ao confirmar consulta', 6000);
+    }
   };
 
-  const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleCancelAppointment = async (appointmentId: number) => {
+    const reason = prompt('Motivo do cancelamento (opcional):');
+    try {
+      await doctorService.cancelAppointment(appointmentId, reason || undefined);
+      toast.success('Consulta cancelada', 3000);
+
+      // Atualizar lista de consultas
+      setAppointments(prev =>
+        prev.map(appt =>
+          appt.id === appointmentId ? { ...appt, status: 'cancelled' } : appt
+        )
+      );
+    } catch (err: any) {
+      console.error('Erro ao cancelar consulta:', err);
+      toast.error('Erro ao cancelar consulta', 6000);
+    }
+  };
+
+  const handleCompleteAppointment = async (appointmentId: number) => {
+    try {
+      await doctorService.completeAppointment(appointmentId);
+      toast.success('Consulta marcada como concluída!', 3000);
+
+      setAppointments(prev =>
+        prev.map(appt =>
+          appt.id === appointmentId ? { ...appt, status: 'completed' } : appt
+        )
+      );
+    } catch (err: any) {
+      console.error('Erro ao completar consulta:', err);
+      toast.error('Erro ao completar consulta', 6000);
+    }
+  };
+
+  // Upload de foto de perfil
+  const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) {
+    if (!file) return;
+
+    try {
+      // Preview local imediato
       const reader = new FileReader();
       reader.onloadend = () => {
         setProfilePhoto(reader.result as string);
       };
       reader.readAsDataURL(file);
+
+      // Upload para o backend
+      const response = await doctorService.uploadAvatar(file);
+
+      // Usar a URL retornada pelo backend
+      setProfilePhoto(response.avatar_url);
+
+      toast.success('Foto atualizada com sucesso!', 3000);
+
+      // Atualizar o estado do perfil com a nova URL
+      if (profile) {
+        setProfile({
+          ...profile,
+          user: { ...profile.user, avatar: response.avatar_url }
+        });
+      }
+    } catch (err: any) {
+      console.error('Erro ao fazer upload da foto:', err);
+      toast.error('Erro ao atualizar foto', 6000);
     }
   };
+
+  // Atualizar perfil
+  const handleUpdateProfile = async () => {
+    try {
+      const updatedProfile = await doctorService.updateProfile(profileData);
+      setProfile(updatedProfile);
+      setEditingProfile(false);
+      toast.success('Perfil atualizado com sucesso!', 3000);
+    } catch (err: any) {
+      console.error('Erro ao atualizar perfil:', err);
+      toast.error('Erro ao atualizar perfil', 6000);
+    }
+  };
+
+  // Funções de Controle de Agenda
+  const handleToggleDay = (day: number) => {
+    setScheduleForm(prev => ({
+      ...prev,
+      days_of_week: prev.days_of_week.includes(day)
+        ? prev.days_of_week.filter(d => d !== day)
+        : [...prev.days_of_week, day]
+    }));
+  };
+
+  // Extrair dias da semana únicos de um intervalo de datas
+  const extractDaysOfWeek = (startDate: string, endDate: string): number[] => {
+    if (!startDate || !endDate) return [];
+
+    // Adicionar T00:00:00 para evitar problemas de timezone
+    const start = new Date(startDate + 'T00:00:00');
+    const end = new Date(endDate + 'T00:00:00');
+    const daysSet = new Set<number>();
+
+    // Iterar por cada dia no intervalo
+    for (let date = new Date(start); date <= end; date.setDate(date.getDate() + 1)) {
+      daysSet.add(date.getDay()); // 0 = domingo, 1 = segunda, etc.
+    }
+
+    return Array.from(daysSet).sort();
+  };
+
+  const handleAddSchedule = async () => {
+    try {
+      // Validação
+      if (!scheduleForm.start_date || !scheduleForm.end_date) {
+        toast.error('Selecione o período de datas (início e fim)', 6000);
+        return;
+      }
+
+      if (scheduleForm.days_of_week.length === 0) {
+        toast.error('Nenhum dia da semana foi detectado no período selecionado', 6000);
+        return;
+      }
+
+      if (!scheduleForm.start_time || !scheduleForm.end_time) {
+        toast.error('Preencha os horários de início e fim', 6000);
+        return;
+      }
+
+      // Gerar lista de todas as datas no intervalo
+      const generateDateRange = (startDate: string, endDate: string): string[] => {
+        const dates: string[] = [];
+        const start = new Date(startDate);
+        const end = new Date(endDate);
+
+        for (let date = new Date(start); date <= end; date.setDate(date.getDate() + 1)) {
+          dates.push(date.toISOString().split('T')[0]);
+        }
+
+        return dates;
+      };
+
+      const allDates = generateDateRange(scheduleForm.start_date, scheduleForm.end_date);
+
+      // Criar um horário para cada data
+      const promises = allDates.map(date => {
+        const scheduleData = {
+          schedule_date: date,
+          start_time: scheduleForm.start_time,
+          end_time: scheduleForm.end_time,
+          is_available: true,
+        };
+        console.log('Enviando dados do horário:', scheduleData);
+        return doctorService.addSchedule(scheduleData);
+      });
+
+      await Promise.all(promises);
+
+      toast.success(`${allDates.length} horários adicionados com sucesso!`, 3000);
+
+      // Limpar formulário
+      setScheduleForm({
+        start_date: '',
+        end_date: '',
+        start_time: '08:00',
+        end_time: '18:00',
+        days_of_week: [],
+        consultation_duration: 30,
+        break_time: 0,
+        lunch_break: '12:00-13:00',
+      });
+
+      // Recarregar horários
+      loadSchedules();
+    } catch (err: any) {
+      console.error('Erro ao adicionar horários:', err);
+      console.error('Detalhes do erro:', err.response?.data);
+
+      // Mostrar mensagem de erro mais específica
+      const errorMessage = err.response?.data?.message || 'Erro ao adicionar horários';
+      const errors = err.response?.data?.errors;
+
+      if (errors) {
+        console.error('Erros de validação:', errors);
+        const firstError = Object.values(errors)[0];
+        toast.error(Array.isArray(firstError) ? firstError[0] : errorMessage, 6000);
+      } else {
+        toast.error(errorMessage, 6000);
+      }
+    }
+  };
+
+  const handleUpdateSchedule = async (scheduleId: number, updates: any) => {
+    try {
+      await doctorService.updateSchedule(scheduleId, updates);
+      toast.success('Horário atualizado com sucesso!', 3000);
+      loadSchedules();
+    } catch (err: any) {
+      console.error('Erro ao atualizar horário:', err);
+      toast.error('Erro ao atualizar horário', 6000);
+    }
+  };
+
+  const handleDeleteSchedule = (scheduleId: number) => {
+    setScheduleToDelete(scheduleId);
+    setShowDeleteModal(true);
+  };
+
+  const confirmDeleteSchedule = async () => {
+    if (!scheduleToDelete) return;
+
+    try {
+      await doctorService.deleteSchedule(scheduleToDelete);
+      toast.success('Horário deletado com sucesso!', 3000);
+      setShowDeleteModal(false);
+      setScheduleToDelete(null);
+      loadSchedules();
+    } catch (err: any) {
+      console.error('Erro ao deletar horário:', err);
+      toast.error('Erro ao deletar horário', 6000);
+    }
+  };
+
+  const cancelDeleteSchedule = () => {
+    setShowDeleteModal(false);
+    setScheduleToDelete(null);
+  };
+
+  const handleToggleScheduleAvailability = async (scheduleId: number, currentStatus: boolean) => {
+    try {
+      await doctorService.updateSchedule(scheduleId, {
+        is_available: !currentStatus,
+      });
+      toast.success(
+        !currentStatus ? 'Horário ativado!' : 'Horário desativado!',
+        3000
+      );
+      loadSchedules();
+    } catch (err: any) {
+      console.error('Erro ao alterar disponibilidade:', err);
+      toast.error('Erro ao alterar disponibilidade', 6000);
+    }
+  };
+
+  const handleStartEditSchedule = (schedule: DoctorSchedule) => {
+    setEditingScheduleId(schedule.id);
+    setEditForm({
+      start_time: schedule.start_time.substring(0, 5),
+      end_time: schedule.end_time.substring(0, 5),
+    });
+  };
+
+  const handleSaveEditSchedule = async () => {
+    if (!editingScheduleId) return;
+
+    try {
+      await doctorService.updateSchedule(editingScheduleId, {
+        start_time: editForm.start_time,
+        end_time: editForm.end_time,
+      });
+      toast.success('Horário atualizado com sucesso!', 3000);
+      setEditingScheduleId(null);
+      loadSchedules();
+    } catch (err: any) {
+      console.error('Erro ao atualizar horário:', err);
+      toast.error('Erro ao atualizar horário', 6000);
+    }
+  };
+
+  const handleCancelEditSchedule = () => {
+    setEditingScheduleId(null);
+    setEditForm({ start_time: '', end_time: '' });
+  };
+
+  const getDayName = (dayNumber: number): string => {
+    const days = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
+    return days[dayNumber] || '';
+  };
+
+  // Converter nome do dia (string) para índice (number)
+  const dayNameToIndex = (dayName: string): number => {
+    const mapping: { [key: string]: number } = {
+      'sunday': 0,
+      'monday': 1,
+      'tuesday': 2,
+      'wednesday': 3,
+      'thursday': 4,
+      'friday': 5,
+      'saturday': 6
+    };
+    return mapping[dayName.toLowerCase()] ?? 0;
+  };
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'confirmed': return 'bg-green-100 text-green-800';
+      case 'scheduled': return 'bg-blue-100 text-blue-800';
+      case 'completed': return 'bg-purple-100 text-purple-800';
+      case 'cancelled': return 'bg-red-100 text-red-800';
+      default: return 'bg-gray-100 text-gray-800';
+    }
+  };
+
+  const getStatusLabel = (status: string) => {
+    const labels: { [key: string]: string } = {
+      'scheduled': 'Agendado',
+      'confirmed': 'Confirmado',
+      'completed': 'Concluído',
+      'cancelled': 'Cancelado',
+    };
+    return labels[status] || status;
+  };
+
+  // Loading state
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 py-8 flex items-center justify-center">
+        <div className="text-center">
+          <LoadingSpinner size="lg" />
+          <p className="mt-4 text-gray-600">Carregando dados...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Error state
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gray-50 py-8">
+        <div className="container mx-auto px-4 max-w-2xl">
+          <Alert variant="destructive">
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription>{error}</AlertDescription>
+          </Alert>
+          <div className="mt-4 text-center">
+            <Button onClick={loadInitialData}>
+              Tentar Novamente
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50 py-8">
@@ -108,10 +507,10 @@ export function DoctorArea({ onSectionChange }: DoctorAreaProps) {
                   <User className="w-10 h-10" />
                 )}
               </div>
-              <label 
-                htmlFor="doctor-photo-upload" 
+              <label
+                htmlFor="doctor-photo-upload"
                 className="absolute inset-0 rounded-full bg-black bg-opacity-50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer">
-            
+
                 <Camera className="w-6 h-6 text-white" />
               </label>
               <input
@@ -128,7 +527,7 @@ export function DoctorArea({ onSectionChange }: DoctorAreaProps) {
                 Área do Médico
               </h1>
               <p className="text-gray-600">
-                Bem-vindo, {user?.name ?? 'Usuário'} - {(user as any)?.specialty ?? 'Especialidade'} | {(user as any)?.crm ?? 'CRM'}
+                Bem-vindo, {profile?.user.name ?? user?.name ?? 'Usuário'} - {profile?.specialty.name ?? 'Especialidade'} | CRM {profile?.crm ?? 'N/A'}/{profile?.crm_state ?? ''}
               </p>
             </div>
           </div>
@@ -139,7 +538,7 @@ export function DoctorArea({ onSectionChange }: DoctorAreaProps) {
           <Card>
             <CardContent className="p-4 text-center">
               <div className="text-2xl font-bold text-blue-600 mb-1">
-                {estatisticas.consultasHoje}
+                {stats?.appointmentsToday ?? 0}
               </div>
               <div className="text-sm text-gray-600">Consultas Hoje</div>
             </CardContent>
@@ -147,7 +546,7 @@ export function DoctorArea({ onSectionChange }: DoctorAreaProps) {
           <Card>
             <CardContent className="p-4 text-center">
               <div className="text-2xl font-bold text-green-600 mb-1">
-                {estatisticas.consultasSemana}
+                {stats?.appointmentsWeek ?? 0}
               </div>
               <div className="text-sm text-gray-600">Esta Semana</div>
             </CardContent>
@@ -155,7 +554,7 @@ export function DoctorArea({ onSectionChange }: DoctorAreaProps) {
           <Card>
             <CardContent className="p-4 text-center">
               <div className="text-2xl font-bold text-purple-600 mb-1">
-                {estatisticas.consultasMes}
+                {stats?.appointmentsMonth ?? 0}
               </div>
               <div className="text-sm text-gray-600">Este Mês</div>
             </CardContent>
@@ -163,7 +562,7 @@ export function DoctorArea({ onSectionChange }: DoctorAreaProps) {
           <Card>
             <CardContent className="p-4 text-center">
               <div className="text-2xl font-bold text-orange-600 mb-1">
-                {estatisticas.pacientesAtivos}
+                {stats?.activePatients ?? 0}
               </div>
               <div className="text-sm text-gray-600">Pacientes Ativos</div>
             </CardContent>
@@ -193,100 +592,136 @@ export function DoctorArea({ onSectionChange }: DoctorAreaProps) {
               <CardHeader>
                 <CardTitle className="flex items-center space-x-2">
                   <Calendar className="w-5 h-5 text-blue-600" />
-                  <span>Agenda do Dia - 15/01/2024</span>
+                  <span>Agenda do Dia - {new Date().toLocaleDateString('pt-BR')}</span>
                 </CardTitle>
                 <CardDescription>
                   Gerencie seus agendamentos e consultas
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="space-y-4">
-                  {agendamentos.map((agendamento) => (
-                    <div key={agendamento.id} className="border rounded-lg p-4 hover:shadow-md transition-shadow">
-                      <div className="flex items-start justify-between">
-                        <div className="flex-1">
-                          <div className="flex items-center space-x-4 mb-2">
-                            <div className="flex items-center space-x-2">
-                              <Clock className="w-4 h-4 text-blue-600" />
-                              <span className="font-medium">{agendamento.time}</span>
+                {loadingAppointments ? (
+                  <div className="text-center py-8">
+                    <LoadingSpinner />
+                    <p className="mt-2 text-gray-600">Carregando consultas...</p>
+                  </div>
+                ) : appointments.length === 0 ? (
+                  <div className="text-center py-8 text-gray-500">
+                    <Calendar className="w-12 h-12 mx-auto mb-3 text-gray-300" />
+                    <p>Nenhuma consulta agendada para hoje</p>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {appointments.map((appointment) => (
+                      <div key={appointment.id} className="border rounded-lg p-4 hover:shadow-md transition-shadow">
+                        <div className="flex items-start justify-between">
+                          <div className="flex-1">
+                            <div className="flex items-center space-x-4 mb-2">
+                              <div className="flex items-center space-x-2">
+                                <Clock className="w-4 h-4 text-blue-600" />
+                                <span className="font-medium">{appointment.appointment_time.substring(0, 5)}</span>
+                              </div>
+                              <div className="flex items-center space-x-2">
+                                <User className="w-4 h-4 text-gray-600" />
+                                <span className="font-medium">{appointment.patient?.user?.name ?? 'Paciente'}</span>
+                              </div>
+                              <Badge className={getStatusColor(appointment.status)}>
+                                {getStatusLabel(appointment.status)}
+                              </Badge>
                             </div>
-                            <div className="flex items-center space-x-2">
-                              <User className="w-4 h-4 text-gray-600" />
-                              <span className="font-medium">{agendamento.patient}</span>
+
+                            <div className="flex items-center space-x-4 text-sm text-gray-600 mb-2">
+                              <div className="flex items-center space-x-1">
+                                <Phone className="w-4 h-4" />
+                                <span>{appointment.patient?.user?.phone ?? 'N/A'}</span>
+                              </div>
+                              <div className="flex items-center space-x-1">
+                                <Mail className="w-4 h-4" />
+                                <span>{appointment.patient?.user?.email ?? 'N/A'}</span>
+                              </div>
                             </div>
-                            <Badge variant="outline">{agendamento.type}</Badge>
-                            <Badge className={getStatusColor(agendamento.status)}>
-                              {getStatusLabel(agendamento.status)}
-                            </Badge>
-                          </div>
-                          
-                          <div className="flex items-center space-x-4 text-sm text-gray-600 mb-2">
-                            <div className="flex items-center space-x-1">
-                              <Phone className="w-4 h-4" />
-                              <span>{agendamento.phone}</span>
-                            </div>
-                          </div>
-                          
-                          {agendamento.observations && (
-                            <p className="text-sm text-gray-600 bg-gray-50 p-2 rounded">
-                              {agendamento.observations}
-                            </p>
-                          )}
-                        </div>
-                        
-                        <div className="flex flex-col space-y-2 ml-4">
-                          <div className="flex space-x-2">
-                            {agendamento.status === 'pendente' && (
-                              <>
-                                <Button 
-                                  size="sm" 
-                                  variant="outline"
-                                  onClick={() => handleStatusChange(agendamento.id, 'confirmado')}
-                                  title="Confirmar consulta"
-                                >
-                                  <Check className="w-4 h-4" />
-                                </Button>
-                                <Button 
-                                  size="sm" 
-                                  variant="outline"
-                                  onClick={() => handleStatusChange(agendamento.id, 'cancelado')}
-                                  title="Cancelar consulta"
-                                >
-                                  <X className="w-4 h-4" />
-                                </Button>
-                              </>
+
+                            {appointment.patient_notes && (
+                              <div className="mb-2">
+                                <p className="text-xs text-gray-500 mb-1">Observações do paciente:</p>
+                                <p className="text-sm text-gray-600 bg-blue-50 p-2 rounded">
+                                  {appointment.patient_notes}
+                                </p>
+                              </div>
                             )}
-                            <Button size="sm" variant="outline" title="Editar agendamento">
-                              <Edit className="w-4 h-4" />
-                            </Button>
+
+                            {appointment.doctor_notes && (
+                              <div>
+                                <p className="text-xs text-gray-500 mb-1">Suas anotações:</p>
+                                <p className="text-sm text-gray-600 bg-gray-50 p-2 rounded">
+                                  {appointment.doctor_notes}
+                                </p>
+                              </div>
+                            )}
                           </div>
-                          
-                          {/* Botões de Contato Rápido */}
-                          <div className="flex space-x-2">
-                            <Button 
-                              size="sm" 
-                              variant="outline"
-                              onClick={() => window.open(`tel:${agendamento.phone}`)}
-                              title="Ligar para o paciente"
-                              className="text-green-600 hover:text-green-700"
-                            >
-                              <Phone className="w-4 h-4" />
-                            </Button>
-                            <Button 
-                              size="sm" 
-                              variant="outline"
-                              onClick={() => window.open(`mailto:${agendamento.patient.toLowerCase().replace(' ', '.')}@email.com`)}
-                              title="Enviar email para o paciente"
-                              className="text-blue-600 hover:text-blue-700"
-                            >
-                              <Mail className="w-4 h-4" />
-                            </Button>
+
+                          <div className="flex flex-col space-y-2 ml-4">
+                            <div className="flex space-x-2">
+                              {appointment.status === 'scheduled' && (
+                                <>
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={() => handleConfirmAppointment(appointment.id)}
+                                    title="Confirmar consulta"
+                                  >
+                                    <Check className="w-4 h-4" />
+                                  </Button>
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={() => handleCancelAppointment(appointment.id)}
+                                    title="Cancelar consulta"
+                                  >
+                                    <X className="w-4 h-4" />
+                                  </Button>
+                                </>
+                              )}
+                              {appointment.status === 'confirmed' && (
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => handleCompleteAppointment(appointment.id)}
+                                  title="Marcar como concluída"
+                                  className="text-green-600"
+                                >
+                                  <Check className="w-4 h-4 mr-1" />
+                                  Concluir
+                                </Button>
+                              )}
+                            </div>
+
+                            {/* Botões de Contato Rápido */}
+                            <div className="flex space-x-2">
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => window.open(`tel:${appointment.patient?.user?.phone}`)}
+                                title="Ligar para o paciente"
+                                className="text-green-600 hover:text-green-700"
+                              >
+                                <Phone className="w-4 h-4" />
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => window.open(`mailto:${appointment.patient?.user?.email}`)}
+                                title="Enviar email para o paciente"
+                                className="text-blue-600 hover:text-blue-700"
+                              >
+                                <Mail className="w-4 h-4" />
+                              </Button>
+                            </div>
                           </div>
                         </div>
                       </div>
-                    </div>
-                  ))}
-                </div>
+                    ))}
+                  </div>
+                )}
               </CardContent>
             </Card>
           </TabsContent>
@@ -300,13 +735,9 @@ export function DoctorArea({ onSectionChange }: DoctorAreaProps) {
                     <Clock className="w-5 h-5 text-blue-600" />
                     <span>Controle de Agenda</span>
                   </div>
-                  <Button size="sm">
-                    <Plus className="w-4 h-4 mr-2" />
-                    Novo Período
-                  </Button>
                 </CardTitle>
                 <CardDescription>
-                  Configure seus períodos de disponibilidade por data
+                  Configure seus horários de disponibilidade por dia da semana
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
@@ -314,7 +745,12 @@ export function DoctorArea({ onSectionChange }: DoctorAreaProps) {
                 <div className="grid grid-cols-3 gap-3 p-3 bg-gray-50 rounded-lg">
                   <div className="space-y-1">
                     <Label className="text-xs text-gray-600">Duração da Consulta</Label>
-                    <select className="w-full p-2 border rounded text-sm" aria-label="Duração da Consulta">
+                    <select
+                      className="w-full p-2 border rounded text-sm"
+                      aria-label="Duração da Consulta"
+                      value={scheduleForm.consultation_duration}
+                      onChange={(e) => setScheduleForm({ ...scheduleForm, consultation_duration: Number(e.target.value) })}
+                    >
                       <option value="30">30 min</option>
                       <option value="45">45 min</option>
                       <option value="60">60 min</option>
@@ -322,7 +758,12 @@ export function DoctorArea({ onSectionChange }: DoctorAreaProps) {
                   </div>
                   <div className="space-y-1">
                     <Label className="text-xs text-gray-600">Intervalo</Label>
-                    <select className="w-full p-2 border rounded text-sm" aria-label="Intervalo entre Consultas">
+                    <select
+                      className="w-full p-2 border rounded text-sm"
+                      aria-label="Intervalo entre Consultas"
+                      value={scheduleForm.break_time}
+                      onChange={(e) => setScheduleForm({ ...scheduleForm, break_time: Number(e.target.value) })}
+                    >
                       <option value="0">Sem intervalo</option>
                       <option value="15">15 min</option>
                       <option value="30">30 min</option>
@@ -330,7 +771,12 @@ export function DoctorArea({ onSectionChange }: DoctorAreaProps) {
                   </div>
                   <div className="space-y-1">
                     <Label className="text-xs text-gray-600">Almoço</Label>
-                    <select className="w-full p-2 border rounded text-sm" aria-label="Intervalo para Almoço">
+                    <select
+                      className="w-full p-2 border rounded text-sm"
+                      aria-label="Intervalo para Almoço"
+                      value={scheduleForm.lunch_break}
+                      onChange={(e) => setScheduleForm({ ...scheduleForm, lunch_break: e.target.value })}
+                    >
                       <option value="12:00-13:00">12h - 13h</option>
                       <option value="13:00-14:00">13h - 14h</option>
                       <option value="none">Sem intervalo</option>
@@ -340,194 +786,291 @@ export function DoctorArea({ onSectionChange }: DoctorAreaProps) {
 
                 {/* Novo Período - Formulário Compacto */}
                 <div className="border rounded-lg p-4 bg-blue-50 border-blue-200">
-                  <h4 className="font-medium mb-3 text-sm">Adicionar Período de Disponibilidade</h4>
-                  <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
-                    <div className="space-y-1">
-                      <Label className="text-xs text-gray-600">Data Início</Label>
-                      <Input type="date" className="text-sm" />
+                  <h4 className="font-medium mb-3 text-sm">Adicionar Horários de Disponibilidade</h4>
+                  <div className="space-y-3">
+                    {/* Período de Datas */}
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="space-y-1">
+                        <Label className="text-xs text-gray-600">📅 Data Início do Período</Label>
+                        <Input
+                          type="date"
+                          className="text-sm"
+                          value={scheduleForm.start_date}
+                          onChange={(e) => {
+                            setScheduleForm({ ...scheduleForm, start_date: e.target.value });
+                            // Auto-detectar dias da semana se ambas as datas estiverem preenchidas
+                            if (e.target.value && scheduleForm.end_date) {
+                              const days = extractDaysOfWeek(e.target.value, scheduleForm.end_date);
+                              setScheduleForm(prev => ({ ...prev, days_of_week: days }));
+                            }
+                          }}
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <Label className="text-xs text-gray-600">📅 Data Fim do Período</Label>
+                        <Input
+                          type="date"
+                          className="text-sm"
+                          value={scheduleForm.end_date}
+                          onChange={(e) => {
+                            setScheduleForm({ ...scheduleForm, end_date: e.target.value });
+                            // Auto-detectar dias da semana se ambas as datas estiverem preenchidas
+                            if (scheduleForm.start_date && e.target.value) {
+                              const days = extractDaysOfWeek(scheduleForm.start_date, e.target.value);
+                              setScheduleForm(prev => ({ ...prev, days_of_week: days }));
+                            }
+                          }}
+                        />
+                      </div>
                     </div>
-                    <div className="space-y-1">
-                      <Label className="text-xs text-gray-600">Data Fim</Label>
-                      <Input type="date" className="text-sm" />
+
+                    {/* Horários */}
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                      <div className="space-y-1">
+                        <Label className="text-xs text-gray-600">⏰ Horário Início</Label>
+                        <Input
+                          type="time"
+                          className="text-sm"
+                          value={scheduleForm.start_time}
+                          onChange={(e) => setScheduleForm({ ...scheduleForm, start_time: e.target.value })}
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <Label className="text-xs text-gray-600">⏰ Horário Fim</Label>
+                        <Input
+                          type="time"
+                          className="text-sm"
+                          value={scheduleForm.end_time}
+                          onChange={(e) => setScheduleForm({ ...scheduleForm, end_time: e.target.value })}
+                        />
+                      </div>
+                      <div className="flex items-end">
+                        <Button className="w-full" size="sm" onClick={handleAddSchedule}>
+                          <Plus className="w-3 h-3 mr-1" />
+                          Adicionar
+                        </Button>
+                      </div>
                     </div>
-                    <div className="space-y-1">
-                      <Label className="text-xs text-gray-600">Horário Início</Label>
-                      <Input type="time" defaultValue="08:00" className="text-sm" />
-                    </div>
-                    <div className="space-y-1">
-                      <Label className="text-xs text-gray-600">Horário Fim</Label>
-                      <Input type="time" defaultValue="18:00" className="text-sm" />
-                    </div>
-                    <div className="flex items-end">
-                      <Button className="w-full" size="sm">
-                        <Plus className="w-3 h-3 mr-1" />
-                        Adicionar
-                      </Button>
-                    </div>
-                  </div>
-                  <div className="mt-3 flex items-center space-x-4 text-xs">
-                    <label className="flex items-center space-x-1 cursor-pointer">
-                      <input type="checkbox" className="rounded" />
-                      <span>Seg</span>
-                    </label>
-                    <label className="flex items-center space-x-1 cursor-pointer">
-                      <input type="checkbox" className="rounded" />
-                      <span>Ter</span>
-                    </label>
-                    <label className="flex items-center space-x-1 cursor-pointer">
-                      <input type="checkbox" className="rounded" />
-                      <span>Qua</span>
-                    </label>
-                    <label className="flex items-center space-x-1 cursor-pointer">
-                      <input type="checkbox" className="rounded" />
-                      <span>Qui</span>
-                    </label>
-                    <label className="flex items-center space-x-1 cursor-pointer">
-                      <input type="checkbox" className="rounded" />
-                      <span>Sex</span>
-                    </label>
-                    <label className="flex items-center space-x-1 cursor-pointer">
-                      <input type="checkbox" className="rounded" />
-                      <span>Sáb</span>
-                    </label>
-                    <label className="flex items-center space-x-1 cursor-pointer">
-                      <input type="checkbox" className="rounded" />
-                      <span>Dom</span>
-                    </label>
-                    <span className="text-gray-500 ml-2">(Aplicar apenas nestes dias)</span>
+
+                    {/* Dias da Semana Detectados */}
+                    {scheduleForm.days_of_week.length > 0 && (
+                      <div className="bg-white border border-blue-300 rounded-md p-3">
+                        <p className="text-xs text-gray-600 mb-2 font-medium">✓ Dias da semana detectados automaticamente:</p>
+                        <div className="flex flex-wrap gap-2">
+                          {scheduleForm.days_of_week.map(dayIndex => (
+                            <Badge key={dayIndex} variant="outline" className="bg-blue-100 text-blue-700 border-blue-300">
+                              {getDayName(dayIndex)}
+                            </Badge>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {scheduleForm.start_date && scheduleForm.end_date && scheduleForm.days_of_week.length === 0 && (
+                      <div className="bg-yellow-50 border border-yellow-300 rounded-md p-2">
+                        <p className="text-xs text-yellow-800">⚠️ Nenhum dia detectado. Verifique se a data de fim é posterior à data de início.</p>
+                      </div>
+                    )}
                   </div>
                 </div>
 
-                {/* Lista de Períodos Configurados */}
+                {/* Lista de Horários Configurados */}
                 <div className="space-y-2">
-                  <h4 className="font-medium text-sm">Períodos Configurados</h4>
-                  
-                  {/* Período Ativo */}
-                  <div className="border rounded-lg p-3 hover:shadow-sm transition-shadow bg-white">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center space-x-4 flex-1">
-                        <div className="flex items-center space-x-2">
-                          <Calendar className="w-4 h-4 text-blue-600" />
-                          <div className="text-sm">
-                            <span className="font-medium">15/01/2025</span>
-                            <span className="text-gray-500 mx-1">até</span>
-                            <span className="font-medium">30/06/2025</span>
-                          </div>
-                        </div>
-                        <div className="flex items-center space-x-2">
-                          <Clock className="w-4 h-4 text-gray-600" />
-                          <span className="text-sm">08:00 - 18:00</span>
-                        </div>
-                        <div className="flex space-x-1">
-                          {['Seg', 'Ter', 'Qua', 'Qui', 'Sex'].map((dia) => (
-                            <span key={dia} className="text-xs px-2 py-1 bg-blue-100 text-blue-700 rounded">
-                              {dia}
-                            </span>
-                          ))}
-                        </div>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
-                          Ativo
-                        </Badge>
-                        <Button size="sm" variant="ghost">
-                          <Edit className="w-4 h-4" />
-                        </Button>
-                        <Button size="sm" variant="ghost">
-                          <X className="w-4 h-4 text-red-600" />
-                        </Button>
-                      </div>
-                    </div>
-                    <div className="mt-2 text-xs text-gray-500 flex items-center space-x-3">
-                      <span>• Almoço: 12:00 - 13:00</span>
-                      <span>• Duração: 30 min</span>
-                      <span>• Intervalo: 15 min</span>
-                    </div>
-                  </div>
+                  <h4 className="font-medium text-sm">Horários Configurados</h4>
 
-                  {/* Período com Final de Semana */}
-                  <div className="border rounded-lg p-3 hover:shadow-sm transition-shadow bg-white">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center space-x-4 flex-1">
-                        <div className="flex items-center space-x-2">
-                          <Calendar className="w-4 h-4 text-blue-600" />
-                          <div className="text-sm">
-                            <span className="font-medium">01/02/2025</span>
-                            <span className="text-gray-500 mx-1">até</span>
-                            <span className="font-medium">31/12/2025</span>
-                          </div>
-                        </div>
-                        <div className="flex items-center space-x-2">
-                          <Clock className="w-4 h-4 text-gray-600" />
-                          <span className="text-sm">09:00 - 13:00</span>
-                        </div>
-                        <div className="flex space-x-1">
-                          {['Sáb', 'Dom'].map((dia) => (
-                            <span key={dia} className="text-xs px-2 py-1 bg-purple-100 text-purple-700 rounded">
-                              {dia}
-                            </span>
-                          ))}
-                        </div>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
-                          Ativo
-                        </Badge>
-                        <Button size="sm" variant="ghost">
-                          <Edit className="w-4 h-4" />
-                        </Button>
-                        <Button size="sm" variant="ghost">
-                          <X className="w-4 h-4 text-red-600" />
-                        </Button>
-                      </div>
+                  {loadingSchedules ? (
+                    <div className="text-center py-8">
+                      <LoadingSpinner />
+                      <p className="mt-2 text-gray-600 text-sm">Carregando horários...</p>
                     </div>
-                    <div className="mt-2 text-xs text-gray-500 flex items-center space-x-3">
-                      <span>• Sem intervalo de almoço</span>
-                      <span>• Duração: 45 min</span>
+                  ) : schedules.length === 0 ? (
+                    <div className="text-center py-8 text-gray-500">
+                      <Clock className="w-12 h-12 mx-auto mb-3 text-gray-300" />
+                      <p className="text-sm">Nenhum horário configurado</p>
+                      <p className="text-xs text-gray-400 mt-1">
+                        Adicione seus horários de disponibilidade acima
+                      </p>
                     </div>
-                  </div>
+                  ) : (
+                    <div className="space-y-2">
+                      {/* Agrupar horários por data específica */}
+                      {schedules
+                        .sort((a, b) => {
+                          const dateA = a.schedule_date ? new Date(a.schedule_date).getTime() : 0;
+                          const dateB = b.schedule_date ? new Date(b.schedule_date).getTime() : 0;
+                          return dateA - dateB;
+                        })
+                        .reduce((groups: any[], schedule) => {
+                          const dateKey = schedule.schedule_date || 'sem-data';
+                          const existing = groups.find(g => g.date === dateKey);
+                          if (existing) {
+                            existing.schedules.push(schedule);
+                          } else {
+                            groups.push({ date: dateKey, schedules: [schedule] });
+                          }
+                          return groups;
+                        }, [])
+                        .map((group) => {
+                          const formatDate = (dateString: string) => {
+                            if (!dateString || dateString === 'sem-data') return 'Sem data';
 
-                  {/* Período de Bloqueio */}
-                  <div className="border rounded-lg p-3 hover:shadow-sm transition-shadow bg-red-50 border-red-200">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center space-x-4 flex-1">
-                        <div className="flex items-center space-x-2">
-                          <Calendar className="w-4 h-4 text-red-600" />
-                          <div className="text-sm">
-                            <span className="font-medium">25/12/2024</span>
-                            <span className="text-gray-500 mx-1">até</span>
-                            <span className="font-medium">05/01/2025</span>
+                            try {
+                              // Extrair apenas a parte da data (YYYY-MM-DD)
+                              const datePart = dateString.split('T')[0];
+                              const [year, month, day] = datePart.split('-').map(Number);
+
+                              // Criar data sem problemas de timezone
+                              const date = new Date(year, month - 1, day);
+
+                              const dayNames = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
+                              const dayName = dayNames[date.getDay()];
+                              const dayStr = String(day).padStart(2, '0');
+                              const monthStr = String(month).padStart(2, '0');
+
+                              return `${dayName}, ${dayStr}/${monthStr}/${year}`;
+                            } catch (e) {
+                              console.error('Erro ao formatar data:', dateString, e);
+                              return 'Data inválida';
+                            }
+                          };
+
+                          return (
+                            <div key={group.date} className="border rounded-lg p-4 bg-white">
+                              <div className="flex items-center mb-3">
+                                <Calendar className="w-5 h-5 text-blue-600 mr-2" />
+                                <h5 className="font-medium text-gray-900">{formatDate(group.date)}</h5>
+                                <Badge variant="outline" className="ml-2 text-xs">
+                                  {group.schedules.length} {group.schedules.length === 1 ? 'horário' : 'horários'}
+                                </Badge>
+                              </div>
+
+                              <div className="space-y-2">
+                                {group.schedules.map((schedule: DoctorSchedule) => (
+                                <div
+                                  key={schedule.id}
+                                  className={`border rounded-md p-3 ${
+                                    schedule.is_available ? 'bg-blue-50 border-blue-200' : 'bg-gray-50 border-gray-200'
+                                  }`}
+                                >
+                                  <div className="flex items-center justify-between">
+                                    {editingScheduleId === schedule.id ? (
+                                      // Modo de Edição
+                                      <div className="flex items-center space-x-3 flex-1">
+                                        <Clock className="w-4 h-4 text-blue-600" />
+                                        <div className="flex items-center space-x-2">
+                                          <Input
+                                            type="time"
+                                            value={editForm.start_time}
+                                            onChange={(e) => setEditForm({ ...editForm, start_time: e.target.value })}
+                                            className="w-28 text-sm h-8"
+                                          />
+                                          <span className="text-sm text-gray-600">-</span>
+                                          <Input
+                                            type="time"
+                                            value={editForm.end_time}
+                                            onChange={(e) => setEditForm({ ...editForm, end_time: e.target.value })}
+                                            className="w-28 text-sm h-8"
+                                          />
+                                        </div>
+                                        <div className="flex items-center space-x-2">
+                                          <Button
+                                            size="sm"
+                                            onClick={handleSaveEditSchedule}
+                                            className="!bg-green-600 hover:!bg-green-700 !text-white h-8 font-semibold"
+                                            style={{ backgroundColor: '#16a34a', color: '#ffffff' }}
+                                          >
+                                            <Check className="w-4 h-4 mr-1" />
+                                            Salvar
+                                          </Button>
+                                          <Button
+                                            size="sm"
+                                            variant="outline"
+                                            onClick={handleCancelEditSchedule}
+                                            className="h-8 text-gray-900 border-gray-300"
+                                          >
+                                            <X className="w-4 h-4 mr-1" />
+                                            Cancelar
+                                          </Button>
+                                        </div>
+                                      </div>
+                                    ) : (
+                                      // Modo de Visualização
+                                      <>
+                                        <div className="flex items-center space-x-4 flex-1">
+                                          <div className="flex items-center space-x-2">
+                                            <Clock className={`w-4 h-4 ${schedule.is_available ? 'text-blue-600' : 'text-gray-400'}`} />
+                                            <span className="text-sm font-medium">
+                                              {schedule.start_time.substring(0, 5)} - {schedule.end_time.substring(0, 5)}
+                                            </span>
+                                          </div>
+                                          <div className="text-xs text-gray-600">
+                                            <span>Duração: {scheduleForm.consultation_duration}min</span>
+                                          </div>
+                                        </div>
+                                        <div className="flex items-center space-x-2">
+                                          <Badge
+                                            variant="outline"
+                                            className={
+                                              schedule.is_available
+                                                ? 'bg-green-50 text-green-700 border-green-200'
+                                                : 'bg-gray-100 text-gray-600 border-gray-300'
+                                            }
+                                          >
+                                            {schedule.is_available ? 'Ativo' : 'Inativo'}
+                                          </Badge>
+                                          <Button
+                                            size="sm"
+                                            variant="ghost"
+                                            onClick={() => handleStartEditSchedule(schedule)}
+                                            title="Editar horário"
+                                            className="hover:bg-blue-100"
+                                          >
+                                            <Edit className="w-4 h-4 text-blue-600" />
+                                          </Button>
+                                          <Button
+                                            size="sm"
+                                            variant="ghost"
+                                            onClick={() => handleToggleScheduleAvailability(schedule.id, schedule.is_available)}
+                                            title={schedule.is_available ? 'Desativar' : 'Ativar'}
+                                            className="hover:bg-orange-100"
+                                          >
+                                            {schedule.is_available ? (
+                                              <Power className="w-4 h-4 text-orange-600" />
+                                            ) : (
+                                              <Check className="w-4 h-4 text-green-600" />
+                                            )}
+                                          </Button>
+                                          <Button
+                                            size="sm"
+                                            variant="ghost"
+                                            onClick={() => handleDeleteSchedule(schedule.id)}
+                                            title="Deletar permanentemente"
+                                            className="hover:bg-red-100"
+                                          >
+                                            <Trash2 className="w-4 h-4 text-red-600" />
+                                          </Button>
+                                        </div>
+                                      </>
+                                    )}
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
                           </div>
-                        </div>
-                        <span className="text-sm font-medium text-red-700">Férias - Período Bloqueado</span>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <Badge variant="outline" className="bg-red-100 text-red-700 border-red-300">
-                          Bloqueado
-                        </Badge>
-                        <Button size="sm" variant="ghost">
-                          <Edit className="w-4 h-4" />
-                        </Button>
-                        <Button size="sm" variant="ghost">
-                          <X className="w-4 h-4 text-red-600" />
-                        </Button>
-                      </div>
+                        );
+                      })}
                     </div>
-                  </div>
+                  )}
                 </div>
 
                 {/* Dica */}
                 <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
                   <p className="text-xs text-blue-800">
-                    <strong>Dica:</strong> Configure períodos de disponibilidade por data. Você pode criar múltiplos períodos 
-                    com horários diferentes e escolher quais dias da semana aplicar. Para bloquear férias ou eventos, 
-                    desmarque todos os dias da semana.
+                    <strong>Dica:</strong> Configure seus horários de disponibilidade selecionando os dias da semana e
+                    definindo o período (início e fim). Você pode adicionar vários horários diferentes para cada dia.
+                    Use os botões de ação para ativar/desativar ou deletar horários existentes.
                   </p>
                 </div>
-
-                <Button className="w-full">
-                  Salvar Todas as Configurações
-                </Button>
               </CardContent>
             </Card>
           </TabsContent>
@@ -536,9 +1079,19 @@ export function DoctorArea({ onSectionChange }: DoctorAreaProps) {
           <TabsContent value="configuracoes" className="space-y-6">
             <Card>
               <CardHeader>
-                <CardTitle className="flex items-center space-x-2">
-                  <User className="w-5 h-5 text-blue-600" />
-                  <span>Configurações do Perfil</span>
+                <CardTitle className="flex items-center justify-between">
+                  <div className="flex items-center space-x-2">
+                    <User className="w-5 h-5 text-blue-600" />
+                    <span>Configurações do Perfil</span>
+                  </div>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => setEditingProfile(!editingProfile)}
+                  >
+                    <Edit className="w-4 h-4 mr-2" />
+                    {editingProfile ? 'Cancelar' : 'Editar'}
+                  </Button>
                 </CardTitle>
                 <CardDescription>
                   Gerencie suas informações pessoais e preferências
@@ -548,43 +1101,185 @@ export function DoctorArea({ onSectionChange }: DoctorAreaProps) {
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="name">Nome Completo</Label>
-                    <Input id="name" defaultValue={user?.name} />
+                    <Input
+                      id="name"
+                      value={profile?.user.name ?? ''}
+                      disabled
+                      className="bg-gray-50"
+                    />
+                    <p className="text-xs text-gray-500">
+                      Entre em contato com o suporte para alterar seu nome
+                    </p>
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="specialty">Especialidade</Label>
-                    <Input id="specialty" defaultValue={(user as any)?.specialty} />
+                    <Input
+                      id="specialty"
+                      value={profile?.specialty.name ?? ''}
+                      disabled
+                      className="bg-gray-50"
+                    />
                   </div>
                 </div>
-                
-                <div className="grid grid-cols-2 gap-4">
+
+                <div className="grid grid-cols-3 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="crm">CRM</Label>
-                    <Input id="crm" defaultValue={(user as any)?.crm} />
+                    <Input
+                      id="crm"
+                      value={profile?.crm ?? ''}
+                      disabled
+                      className="bg-gray-50"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="crm_state">UF</Label>
+                    <Input
+                      id="crm_state"
+                      value={profile?.crm_state ?? ''}
+                      disabled
+                      className="bg-gray-50"
+                    />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="phone">Telefone</Label>
-                    <Input id="phone" placeholder="(11) 99999-9999" />
+                    <Input
+                      id="phone"
+                      value={profile?.user.phone ?? ''}
+                      disabled
+                      className="bg-gray-50"
+                    />
                   </div>
                 </div>
-                
+
+                <div className="grid grid-cols-3 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="consultation_price">Preço Consulta (R$)</Label>
+                    <Input
+                      id="consultation_price"
+                      type="number"
+                      value={profileData.consultation_price}
+                      onChange={(e) =>
+                        setProfileData({
+                          ...profileData,
+                          consultation_price: Number(e.target.value),
+                        })
+                      }
+                      disabled={!editingProfile}
+                      step="0.01"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="consultation_duration">Duração (min)</Label>
+                    <Input
+                      id="consultation_duration"
+                      type="number"
+                      value={profileData.consultation_duration}
+                      onChange={(e) =>
+                        setProfileData({
+                          ...profileData,
+                          consultation_duration: Number(e.target.value),
+                        })
+                      }
+                      disabled={!editingProfile}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="years_experience">Anos de Experiência</Label>
+                    <Input
+                      id="years_experience"
+                      type="number"
+                      value={profileData.years_experience}
+                      onChange={(e) =>
+                        setProfileData({
+                          ...profileData,
+                          years_experience: Number(e.target.value),
+                        })
+                      }
+                      disabled={!editingProfile}
+                    />
+                  </div>
+                </div>
+
                 <div className="space-y-2">
                   <Label htmlFor="bio">Biografia Profissional</Label>
-                  <Textarea 
-                    id="bio" 
+                  <Textarea
+                    id="bio"
                     placeholder="Descreva sua experiência e formação..."
                     rows={4}
+                    value={profileData.bio}
+                    onChange={(e) =>
+                      setProfileData({
+                        ...profileData,
+                        bio: e.target.value,
+                      })
+                    }
+                    disabled={!editingProfile}
                   />
                 </div>
-                
-                <Button className="w-full">
-                  Salvar Alterações
-                </Button>
+
+                {editingProfile && (
+                  <Button className="w-full" onClick={handleUpdateProfile}>
+                    Salvar Alterações
+                  </Button>
+                )}
               </CardContent>
             </Card>
-
           </TabsContent>
         </Tabs>
       </div>
+
+      {/* Modal de Confirmação de Deleção */}
+      {showDeleteModal && (
+        <div className="fixed inset-0 flex items-center justify-center p-4 z-50 animate-fade-in">
+          {/* Overlay */}
+          <div
+            className="absolute inset-0 bg-black/50 backdrop-blur-sm"
+            onClick={cancelDeleteSchedule}
+          />
+
+          {/* Modal */}
+          <div className="relative bg-white rounded-lg shadow-2xl max-w-md w-full mx-4 p-6 animate-zoom-in">
+            <div className="flex items-center space-x-3 mb-4">
+              <div className="flex-shrink-0">
+                <div className="w-12 h-12 rounded-full bg-red-100 flex items-center justify-center">
+                  <AlertCircle className="w-6 h-6 text-red-600" />
+                </div>
+              </div>
+              <div>
+                <h3 className="text-lg font-semibold text-black">Confirmar Exclusão</h3>
+                <p className="text-sm text-gray-700 mt-1">
+                  Tem certeza que deseja deletar este horário permanentemente?
+                </p>
+              </div>
+            </div>
+
+            <div className="bg-yellow-50 border border-yellow-200 rounded-md p-3 mb-4">
+              <p className="text-xs text-yellow-900">
+                <strong className="text-black">Atenção:</strong> Esta ação não pode ser desfeita. O horário será removido permanentemente.
+              </p>
+            </div>
+
+            <div className="flex space-x-3">
+              <Button
+                variant="outline"
+                className="flex-1 text-gray-900 border-gray-300 hover:bg-gray-100"
+                onClick={cancelDeleteSchedule}
+              >
+                Cancelar
+              </Button>
+              <Button
+                variant="default"
+                className="flex-1 !bg-red-600 hover:!bg-red-700 !text-white font-semibold"
+                onClick={confirmDeleteSchedule}
+                style={{ backgroundColor: '#dc2626', color: '#ffffff' }}
+              >
+                Deletar Permanentemente
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

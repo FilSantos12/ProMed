@@ -9,6 +9,10 @@ use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
 use App\Traits\EncryptsAttributes;
 
+/**
+ * @property-read Doctor|null $doctor
+ * @property-read Patient|null $patient
+ */
 class User extends Authenticatable
 {
     use HasApiTokens, HasFactory, Notifiable, SoftDeletes, EncryptsAttributes;
@@ -50,26 +54,41 @@ class User extends Authenticatable
     ];
 
     // Relacionamentos
+    /**
+     * @return \Illuminate\Database\Eloquent\Relations\HasOne<Doctor>
+     */
     public function doctor()
     {
         return $this->hasOne(Doctor::class);
     }
 
+    /**
+     * @return \Illuminate\Database\Eloquent\Relations\HasOne
+     */
     public function patient()
     {
         return $this->hasOne(Patient::class);
     }
 
+    /**
+     * @return \Illuminate\Database\Eloquent\Relations\HasMany
+     */
     public function schedules()
     {
         return $this->hasMany(Schedule::class, 'doctor_id');
     }
 
+    /**
+     * @return \Illuminate\Database\Eloquent\Relations\HasMany
+     */
     public function appointmentsAsPatient()
     {
         return $this->hasMany(Appointment::class, 'patient_id');
     }
 
+    /**
+     * @return \Illuminate\Database\Eloquent\Relations\HasMany
+     */
     public function appointmentsAsDoctor()
     {
         return $this->hasMany(Appointment::class, 'doctor_id');

@@ -74,6 +74,9 @@ export function CadastroPages({ type, onSectionChange }: CadastroPagesProps) {
   const [showErrorModal, setShowErrorModal] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
 
+  // Estado para controlar se o campo de confirmação de email foi "tocado"
+  const [confirmEmailTouched, setConfirmEmailTouched] = useState(false);
+
   const [showTermsModal, setShowTermsModal] = useState(false);
   const [showPrivacyModal, setShowPrivacyModal] = useState(false);
 
@@ -626,27 +629,28 @@ const handleSubmitForm = async (e: React.FormEvent) => {
                     required
                   />
                 </div>
-                <div className="space-y-2"> 
+                <div className="space-y-2">
                   <Label htmlFor="confirmEmail">Confirmar Email *</Label>
                   <Input
                     id="confirmEmail"
                     type="email"
                     value={formData.confirmEmail}
                     onChange={(e) => handleInputChange('confirmEmail', e.target.value)}
+                    onBlur={() => setConfirmEmailTouched(true)}
                     placeholder="Confirme seu@email.com"
                     required
                      className={
-                        formData.confirmEmail && formData.email !== formData.confirmEmail
+                        confirmEmailTouched && formData.confirmEmail && formData.email !== formData.confirmEmail
                           ? 'border-red-500 focus:ring-red-500'
-                          : formData.confirmEmail && formData.email === formData.confirmEmail
+                          : confirmEmailTouched && formData.confirmEmail && formData.email === formData.confirmEmail
                           ? 'border-green-500 focus:ring-green-500'
                           : ''
                       }
                     />
-                    {formData.confirmEmail && formData.email !== formData.confirmEmail && (
+                    {confirmEmailTouched && formData.confirmEmail && formData.email !== formData.confirmEmail && (
                       <p className="text-sm text-red-600">Os emails estão diferentes</p>
                     )}
-                    {formData.confirmEmail && formData.email === formData.confirmEmail && (
+                    {confirmEmailTouched && formData.confirmEmail && formData.email === formData.confirmEmail && (
                       <p className="text-sm text-green-600">✓ Correto, os emails são iguais</p>
                     )}
                 </div>

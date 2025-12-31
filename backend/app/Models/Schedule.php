@@ -12,6 +12,7 @@ class Schedule extends Model
     protected $fillable = [
         'doctor_id',
         'day_of_week',
+        'schedule_date',
         'start_time',
         'end_time',
         'slot_duration',
@@ -21,6 +22,7 @@ class Schedule extends Model
     protected $casts = [
         'is_available' => 'boolean',
         'slot_duration' => 'integer',
+        'schedule_date' => 'date',
     ];
 
     /**

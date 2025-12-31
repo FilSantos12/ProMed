@@ -32,19 +32,19 @@ class Appointment extends Model
     ];
 
     /**
-     * Relacionamento: Appointment pertence a um Patient (User)
+     * Relacionamento: Appointment pertence a um Patient
      */
     public function patient()
     {
-        return $this->belongsTo(User::class, 'patient_id');
+        return $this->belongsTo(Patient::class, 'patient_id');
     }
 
     /**
-     * Relacionamento: Appointment pertence a um Doctor (User)
+     * Relacionamento: Appointment pertence a um Doctor
      */
     public function doctor()
     {
-        return $this->belongsTo(User::class, 'doctor_id');
+        return $this->belongsTo(Doctor::class, 'doctor_id');
     }
 
     /**

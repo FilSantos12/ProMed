@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import api from '../services/api';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
 import { Badge } from './ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from './ui/table';
@@ -49,8 +49,6 @@ interface ChartData {
   const [error, setError] = useState<string | null>(null);
   const toast = useToast();
 
-  const API_URL = 'http://localhost:8000/api/v1/admin';
-
   useEffect(() => {
     fetchDashboardData();
   }, []);
@@ -58,11 +56,8 @@ interface ChartData {
   const fetchDashboardData = async () => {
     try {
       setLoading(true);
-      const token = localStorage.getItem('token');
-      
-      const response = await axios.get(`${API_URL}/dashboard/stats`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+
+      const response = await api.get('/admin/dashboard/stats');
 
       setStats(response.data.stats);
       setRecentAppointments(response.data.recentAppointments || []);
@@ -70,8 +65,11 @@ interface ChartData {
       setError(null);
     } catch (err: any) {
       console.error('Erro ao carregar dashboard:', err);
-      setError('Erro ao carregar dados do dashboard');
-      toast.error('❌ Erro ao carregar dashboard', 6000);
+      console.error('Detalhes do erro:', err.response?.data);
+
+      const errorMessage = err.response?.data?.message || 'Erro ao carregar dados do dashboard';
+      setError(errorMessage);
+      toast.error(`❌ ${errorMessage}`, 6000);
     } finally {
       setLoading(false);
     }
