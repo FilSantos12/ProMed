@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
@@ -6,10 +6,33 @@ import { Label } from './ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 import { Textarea } from './ui/textarea';
 import { Badge } from './ui/badge';
-import { CalendarIcon, Clock, User, FileText } from 'lucide-react';
+import { CalendarIcon, Clock, User, FileText, AlertCircle, CheckCircle2 } from 'lucide-react';
+import { useAuth } from '../hooks/useAuth';
+import { useToast } from '../contexts/ToastContext';
+import { appointmentService, Specialty, Doctor, DoctorSchedule } from '../services/appointmentService';
+import { LoadingSpinner } from './ui/loading-spinner';
+import { Alert, AlertDescription } from './ui/alert';
 
 export function AgendamentosPage() {
-  const [selectedDate, setSelectedDate] = useState<Date>();
+  const { user } = useAuth();
+  const toast = useToast();
+
+  // Estados para dados do backend
+  const [specialties, setSpecialties] = useState<Specialty[]>([]);
+  const [doctors, setDoctors] = useState<Doctor[]>([]);
+  const [doctorSchedules, setDoctorSchedules] = useState<DoctorSchedule[]>([]);
+  const [availableDates, setAvailableDates] = useState<string[]>([]);
+  const [availableSlots, setAvailableSlots] = useState<string[]>([]);
+
+  // Estados de loading
+  const [loading, setLoading] = useState(true);
+  const [loadingDoctors, setLoadingDoctors] = useState(false);
+  const [loadingDates, setLoadingDates] = useState(false);
+  const [loadingSlots, setLoadingSlots] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+
+  // Estados do formulário
+  const [selectedDate, setSelectedDate] = useState('');
   const [selectedTime, setSelectedTime] = useState('');
   const [selectedSpecialty, setSelectedSpecialty] = useState('');
   const [selectedDoctor, setSelectedDoctor] = useState('');
@@ -21,94 +44,277 @@ export function AgendamentosPage() {
     observations: ''
   });
 
-  const especialidades = [
-    'Cardiologia',
-    'Neurologia',
-    'Oftalmologia',
-    'Ortopedia',
-    'Pediatria',
-    'Clínica Geral',
-    'Endocrinologia'
-  ];
+  // Estado de sucesso
+  const [appointmentCreated, setAppointmentCreated] = useState(false);
 
-  const medicos = {
-    'Cardiologia': ['Dr. João Santos', 'Dra. Maria Silva', 'Dr. Pedro Costa'],
-    'Neurologia': ['Dr. Carlos Oliveira', 'Dra. Ana Santos'],
-    'Oftalmologia': ['Dr. Roberto Lima', 'Dra. Julia Ferreira'],
-    'Ortopedia': ['Dr. Marcos Souza', 'Dra. Lucia Costa'],
-    'Pediatria': ['Dra. Ana Costa', 'Dr. Rafael Silva'],
-    'Clínica Geral': ['Dr. Roberto Silva', 'Dra. Carla Santos'],
-    'Endocrinologia': ['Dra. Patricia Lima']
+  // Carregar especialidades ao montar o componente
+  useEffect(() => {
+    loadSpecialties();
+  }, []);
+
+  // Pré-preencher dados do usuário se estiver logado
+  useEffect(() => {
+    if (user) {
+      setFormData(prev => ({
+        ...prev,
+        name: user.name || '',
+        cpf: user.cpf || '',
+        phone: user.phone || '',
+        email: user.email || '',
+      }));
+    }
+  }, [user]);
+
+  // Carregar médicos quando especialidade for selecionada
+  useEffect(() => {
+    if (selectedSpecialty) {
+      loadDoctors(parseInt(selectedSpecialty));
+    } else {
+      setDoctors([]);
+      setSelectedDoctor('');
+    }
+  }, [selectedSpecialty]);
+
+  // Carregar datas disponíveis quando médico for selecionado
+  useEffect(() => {
+    if (selectedDoctor) {
+      loadAvailableDates(parseInt(selectedDoctor));
+    } else {
+      setAvailableDates([]);
+      setSelectedDate('');
+    }
+  }, [selectedDoctor]);
+
+  // Carregar horários quando médico e data forem selecionados
+  useEffect(() => {
+    if (selectedDoctor && selectedDate) {
+      loadAvailableSlots();
+    } else {
+      setAvailableSlots([]);
+      setSelectedTime('');
+    }
+  }, [selectedDoctor, selectedDate]);
+
+  const loadSpecialties = async () => {
+    try {
+      setLoading(true);
+      const data = await appointmentService.getSpecialties();
+      setSpecialties(data);
+    } catch (err: any) {
+      console.error('Erro ao carregar especialidades:', err);
+      toast.error('Erro ao carregar especialidades');
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const horarios = [
-    '08:00', '08:30', '09:00', '09:30', '10:00', '10:30',
-    '11:00', '11:30', '14:00', '14:30', '15:00', '15:30',
-    '16:00', '16:30', '17:00', '17:30', '18:00'
-  ];
+  const loadDoctors = async (specialtyId: number) => {
+    try {
+      setLoadingDoctors(true);
+      const data = await appointmentService.getDoctors({ specialty_id: specialtyId });
+      setDoctors(data);
+    } catch (err: any) {
+      console.error('Erro ao carregar médicos:', err);
+      toast.error('Erro ao carregar médicos');
+    } finally {
+      setLoadingDoctors(false);
+    }
+  };
+
+  const loadAvailableDates = async (doctorId: number) => {
+    try {
+      setLoadingDates(true);
+
+      // Buscar todos os schedules disponíveis do médico
+      const schedules = await appointmentService.getDoctorSchedules(doctorId, {
+        available: 1, // Enviar como 1 ao invés de true para compatibilidade com backend
+      });
+
+      // Extrair datas únicas e filtrar apenas datas futuras
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+
+      const schedulesWithDate = schedules.filter(schedule => schedule.schedule_date);
+
+      // Extrair apenas a parte da data (YYYY-MM-DD) do formato ISO
+      const allDates = schedulesWithDate.map(schedule => {
+        const dateStr = schedule.schedule_date!;
+        // Se vier no formato ISO (2026-01-02T00:00:00.000000Z), pegar só YYYY-MM-DD
+        return dateStr.split('T')[0];
+      });
+
+      const futureDates = allDates.filter(dateStr => {
+        const scheduleDate = new Date(dateStr + 'T00:00:00');
+        return scheduleDate >= today;
+      });
+
+      const uniqueDates = Array.from(new Set(futureDates)).sort();
+
+      setAvailableDates(uniqueDates);
+
+      if (uniqueDates.length === 0) {
+        toast.error('Este médico não possui datas disponíveis no momento');
+      }
+    } catch (err: any) {
+      console.error('Erro ao carregar datas disponíveis:', err);
+      toast.error('Erro ao carregar datas disponíveis');
+      setAvailableDates([]);
+    } finally {
+      setLoadingDates(false);
+    }
+  };
+
+  const loadAvailableSlots = async () => {
+    try {
+      setLoadingSlots(true);
+      const doctorId = parseInt(selectedDoctor);
+      const dateStr = selectedDate; // selectedDate já é string agora
+
+      // Buscar horários do médico para a data específica
+      const schedules = await appointmentService.getDoctorSchedules(doctorId, {
+        schedule_date: dateStr,
+        available: true,
+      });
+
+      if (schedules.length === 0) {
+        setAvailableSlots([]);
+        toast.error('Nenhum horário disponível para esta data');
+        return;
+      }
+
+      // Pegar o primeiro horário disponível e buscar os slots
+      const schedule = schedules[0];
+      const slotsData = await appointmentService.getAvailableSlots(schedule.id, dateStr);
+      setAvailableSlots(slotsData.available_slots);
+
+      if (slotsData.available_slots.length === 0) {
+        toast.error('Todos os horários estão ocupados para esta data');
+      }
+    } catch (err: any) {
+      console.error('Erro ao carregar horários disponíveis:', err);
+      toast.error('Erro ao carregar horários disponíveis');
+      setAvailableSlots([]);
+    } finally {
+      setLoadingSlots(false);
+    }
+  };
 
   const handleInputChange = (field: string, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Aqui seria feita a integração com o backend
-    alert('Agendamento realizado com sucesso! Você receberá uma confirmação por email.');
-    
-    // Reset form
-    setSelectedDate(undefined);
+
+    if (!isFormValid) {
+      toast.error('Preencha todos os campos obrigatórios');
+      return;
+    }
+
+    if (!user) {
+      toast.error('Você precisa estar logado para agendar uma consulta');
+      return;
+    }
+
+    const selectedDoctorInfo = getSelectedDoctorInfo();
+    if (!selectedDoctorInfo) {
+      toast.error('Médico não encontrado');
+      return;
+    }
+
+    try {
+      setSubmitting(true);
+
+      const appointmentData = {
+        patient_id: user.id, // ID do usuário logado (paciente)
+        doctor_id: selectedDoctorInfo.user_id, // user_id do médico, não doctor.id
+        specialty_id: parseInt(selectedSpecialty),
+        appointment_date: selectedDate, // selectedDate já é string no formato YYYY-MM-DD
+        appointment_time: selectedTime,
+        patient_notes: formData.observations || undefined,
+      };
+
+      await appointmentService.createAppointment(appointmentData);
+
+      toast.success('Agendamento realizado com sucesso!');
+      setAppointmentCreated(true);
+
+      // Reset form após 3 segundos
+      setTimeout(() => {
+        resetForm();
+        setAppointmentCreated(false);
+      }, 3000);
+
+    } catch (err: any) {
+      console.error('Erro ao criar agendamento:', err);
+      toast.error(err.response?.data?.message || 'Erro ao criar agendamento');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const resetForm = () => {
+    setSelectedDate('');
     setSelectedTime('');
     setSelectedSpecialty('');
     setSelectedDoctor('');
     setFormData({
-      name: '',
-      cpf: '',
-      phone: '',
-      email: '',
+      name: user?.name || '',
+      cpf: user?.cpf || '',
+      phone: user?.phone || '',
+      email: user?.email || '',
       observations: ''
     });
+    setAvailableDates([]);
+    setAvailableSlots([]);
   };
 
-  const isFormValid = selectedDate && selectedTime && selectedSpecialty && selectedDoctor && 
-                     formData.name && formData.cpf && formData.phone && formData.email;
+  const isFormValid = selectedDate && selectedTime && selectedSpecialty && selectedDoctor &&
+    formData.name && formData.cpf && formData.phone && formData.email;
 
-  // Format date for display
-  const formatDateDisplay = (date: Date | undefined) => {
-    if (!date) return '';
-    
-    const day = date.getDate().toString().padStart(2, '0');
-    const month = (date.getMonth() + 1).toString().padStart(2, '0');
-    const year = date.getFullYear();
-    
+  const formatDateDisplay = (dateStr: string) => {
+    if (!dateStr) return '';
+    const [year, month, day] = dateStr.split('-');
     return `${day}/${month}/${year}`;
   };
 
-  // Get minimum date (today)
-  const getMinDate = () => {
-    const today = new Date();
-    const year = today.getFullYear();
-    const month = (today.getMonth() + 1).toString().padStart(2, '0');
-    const day = today.getDate().toString().padStart(2, '0');
-    return `${year}-${month}-${day}`;
+  const getSelectedDoctorInfo = () => {
+    return doctors.find(d => d.id.toString() === selectedDoctor);
   };
 
-  // Get maximum date (30 days from now)
-  const getMaxDate = () => {
-    const today = new Date();
-    today.setDate(today.getDate() + 30);
-    const year = today.getFullYear();
-    const month = (today.getMonth() + 1).toString().padStart(2, '0');
-    const day = today.getDate().toString().padStart(2, '0');
-    return `${year}-${month}-${day}`;
-  };
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <LoadingSpinner size="lg" />
+          <p className="mt-4 text-gray-600">Carregando...</p>
+        </div>
+      </div>
+    );
+  }
 
-  const handleDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const dateValue = e.target.value;
-    if (dateValue) {
-      setSelectedDate(new Date(dateValue + 'T00:00:00'));
-    }
-  };
+  if (appointmentCreated) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <Card className="max-w-md">
+          <CardContent className="p-8 text-center">
+            <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <CheckCircle2 className="w-10 h-10 text-green-600" />
+            </div>
+            <h2 className="text-2xl font-bold text-gray-900 mb-2">
+              Agendamento Confirmado!
+            </h2>
+            <p className="text-gray-600 mb-4">
+              Você receberá uma confirmação por email e SMS com todos os detalhes da consulta.
+            </p>
+            <Button onClick={resetForm} className="mt-4">
+              Fazer Novo Agendamento
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50 py-12">
@@ -134,7 +340,7 @@ export function AgendamentosPage() {
               Preencha todos os campos para agendar sua consulta
             </CardDescription>
           </CardHeader>
-          
+
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-6">
               {/* Especialidade e Médico */}
@@ -146,8 +352,10 @@ export function AgendamentosPage() {
                       <SelectValue placeholder="Selecione a especialidade" />
                     </SelectTrigger>
                     <SelectContent>
-                      {especialidades.map((esp) => (
-                        <SelectItem key={esp} value={esp}>{esp}</SelectItem>
+                      {specialties.map((spec) => (
+                        <SelectItem key={spec.id} value={spec.id.toString()}>
+                          {spec.icon} {spec.name}
+                        </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
@@ -155,20 +363,32 @@ export function AgendamentosPage() {
 
                 <div className="space-y-2">
                   <Label htmlFor="doctor">Médico *</Label>
-                  <Select 
-                    value={selectedDoctor} 
+                  <Select
+                    value={selectedDoctor}
                     onValueChange={setSelectedDoctor}
-                    disabled={!selectedSpecialty}
+                    disabled={!selectedSpecialty || loadingDoctors}
                   >
                     <SelectTrigger>
-                      <SelectValue placeholder="Selecione o médico" />
+                      <SelectValue placeholder={
+                        loadingDoctors ? "Carregando..." :
+                          !selectedSpecialty ? "Selecione uma especialidade primeiro" :
+                            doctors.length === 0 ? "Nenhum médico disponível" :
+                              "Selecione o médico"
+                      } />
                     </SelectTrigger>
                     <SelectContent>
-                      {selectedSpecialty && medicos[selectedSpecialty as keyof typeof medicos]?.map((med) => (
-                        <SelectItem key={med} value={med}>{med}</SelectItem>
+                      {doctors.map((doc) => (
+                        <SelectItem key={doc.id} value={doc.id.toString()}>
+                          {doc.user.name} - CRM {doc.crm}/{doc.crm_state}
+                        </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
+                  {selectedDoctor && getSelectedDoctorInfo() && (
+                    <p className="text-sm text-gray-600">
+                      Valor da consulta: R$ {(Number(getSelectedDoctorInfo()?.consultation_price) || 0).toFixed(2)}
+                    </p>
+                  )}
                 </div>
               </div>
 
@@ -176,39 +396,70 @@ export function AgendamentosPage() {
               <div className="grid md:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="date">Data da Consulta *</Label>
-                  <div className="relative">
-                    <Input
-                      id="date"
-                      type="date"
-                      min={getMinDate()}
-                      max={getMaxDate()}
-                      onChange={handleDateChange}
-                      className="w-full"
-                      required
-                    />
-                  </div>
-                  <p className="text-xs text-gray-500">
-                    Atendemos de segunda a domingo
-                  </p>
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="time">Horário *</Label>
-                  <Select value={selectedTime} onValueChange={setSelectedTime}>
+                  <Select
+                    value={selectedDate}
+                    onValueChange={setSelectedDate}
+                    disabled={!selectedDoctor || loadingDates}
+                  >
                     <SelectTrigger>
-                      <SelectValue placeholder="Selecione o horário" />
+                      <SelectValue placeholder={
+                        loadingDates ? "Carregando datas..." :
+                          !selectedDoctor ? "Selecione um médico primeiro" :
+                            availableDates.length === 0 ? "Nenhuma data disponível" :
+                              "Selecione a data"
+                      } />
                     </SelectTrigger>
                     <SelectContent>
-                      {horarios.map((hora) => (
-                        <SelectItem key={hora} value={hora}>
+                      {availableDates.map((date) => (
+                        <SelectItem key={date} value={date}>
                           <div className="flex items-center space-x-2">
-                            <Clock className="w-4 h-4" />
-                            <span>{hora}</span>
+                            <CalendarIcon className="w-4 h-4" />
+                            <span>{formatDateDisplay(date)}</span>
                           </div>
                         </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
+                  {loadingDates && (
+                    <div className="flex items-center space-x-2 text-sm text-gray-500">
+                      <LoadingSpinner size="sm" />
+                      <span>Buscando datas disponíveis...</span>
+                    </div>
+                  )}
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="time">Horário *</Label>
+                  <Select
+                    value={selectedTime}
+                    onValueChange={setSelectedTime}
+                    disabled={!selectedDate || loadingSlots}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder={
+                        loadingSlots ? "Carregando horários..." :
+                          !selectedDate ? "Selecione uma data primeiro" :
+                            availableSlots.length === 0 ? "Nenhum horário disponível" :
+                              "Selecione o horário"
+                      } />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {availableSlots.map((time) => (
+                        <SelectItem key={time} value={time}>
+                          <div className="flex items-center space-x-2">
+                            <Clock className="w-4 h-4" />
+                            <span>{time}</span>
+                          </div>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  {loadingSlots && (
+                    <div className="flex items-center space-x-2 text-sm text-gray-500">
+                      <LoadingSpinner size="sm" />
+                      <span>Buscando horários disponíveis...</span>
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -218,7 +469,7 @@ export function AgendamentosPage() {
                   <User className="w-5 h-5 text-blue-600" />
                   <span>Dados do Paciente</span>
                 </h3>
-                
+
                 <div className="grid md:grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="name">Nome Completo *</Label>
@@ -287,13 +538,16 @@ export function AgendamentosPage() {
                   <div className="space-y-2 text-sm">
                     {selectedSpecialty && (
                       <div className="flex items-center space-x-2">
-                        <Badge variant="secondary">{selectedSpecialty}</Badge>
+                        <Badge variant="secondary">
+                          {specialties.find(s => s.id.toString() === selectedSpecialty)?.icon}{' '}
+                          {specialties.find(s => s.id.toString() === selectedSpecialty)?.name}
+                        </Badge>
                       </div>
                     )}
-                    {selectedDoctor && (
+                    {selectedDoctor && getSelectedDoctorInfo() && (
                       <div className="flex items-center space-x-2">
                         <User className="w-4 h-4 text-blue-600" />
-                        <span>{selectedDoctor}</span>
+                        <span>{getSelectedDoctorInfo()?.user.name}</span>
                       </div>
                     )}
                     {selectedDate && (
@@ -313,13 +567,22 @@ export function AgendamentosPage() {
               )}
 
               {/* Submit Button */}
-              <Button 
-                type="submit" 
+              <Button
+                type="submit"
                 className="w-full"
-                disabled={!isFormValid}
+                disabled={!isFormValid || submitting}
               >
-                <CalendarIcon className="w-4 h-4 mr-2" />
-                Agendar Consulta
+                {submitting ? (
+                  <>
+                    <LoadingSpinner size="sm" className="mr-2" />
+                    Agendando...
+                  </>
+                ) : (
+                  <>
+                    <CalendarIcon className="w-4 h-4 mr-2" />
+                    Agendar Consulta
+                  </>
+                )}
               </Button>
             </form>
           </CardContent>
@@ -353,10 +616,10 @@ export function AgendamentosPage() {
                 </ul>
               </div>
             </div>
-            
+
             <div className="bg-yellow-50 p-4 rounded-lg">
               <p className="text-sm text-yellow-800">
-                <strong>Importante:</strong> Chegue com 15 minutos de antecedência. 
+                <strong>Importante:</strong> Chegue com 15 minutos de antecedência.
                 Você receberá uma confirmação por email e SMS com todos os detalhes da consulta.
               </p>
             </div>

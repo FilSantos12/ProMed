@@ -38,6 +38,11 @@ class DoctorProfileController extends Controller
                 'documents'
             ])->find($user->doctor->id);
 
+            // Adicionar URL completa do avatar se existir
+            if ($doctor->user && $doctor->user->avatar) {
+                $doctor->user->avatar_url = asset('storage/' . $doctor->user->avatar);
+            }
+
             return response()->json([
                 'doctor' => $doctor,
                 'stats' => $this->getDoctorStats($doctor->id)
@@ -118,6 +123,11 @@ class DoctorProfileController extends Controller
             $doctor = Doctor::with(['user', 'specialty', 'schedules', 'documents'])
                 ->find($user->doctor->id);
 
+            // Adicionar URL completa do avatar se existir
+            if ($doctor->user && $doctor->user->avatar) {
+                $doctor->user->avatar_url = asset('storage/' . $doctor->user->avatar);
+            }
+
             return response()->json([
                 'message' => 'Perfil atualizado com sucesso',
                 'doctor' => $doctor
@@ -182,10 +192,22 @@ class DoctorProfileController extends Controller
     {
         try {
             $user = $request->user();
-            $schedules = Schedule::where('doctor_id', $user->id)
+
+            if (!$user->doctor) {
+                return response()->json([
+                    'message' => 'Perfil de médico não encontrado'
+                ], 404);
+            }
+
+            Log::info('getSchedules - Doctor ID: ' . $user->doctor->id);
+
+            $schedules = Schedule::where('doctor_id', $user->doctor->id)
                 ->orderBy('schedule_date')
                 ->orderBy('start_time')
                 ->get();
+
+            Log::info('getSchedules - Total de schedules encontradas: ' . $schedules->count());
+            Log::info('getSchedules - Schedules: ' . json_encode($schedules));
 
             return response()->json($schedules);
         } catch (\Exception $e) {
@@ -219,8 +241,14 @@ class DoctorProfileController extends Controller
 
             $user = $request->user();
 
+            if (!$user->doctor) {
+                return response()->json([
+                    'message' => 'Perfil de médico não encontrado'
+                ], 404);
+            }
+
             // Verificar se já existe horário na mesma data e horário
-            $exists = Schedule::where('doctor_id', $user->id)
+            $exists = Schedule::where('doctor_id', $user->doctor->id)
                 ->where('schedule_date', $request->schedule_date)
                 ->where(function($query) use ($request) {
                     $query->whereBetween('start_time', [$request->start_time, $request->end_time])
@@ -241,8 +269,17 @@ class DoctorProfileController extends Controller
             // Obter o dia da semana da data
             $dayOfWeek = strtolower(date('l', strtotime($request->schedule_date)));
 
+            Log::info('addSchedule - Doctor ID: ' . $user->doctor->id);
+            Log::info('addSchedule - Data: ' . json_encode([
+                'doctor_id' => $user->doctor->id,
+                'schedule_date' => $request->schedule_date,
+                'day_of_week' => $dayOfWeek,
+                'start_time' => $request->start_time,
+                'end_time' => $request->end_time,
+            ]));
+
             $schedule = Schedule::create([
-                'doctor_id' => $user->id,
+                'doctor_id' => $user->doctor->id,
                 'schedule_date' => $request->schedule_date,
                 'day_of_week' => $dayOfWeek,
                 'start_time' => $request->start_time,
@@ -250,6 +287,8 @@ class DoctorProfileController extends Controller
                 'slot_duration' => $request->slot_duration ?? $user->doctor->consultation_duration ?? 30,
                 'is_available' => true
             ]);
+
+            Log::info('addSchedule - Schedule criado com ID: ' . $schedule->id);
 
             return response()->json([
                 'message' => 'Horário adicionado com sucesso',
@@ -272,7 +311,14 @@ class DoctorProfileController extends Controller
     {
         try {
             $user = $request->user();
-            $schedule = Schedule::where('doctor_id', $user->id)
+
+            if (!$user->doctor) {
+                return response()->json([
+                    'message' => 'Perfil de médico não encontrado'
+                ], 404);
+            }
+
+            $schedule = Schedule::where('doctor_id', $user->doctor->id)
                 ->findOrFail($scheduleId);
 
             $validator = Validator::make($request->all(), [
@@ -313,7 +359,14 @@ class DoctorProfileController extends Controller
     {
         try {
             $user = $request->user();
-            $schedule = Schedule::where('doctor_id', $user->id)
+
+            if (!$user->doctor) {
+                return response()->json([
+                    'message' => 'Perfil de médico não encontrado'
+                ], 404);
+            }
+
+            $schedule = Schedule::where('doctor_id', $user->doctor->id)
                 ->findOrFail($scheduleId);
 
             $schedule->delete();

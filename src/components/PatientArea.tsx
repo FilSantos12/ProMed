@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
@@ -6,92 +6,243 @@ import { Label } from './ui/label';
 import { Badge } from './ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from './ui/table';
-import { Calendar, Clock, User, FileText, Download, Eye, Plus, Phone, Camera } from 'lucide-react';
+import { Textarea } from './ui/textarea';
+import { Calendar, Clock, User, FileText, Download, Eye, Plus, Phone, Camera, Edit, X, AlertCircle } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
-import { Header } from '../components/Header';
-
+import { useToast } from '../contexts/ToastContext';
+import { patientService, PatientProfile, PatientAppointment, PatientStats } from '../services/patientService';
+import { LoadingSpinner } from './ui/loading-spinner';
+import { Alert, AlertDescription } from './ui/alert';
 
 interface PatientAreaProps {
-  
   onSectionChange: (section: string) => void;
 }
 
 export function PatientArea({ onSectionChange }: PatientAreaProps) {
   const { user } = useAuth();
+  const toast = useToast();
   const [activeTab, setActiveTab] = useState('consultas');
-  const [profilePhoto, setProfilePhoto] = useState<string>('');
-  
 
-  // Mock data - em produção viria do backend
-  const consultas = [
-    {
-      id: 1,
-      date: '2024-01-20',
-      time: '10:00',
-      doctor: 'Dr. Roberto Silva',
-      specialty: 'Cardiologia',
-      status: 'agendada',
-      type: 'Consulta',
-      location: 'Consultório 201'
-    },
-    {
-      id: 2,
-      date: '2024-01-15',
-      time: '14:30',
-      doctor: 'Dra. Maria Santos',
-      specialty: 'Cardiologia',
-      status: 'concluida',
-      type: 'Retorno',
-      location: 'Consultório 203'
-    },
-    {
-      id: 3,
-      date: '2024-01-10',
-      time: '09:00',
-      doctor: 'Dr. Carlos Oliveira',
-      specialty: 'Neurologia',
-      status: 'concluida',
-      type: 'Consulta',
-      location: 'Consultório 105'
-    },
-  ];
+  // Estados para dados do backend
+  const [profile, setProfile] = useState<PatientProfile | null>(null);
+  const [appointments, setAppointments] = useState<PatientAppointment[]>([]);
+  const [stats, setStats] = useState<PatientStats | null>(null);
+
+  // Estados de loading e erro
+  const [loading, setLoading] = useState(true);
+  const [loadingAppointments, setLoadingAppointments] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  // Estados para formulários
+  const [profilePhoto, setProfilePhoto] = useState<string>('');
+  const [editingProfile, setEditingProfile] = useState(false);
+  const [profileData, setProfileData] = useState({
+    name: '',
+    email: '',
+    phone: '',
+    birth_date: '',
+    gender: '',
+    rg: '',
+    emergency_contact: '',
+    emergency_phone: '',
+    blood_type: '',
+    allergies: '',
+    chronic_diseases: '',
+    medications: '',
+    health_insurance: '',
+    insurance_number: '',
+  });
+
+  // Estados para cancelamento de consulta
+  const [showCancelModal, setShowCancelModal] = useState(false);
+  const [appointmentToCancel, setAppointmentToCancel] = useState<number | null>(null);
+  const [cancellationReason, setCancellationReason] = useState('');
+
+  // Carregar dados iniciais
+  useEffect(() => {
+    loadInitialData();
+  }, []);
+
+  const loadInitialData = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+
+      const [profileData, statsData, appointmentsData] = await Promise.all([
+        patientService.getProfile(),
+        patientService.getStats(),
+        patientService.getAppointments(),
+      ]);
+
+      setProfile(profileData);
+      setStats(statsData);
+      setAppointments(appointmentsData);
+
+      // Atualizar estados do formulário
+      if (profileData) {
+        setProfileData({
+          name: profileData.user?.name || '',
+          email: profileData.user?.email || '',
+          phone: profileData.user?.phone || '',
+          birth_date: profileData.user?.birth_date || '',
+          gender: profileData.user?.gender || '',
+          rg: profileData.user?.rg || '',
+          emergency_contact: profileData.emergency_contact || '',
+          emergency_phone: profileData.emergency_phone || '',
+          blood_type: profileData.blood_type || '',
+          allergies: profileData.allergies || '',
+          chronic_diseases: profileData.chronic_diseases || '',
+          medications: profileData.medications || '',
+          health_insurance: profileData.health_insurance || '',
+          insurance_number: profileData.insurance_number || '',
+        });
+
+        // Carregar avatar do backend (se existir)
+        if (profileData.user?.avatar) {
+          // Usar avatar_url se disponível, senão construir URL manualmente
+          const avatarUrl = (profileData.user as any).avatar_url ||
+                           `${import.meta.env.VITE_API_URL}/storage/${profileData.user.avatar}`;
+          setProfilePhoto(avatarUrl);
+          console.log('Avatar carregado:', avatarUrl);
+        } else {
+          console.log('Nenhum avatar encontrado no perfil');
+        }
+      }
+
+      setLoading(false);
+    } catch (err: any) {
+      console.error('Erro ao carregar dados:', err);
+      setError(err.response?.data?.message || 'Erro ao carregar dados do paciente');
+      setLoading(false);
+      toast.error('Erro ao carregar dados do paciente');
+    }
+  };
+
+  const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      try {
+        // Preview imediato
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          setProfilePhoto(reader.result as string);
+        };
+        reader.readAsDataURL(file);
+
+        // Upload para o backend
+        const result = await patientService.uploadAvatar(file);
+        setProfilePhoto(result.avatar_url);
+        toast.success('Foto atualizada com sucesso!');
+
+        // Recarregar perfil
+        const updatedProfile = await patientService.getProfile();
+        setProfile(updatedProfile);
+      } catch (err: any) {
+        console.error('Erro ao fazer upload da foto:', err);
+        toast.error(err.response?.data?.message || 'Erro ao fazer upload da foto');
+      }
+    }
+  };
+
+  const handleUpdateProfile = async () => {
+    try {
+      setEditingProfile(false);
+      const updatedProfile = await patientService.updateProfile(profileData);
+      setProfile(updatedProfile);
+      toast.success('Perfil atualizado com sucesso!');
+    } catch (err: any) {
+      console.error('Erro ao atualizar perfil:', err);
+      toast.error(err.response?.data?.message || 'Erro ao atualizar perfil');
+    }
+  };
+
+  const handleCancelAppointment = (appointmentId: number) => {
+    setAppointmentToCancel(appointmentId);
+    setShowCancelModal(true);
+  };
+
+  const confirmCancelAppointment = async () => {
+    if (!appointmentToCancel) return;
+
+    try {
+      await patientService.cancelAppointment(appointmentToCancel, cancellationReason);
+      toast.success('Consulta cancelada com sucesso!');
+
+      // Recarregar consultas
+      const updatedAppointments = await patientService.getAppointments();
+      setAppointments(updatedAppointments);
+
+      setShowCancelModal(false);
+      setAppointmentToCancel(null);
+      setCancellationReason('');
+    } catch (err: any) {
+      console.error('Erro ao cancelar consulta:', err);
+      toast.error(err.response?.data?.message || 'Erro ao cancelar consulta');
+    }
+  };
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'agendada': return 'bg-blue-100 text-blue-800';
-      case 'concluida': return 'bg-green-100 text-green-800';
-      case 'cancelada': return 'bg-red-100 text-red-800';
-      case 'disponivel': return 'bg-green-100 text-green-800';
-      case 'processando': return 'bg-yellow-100 text-yellow-800';
-      case 'ativa': return 'bg-green-100 text-green-800';
-      case 'finalizada': return 'bg-gray-100 text-gray-800';
+      case 'pending': return 'bg-yellow-100 text-yellow-800';
+      case 'confirmed': return 'bg-blue-100 text-blue-800';
+      case 'completed': return 'bg-green-100 text-green-800';
+      case 'cancelled': return 'bg-red-100 text-red-800';
+      case 'no_show': return 'bg-gray-100 text-gray-800';
       default: return 'bg-gray-100 text-gray-800';
     }
   };
 
   const getStatusLabel = (status: string) => {
     switch (status) {
-      case 'agendada': return 'Agendada';
-      case 'concluida': return 'Concluída';
-      case 'cancelada': return 'Cancelada';
-      case 'disponivel': return 'Disponível';
-      case 'processando': return 'Processando';
-      case 'ativa': return 'Ativa';
-      case 'finalizada': return 'Finalizada';
+      case 'pending': return 'Pendente';
+      case 'confirmed': return 'Confirmada';
+      case 'completed': return 'Concluída';
+      case 'cancelled': return 'Cancelada';
+      case 'no_show': return 'Não compareceu';
       default: return status;
     }
   };
 
-  const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setProfilePhoto(reader.result as string);
-      };
-      reader.readAsDataURL(file);
+  const formatDate = (dateString: string) => {
+    try {
+      // Se já tem 'T' (formato ISO completo), usar diretamente
+      // Senão, adicionar 'T00:00:00' para datas no formato YYYY-MM-DD
+      const date = dateString.includes('T')
+        ? new Date(dateString)
+        : new Date(dateString + 'T00:00:00');
+      return date.toLocaleDateString('pt-BR');
+    } catch {
+      return dateString;
     }
   };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <LoadingSpinner size="lg" />
+          <p className="mt-4 text-gray-600 text-lg">Carregando seus dados...</p>
+          <p className="mt-2 text-gray-500 text-sm">Aguarde um momento</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gray-50 py-8">
+        <div className="container mx-auto px-4">
+          <Alert variant="destructive">
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription>{error}</AlertDescription>
+          </Alert>
+          <Button onClick={loadInitialData} className="mt-4">
+            Tentar Novamente
+          </Button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50 py-8">
@@ -107,10 +258,9 @@ export function PatientArea({ onSectionChange }: PatientAreaProps) {
                   <User className="w-10 h-10" />
                 )}
               </div>
-              <label 
-                htmlFor="patient-photo-upload" 
+              <label
+                htmlFor="patient-photo-upload"
                 className="absolute inset-0 rounded-full bg-black bg-opacity-50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer">
-                  
                 <Camera className="w-6 h-6 text-white" />
               </label>
               <input
@@ -119,7 +269,7 @@ export function PatientArea({ onSectionChange }: PatientAreaProps) {
                 accept="image/*"
                 onChange={handlePhotoUpload}
                 className="hidden"
-                arial-label="Upload de foto de perfil"
+                aria-label="Upload de foto de perfil"
               />
             </div>
             <div>
@@ -127,11 +277,49 @@ export function PatientArea({ onSectionChange }: PatientAreaProps) {
                 Área do Paciente
               </h1>
               <p className="text-gray-600">
-                Bem-vindo, {user?.name} - CPF: {user?.cpf}
+                Bem-vindo, {profile?.user?.name || user?.name} - CPF: {profile?.user?.cpf || user?.cpf || 'N/A'}
               </p>
             </div>
           </div>
         </div>
+
+        {/* Quick Stats */}
+        {stats && (
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+            <Card>
+              <CardContent className="p-4 text-center">
+                <div className="text-2xl font-bold text-blue-600 mb-1">
+                  {stats.upcoming_appointments}
+                </div>
+                <div className="text-sm text-gray-600">Próximas Consultas</div>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="p-4 text-center">
+                <div className="text-2xl font-bold text-green-600 mb-1">
+                  {stats.completed_appointments}
+                </div>
+                <div className="text-sm text-gray-600">Concluídas</div>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="p-4 text-center">
+                <div className="text-2xl font-bold text-purple-600 mb-1">
+                  {stats.total_appointments}
+                </div>
+                <div className="text-sm text-gray-600">Total</div>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="p-4 text-center">
+                <div className="text-2xl font-bold text-red-600 mb-1">
+                  {stats.cancelled_appointments}
+                </div>
+                <div className="text-sm text-gray-600">Canceladas</div>
+              </CardContent>
+            </Card>
+          </div>
+        )}
 
         {/* Quick Actions */}
         <div className="grid md:grid-cols-2 gap-4 mb-8">
@@ -142,7 +330,7 @@ export function PatientArea({ onSectionChange }: PatientAreaProps) {
               <p className="text-sm text-gray-600">Marque uma nova consulta</p>
             </CardContent>
           </Card>
-          
+
           <Card className="cursor-pointer hover:shadow-md transition-shadow">
             <CardContent className="p-6 text-center">
               <FileText className="w-12 h-12 text-purple-600 mx-auto mb-3" />
@@ -186,60 +374,69 @@ export function PatientArea({ onSectionChange }: PatientAreaProps) {
                 </div>
               </CardHeader>
               <CardContent>
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Data/Hora</TableHead>
-                      <TableHead>Médico</TableHead>
-                      <TableHead>Especialidade</TableHead>
-                      <TableHead>Tipo</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead>Ações</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {consultas.map((consulta) => (
-                      <TableRow key={consulta.id}>
-                        <TableCell>
-                          <div>
-                            <div className="font-medium">{consulta.date}</div>
-                            <div className="text-sm text-gray-600 flex items-center">
-                              <Clock className="w-3 h-3 mr-1" />
-                              {consulta.time}
+                {appointments.length === 0 ? (
+                  <div className="text-center py-8 text-gray-500">
+                    <Calendar className="w-12 h-12 mx-auto mb-3 opacity-30" />
+                    <p>Nenhuma consulta encontrada</p>
+                    <Button onClick={() => onSectionChange('agendamentos')} className="mt-4">
+                      Agendar Primeira Consulta
+                    </Button>
+                  </div>
+                ) : (
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Data/Hora</TableHead>
+                        <TableHead>Médico</TableHead>
+                        <TableHead>Especialidade</TableHead>
+                        <TableHead>Status</TableHead>
+                        <TableHead>Ações</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {appointments.map((appointment) => (
+                        <TableRow key={appointment.id}>
+                          <TableCell>
+                            <div>
+                              <div className="font-medium">{formatDate(appointment.appointment_date)}</div>
+                              <div className="text-sm text-gray-600 flex items-center">
+                                <Clock className="w-3 h-3 mr-1" />
+                                {appointment.appointment_time}
+                              </div>
                             </div>
-                          </div>
-                        </TableCell>
-                        <TableCell className="font-medium">{consulta.doctor}</TableCell>
-                        <TableCell>{consulta.specialty}</TableCell>
-                        <TableCell>
-                          <Badge variant="outline">{consulta.type}</Badge>
-                        </TableCell>
-                        <TableCell>
-                          <Badge className={getStatusColor(consulta.status)}>
-                            {getStatusLabel(consulta.status)}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>
-                          {consulta.status === 'agendada' ? (
-                            <div className="flex space-x-2">
-                              <Button size="sm" variant="outline">
-                                Reagendar
-                              </Button>
-                              <Button size="sm" variant="outline">
+                          </TableCell>
+                          <TableCell className="font-medium">
+                            {appointment.doctor?.name || 'N/A'}
+                          </TableCell>
+                          <TableCell>
+                            {appointment.doctor?.doctor?.specialty?.icon} {appointment.doctor?.doctor?.specialty?.name || 'N/A'}
+                          </TableCell>
+                          <TableCell>
+                            <Badge className={getStatusColor(appointment.status)}>
+                              {getStatusLabel(appointment.status)}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>
+                            {(appointment.status === 'pending' || appointment.status === 'confirmed') ? (
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => handleCancelAppointment(appointment.id)}
+                              >
                                 Cancelar
                               </Button>
-                            </div>
-                          ) : (
-                            <Button size="sm" variant="outline">
-                              <Eye className="w-4 h-4 mr-1" />
-                              Detalhes
-                            </Button>
-                          )}
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
+                            ) : (
+                              <Button size="sm" variant="outline">
+                                <Eye className="w-4 h-4 mr-1" />
+                                Detalhes
+                              </Button>
+                            )}
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                )}
               </CardContent>
             </Card>
           </TabsContent>
@@ -248,83 +445,242 @@ export function PatientArea({ onSectionChange }: PatientAreaProps) {
           <TabsContent value="perfil" className="space-y-6">
             <Card>
               <CardHeader>
-                <CardTitle className="flex items-center space-x-2">
-                  <User className="w-5 h-5 text-blue-600" />
-                  <span>Meu Perfil</span>
-                </CardTitle>
-                <CardDescription>
-                  Gerencie suas informações pessoais
-                </CardDescription>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle className="flex items-center space-x-2">
+                      <User className="w-5 h-5 text-blue-600" />
+                      <span>Meu Perfil</span>
+                    </CardTitle>
+                    <CardDescription>
+                      Gerencie suas informações pessoais
+                    </CardDescription>
+                  </div>
+                  {!editingProfile ? (
+                    <Button onClick={() => setEditingProfile(true)}>
+                      <Edit className="w-4 h-4 mr-2" />
+                      Editar
+                    </Button>
+                  ) : (
+                    <div className="flex space-x-2">
+                      <Button onClick={handleUpdateProfile}>
+                        Salvar
+                      </Button>
+                      <Button variant="outline" onClick={() => setEditingProfile(false)}>
+                        Cancelar
+                      </Button>
+                    </div>
+                  )}
+                </div>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="name">Nome Completo</Label>
-                    <Input id="name" defaultValue={user?.name} />
+                    <Input
+                      id="name"
+                      value={profileData.name}
+                      onChange={(e) => setProfileData({ ...profileData, name: e.target.value })}
+                      disabled={!editingProfile}
+                    />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="cpf">CPF</Label>
-                    <Input id="cpf" defaultValue={user?.cpf} disabled />
+                    <Input id="cpf" value={profile?.user?.cpf || ''} disabled />
                   </div>
                 </div>
-                
+
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="phone">Telefone</Label>
-                    <Input id="phone" defaultValue={user?.phone} />
+                    <Input
+                      id="phone"
+                      value={profileData.phone}
+                      onChange={(e) => setProfileData({ ...profileData, phone: e.target.value })}
+                      disabled={!editingProfile}
+                    />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="email">Email</Label>
-                    <Input id="email" type="email" defaultValue={user?.email} />
+                    <Input
+                      id="email"
+                      type="email"
+                      value={profileData.email}
+                      onChange={(e) => setProfileData({ ...profileData, email: e.target.value })}
+                      disabled={!editingProfile}
+                    />
                   </div>
                 </div>
-                
+
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="birth">Data de Nascimento</Label>
-                    <Input id="birth" type="date" />
+                    <Input
+                      id="birth"
+                      type="date"
+                      value={profileData.birth_date}
+                      onChange={(e) => setProfileData({ ...profileData, birth_date: e.target.value })}
+                      disabled={!editingProfile}
+                    />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="emergency">Contato de Emergência</Label>
-                    <Input id="emergency" placeholder="(11) 99999-9999" />
+                    <Label htmlFor="gender">Gênero</Label>
+                    <Input
+                      id="gender"
+                      value={profileData.gender}
+                      onChange={(e) => setProfileData({ ...profileData, gender: e.target.value })}
+                      disabled={!editingProfile}
+                    />
                   </div>
                 </div>
-                
-                <Button className="w-full">
-                  Salvar Alterações
-                </Button>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="emergency">Contato de Emergência</Label>
+                    <Input
+                      id="emergency"
+                      value={profileData.emergency_contact}
+                      onChange={(e) => setProfileData({ ...profileData, emergency_contact: e.target.value })}
+                      disabled={!editingProfile}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="emergency_phone">Telefone de Emergência</Label>
+                    <Input
+                      id="emergency_phone"
+                      value={profileData.emergency_phone}
+                      onChange={(e) => setProfileData({ ...profileData, emergency_phone: e.target.value })}
+                      disabled={!editingProfile}
+                    />
+                  </div>
+                </div>
               </CardContent>
             </Card>
 
             <Card>
               <CardHeader>
-                <CardTitle>Convênios</CardTitle>
+                <CardTitle>Informações Médicas</CardTitle>
                 <CardDescription>
-                  Gerencie seus planos de saúde
+                  Dados importantes para o atendimento
                 </CardDescription>
               </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  <div className="border rounded-lg p-4">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <h4 className="font-medium">Unimed</h4>
-                        <p className="text-sm text-gray-600">Cartão: 123456789</p>
-                      </div>
-                      <Badge className="bg-green-100 text-green-800">Ativo</Badge>
-                    </div>
+              <CardContent className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="blood_type">Tipo Sanguíneo</Label>
+                  <Input
+                    id="blood_type"
+                    value={profileData.blood_type}
+                    onChange={(e) => setProfileData({ ...profileData, blood_type: e.target.value })}
+                    disabled={!editingProfile}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="allergies">Alergias</Label>
+                  <Textarea
+                    id="allergies"
+                    value={profileData.allergies}
+                    onChange={(e) => setProfileData({ ...profileData, allergies: e.target.value })}
+                    disabled={!editingProfile}
+                    rows={3}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="chronic_diseases">Doenças Crônicas</Label>
+                  <Textarea
+                    id="chronic_diseases"
+                    value={profileData.chronic_diseases}
+                    onChange={(e) => setProfileData({ ...profileData, chronic_diseases: e.target.value })}
+                    disabled={!editingProfile}
+                    rows={3}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="medications">Medicamentos em Uso</Label>
+                  <Textarea
+                    id="medications"
+                    value={profileData.medications}
+                    onChange={(e) => setProfileData({ ...profileData, medications: e.target.value })}
+                    disabled={!editingProfile}
+                    rows={3}
+                  />
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Convênio</CardTitle>
+                <CardDescription>
+                  Informações do plano de saúde
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="health_insurance">Convênio</Label>
+                    <Input
+                      id="health_insurance"
+                      value={profileData.health_insurance}
+                      onChange={(e) => setProfileData({ ...profileData, health_insurance: e.target.value })}
+                      disabled={!editingProfile}
+                    />
                   </div>
-                  
-                  <Button variant="outline" className="w-full">
-                    <Plus className="w-4 h-4 mr-2" />
-                    Adicionar Convênio
-                  </Button>
+                  <div className="space-y-2">
+                    <Label htmlFor="insurance_number">Número da Carteirinha</Label>
+                    <Input
+                      id="insurance_number"
+                      value={profileData.insurance_number}
+                      onChange={(e) => setProfileData({ ...profileData, insurance_number: e.target.value })}
+                      disabled={!editingProfile}
+                    />
+                  </div>
                 </div>
               </CardContent>
             </Card>
           </TabsContent>
         </Tabs>
       </div>
+
+      {/* Modal de Cancelamento */}
+      {showCancelModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 animate-fade-in">
+          <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setShowCancelModal(false)} />
+          <div className="relative bg-white rounded-lg shadow-2xl max-w-md w-full mx-4 p-6 animate-zoom-in">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold">Cancelar Consulta</h3>
+              <button
+                onClick={() => setShowCancelModal(false)}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="mb-4">
+              <Label htmlFor="cancellation_reason">Motivo do Cancelamento (opcional)</Label>
+              <Textarea
+                id="cancellation_reason"
+                value={cancellationReason}
+                onChange={(e) => setCancellationReason(e.target.value)}
+                rows={3}
+                placeholder="Informe o motivo do cancelamento..."
+                className="mt-2"
+              />
+            </div>
+
+            <div className="flex space-x-3">
+              <Button onClick={confirmCancelAppointment} variant="destructive" className="flex-1">
+                Confirmar Cancelamento
+              </Button>
+              <Button onClick={() => setShowCancelModal(false)} variant="outline" className="flex-1">
+                Voltar
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

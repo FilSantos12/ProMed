@@ -87,9 +87,14 @@ class AppointmentController extends Controller
     public function store(CreateAppointmentRequest $request)
     {
         try {
+            \Log::info('AppointmentController@store - Request data: ' . json_encode($request->all()));
+            \Log::info('AppointmentController@store - Validated data: ' . json_encode($request->validated()));
+
             $appointment = Appointment::create($request->validated());
 
             // Aqui você pode adicionar envio de email/notificação
+
+            \Log::info('AppointmentController@store - Appointment criado com ID: ' . $appointment->id);
 
             return response()->json([
                 'message' => 'Consulta agendada com sucesso.',
@@ -97,6 +102,7 @@ class AppointmentController extends Controller
             ], 201);
 
         } catch (\Exception $e) {
+            \Log::error('AppointmentController@store - Erro: ' . $e->getMessage());
             return response()->json([
                 'message' => 'Erro ao agendar consulta.',
                 'error' => $e->getMessage()

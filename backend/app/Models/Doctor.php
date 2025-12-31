@@ -31,9 +31,10 @@ class Doctor extends Model
 
     /**
      * Atributos que devem ser criptografados (LGPD)
+     * CRM removido pois é um dado público
      */
     protected array $encryptable = [
-        'crm',
+        // 'crm', // CRM é público, não precisa criptografar
     ];
 
     public function user()

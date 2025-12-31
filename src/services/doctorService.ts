@@ -146,6 +146,13 @@ class DoctorService {
     });
   }
 
+  // Marcar como não compareceu (no-show)
+  async noShowAppointment(appointmentId: number): Promise<void> {
+    await api.put(`/appointments/${appointmentId}`, {
+      status: 'no_show',
+    });
+  }
+
   // Adicionar notas do médico
   async addDoctorNotes(
     appointmentId: number,

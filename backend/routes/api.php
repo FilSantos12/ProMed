@@ -10,6 +10,7 @@ use App\Http\Controllers\Api\ScheduleController;
 use App\Http\Controllers\Api\PatientController;
 use App\Http\Controllers\Api\DashboardController;
 use App\Http\Controllers\Api\DoctorProfileController;
+use App\Http\Controllers\Api\PatientProfileController;
 
 /*
 |--------------------------------------------------------------------------
@@ -152,6 +153,26 @@ Route::middleware('auth:sanctum')->prefix('v1')->group(function () {
         Route::get('/documents', [DoctorProfileController::class, 'getDocuments']);
         Route::post('/documents', [DoctorProfileController::class, 'uploadDocument']);
         Route::delete('/documents/{documentId}', [DoctorProfileController::class, 'deleteDocument']);
+    });
+
+    // ============================================
+    // ROTAS DA ÁREA DO PACIENTE (role: patient)
+    // ============================================
+    Route::middleware('role:patient')->prefix('patient')->group(function () {
+
+        // Perfil
+        Route::get('/profile', [PatientProfileController::class, 'show']);
+        Route::put('/profile', [PatientProfileController::class, 'update']);
+        Route::post('/profile/avatar', [PatientProfileController::class, 'uploadAvatar']);
+        Route::post('/profile/change-password', [PatientProfileController::class, 'changePassword']);
+
+        // Consultas
+        Route::get('/appointments', [PatientProfileController::class, 'getAppointments']);
+        Route::get('/appointments/upcoming', [PatientProfileController::class, 'getUpcomingAppointments']);
+        Route::post('/appointments/{appointmentId}/cancel', [PatientProfileController::class, 'cancelAppointment']);
+
+        // Estatísticas
+        Route::get('/stats', [PatientProfileController::class, 'getStats']);
     });
 
 });

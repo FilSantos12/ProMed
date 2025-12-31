@@ -47,6 +47,8 @@ function AppContent() {
         return <SobrePage />;
       case 'contato':
         return <ContatoPage onSectionChange={handleSectionChange} />;
+      case 'agendamentos':
+        return <AgendamentosPage />;
       case 'reset-password':
         return <ResetPasswordPage onSectionChange={handleSectionChange} />;
       case 'login':

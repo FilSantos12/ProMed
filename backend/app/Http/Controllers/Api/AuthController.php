@@ -161,7 +161,7 @@ public function login(Request $request)
             'rg' => 'nullable|string|max:20',
             'phone' => 'required|string',
             'birth_date' => 'required|date',
-            'gender' => 'nullable|in:M,F,Outro',
+            'gender' => 'nullable|in:M,F,Masculino,Feminino,Outro',
             'role' => 'required|in:patient,doctor,admin',
             
             // Campos específicos do médico

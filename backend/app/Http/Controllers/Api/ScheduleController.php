@@ -15,11 +15,20 @@ class ScheduleController extends Controller
      */
     public function index(Request $request)
     {
+        \Log::info('ScheduleController@index - Params: ' . json_encode($request->all()));
+
         $query = Schedule::with('doctor');
 
         // Filtrar por médico
         if ($request->has('doctor_id')) {
+            \Log::info('ScheduleController@index - Filtrando por doctor_id: ' . $request->doctor_id);
             $query->where('doctor_id', $request->doctor_id);
+        }
+
+        // Filtrar por data específica
+        if ($request->has('schedule_date')) {
+            \Log::info('ScheduleController@index - Filtrando por schedule_date: ' . $request->schedule_date);
+            $query->whereDate('schedule_date', $request->schedule_date);
         }
 
         // Filtrar por dia da semana
@@ -29,12 +38,18 @@ class ScheduleController extends Controller
 
         // Filtrar apenas disponíveis
         if ($request->has('available')) {
-            $query->where('is_available', $request->available);
+            // Converter string "true"/"false" para booleano
+            $isAvailable = filter_var($request->available, FILTER_VALIDATE_BOOLEAN);
+            \Log::info('ScheduleController@index - Filtrando por is_available: ' . $request->available . ' (convertido para: ' . ($isAvailable ? 'true' : 'false') . ')');
+            $query->where('is_available', $isAvailable);
         }
 
         $schedules = $query->orderBy('day_of_week')
             ->orderBy('start_time')
             ->get();
+
+        \Log::info('ScheduleController@index - Total de schedules encontradas: ' . $schedules->count());
+        \Log::info('ScheduleController@index - Schedules: ' . json_encode($schedules));
 
         return response()->json($schedules, 200);
     }

@@ -82,7 +82,10 @@ export function DoctorArea({ onSectionChange }: DoctorAreaProps) {
       const [profileData, statsData, appointmentsData] = await Promise.all([
         doctorService.getProfile(),
         doctorService.getStats(),
-        doctorService.getTodayAppointments(),
+        // Buscar consultas futuras (a partir de hoje)
+        doctorService.getAppointments({
+          startDate: new Date().toISOString().split('T')[0]
+        }),
       ]);
 
       setProfile(profileData);
@@ -99,11 +102,13 @@ export function DoctorArea({ onSectionChange }: DoctorAreaProps) {
 
       // Carregar avatar do backend (se existir)
       if (profileData?.user?.avatar) {
-        // Se o avatar começar com http, usar direto, senão adicionar o prefixo do storage
-        const avatarUrl = profileData.user.avatar.startsWith('http')
-          ? profileData.user.avatar
-          : `http://localhost:8000/storage/${profileData.user.avatar}`;
+        // Usar avatar_url se disponível, senão construir URL manualmente
+        const avatarUrl = (profileData.user as any).avatar_url ||
+                         `${import.meta.env.VITE_API_URL}/storage/${profileData.user.avatar}`;
         setProfilePhoto(avatarUrl);
+        console.log('Avatar do médico carregado:', avatarUrl);
+      } else {
+        console.log('Nenhum avatar encontrado no perfil do médico');
       }
     } catch (err: any) {
       console.error('Erro ao carregar dados:', err);
@@ -183,6 +188,22 @@ export function DoctorArea({ onSectionChange }: DoctorAreaProps) {
     } catch (err: any) {
       console.error('Erro ao completar consulta:', err);
       toast.error('Erro ao completar consulta', 6000);
+    }
+  };
+
+  const handleNoShowAppointment = async (appointmentId: number) => {
+    try {
+      await doctorService.noShowAppointment(appointmentId);
+      toast.success('Consulta marcada como faltou', 3000);
+
+      setAppointments(prev =>
+        prev.map(appt =>
+          appt.id === appointmentId ? { ...appt, status: 'no_show' } : appt
+        )
+      );
+    } catch (err: any) {
+      console.error('Erro ao marcar como faltou:', err);
+      toast.error('Erro ao marcar como faltou', 6000);
     }
   };
 
@@ -444,20 +465,24 @@ export function DoctorArea({ onSectionChange }: DoctorAreaProps) {
 
   const getStatusColor = (status: string) => {
     switch (status) {
+      case 'pending': return 'bg-yellow-100 text-yellow-800';
       case 'confirmed': return 'bg-green-100 text-green-800';
       case 'scheduled': return 'bg-blue-100 text-blue-800';
       case 'completed': return 'bg-purple-100 text-purple-800';
       case 'cancelled': return 'bg-red-100 text-red-800';
+      case 'no_show': return 'bg-orange-100 text-orange-800';
       default: return 'bg-gray-100 text-gray-800';
     }
   };
 
   const getStatusLabel = (status: string) => {
     const labels: { [key: string]: string } = {
+      'pending': 'Pendente',
       'scheduled': 'Agendado',
       'confirmed': 'Confirmado',
       'completed': 'Concluído',
       'cancelled': 'Cancelado',
+      'no_show': 'Não Compareceu',
     };
     return labels[status] || status;
   };
@@ -592,10 +617,10 @@ export function DoctorArea({ onSectionChange }: DoctorAreaProps) {
               <CardHeader>
                 <CardTitle className="flex items-center space-x-2">
                   <Calendar className="w-5 h-5 text-blue-600" />
-                  <span>Agenda do Dia - {new Date().toLocaleDateString('pt-BR')}</span>
+                  <span>Próximas Consultas</span>
                 </CardTitle>
                 <CardDescription>
-                  Gerencie seus agendamentos e consultas
+                  Consultas agendadas a partir de hoje
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -617,12 +642,18 @@ export function DoctorArea({ onSectionChange }: DoctorAreaProps) {
                           <div className="flex-1">
                             <div className="flex items-center space-x-4 mb-2">
                               <div className="flex items-center space-x-2">
+                                <Calendar className="w-4 h-4 text-blue-600" />
+                                <span className="font-medium">
+                                  {new Date(appointment.appointment_date).toLocaleDateString('pt-BR')}
+                                </span>
+                              </div>
+                              <div className="flex items-center space-x-2">
                                 <Clock className="w-4 h-4 text-blue-600" />
                                 <span className="font-medium">{appointment.appointment_time.substring(0, 5)}</span>
                               </div>
                               <div className="flex items-center space-x-2">
                                 <User className="w-4 h-4 text-gray-600" />
-                                <span className="font-medium">{appointment.patient?.user?.name ?? 'Paciente'}</span>
+                                <span className="font-medium">{appointment.patient?.name ?? 'Paciente'}</span>
                               </div>
                               <Badge className={getStatusColor(appointment.status)}>
                                 {getStatusLabel(appointment.status)}
@@ -632,11 +663,11 @@ export function DoctorArea({ onSectionChange }: DoctorAreaProps) {
                             <div className="flex items-center space-x-4 text-sm text-gray-600 mb-2">
                               <div className="flex items-center space-x-1">
                                 <Phone className="w-4 h-4" />
-                                <span>{appointment.patient?.user?.phone ?? 'N/A'}</span>
+                                <span>{appointment.patient?.phone ?? 'N/A'}</span>
                               </div>
                               <div className="flex items-center space-x-1">
                                 <Mail className="w-4 h-4" />
-                                <span>{appointment.patient?.user?.email ?? 'N/A'}</span>
+                                <span>{appointment.patient?.email ?? 'N/A'}</span>
                               </div>
                             </div>
 
@@ -661,37 +692,133 @@ export function DoctorArea({ onSectionChange }: DoctorAreaProps) {
 
                           <div className="flex flex-col space-y-2 ml-4">
                             <div className="flex space-x-2">
-                              {appointment.status === 'scheduled' && (
+                              {appointment.status === 'pending' && (
                                 <>
-                                  <Button
-                                    size="sm"
-                                    variant="outline"
+                                  <button
+                                    style={{
+                                      display: 'inline-flex',
+                                      alignItems: 'center',
+                                      justifyContent: 'center',
+                                      height: '32px',
+                                      padding: '0 12px',
+                                      fontSize: '14px',
+                                      fontWeight: '500',
+                                      color: 'white',
+                                      backgroundColor: '#16a34a',
+                                      border: 'none',
+                                      borderRadius: '6px',
+                                      cursor: 'pointer',
+                                      transition: 'background-color 0.2s'
+                                    }}
                                     onClick={() => handleConfirmAppointment(appointment.id)}
+                                    onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#15803d'}
+                                    onMouseOut={(e) => e.currentTarget.style.backgroundColor = '#16a34a'}
                                     title="Confirmar consulta"
                                   >
-                                    <Check className="w-4 h-4" />
-                                  </Button>
-                                  <Button
-                                    size="sm"
-                                    variant="outline"
+                                    <Check className="w-4 h-4 mr-1" />
+                                    Confirmar
+                                  </button>
+                                  <button
+                                    style={{
+                                      display: 'inline-flex',
+                                      alignItems: 'center',
+                                      justifyContent: 'center',
+                                      height: '32px',
+                                      padding: '0 12px',
+                                      fontSize: '14px',
+                                      fontWeight: '500',
+                                      color: '#dc2626',
+                                      backgroundColor: 'white',
+                                      border: '1px solid #fca5a5',
+                                      borderRadius: '6px',
+                                      cursor: 'pointer',
+                                      transition: 'background-color 0.2s'
+                                    }}
                                     onClick={() => handleCancelAppointment(appointment.id)}
+                                    onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#fef2f2'}
+                                    onMouseOut={(e) => e.currentTarget.style.backgroundColor = 'white'}
                                     title="Cancelar consulta"
                                   >
-                                    <X className="w-4 h-4" />
-                                  </Button>
+                                    <X className="w-4 h-4 mr-1" />
+                                    Cancelar
+                                  </button>
                                 </>
                               )}
                               {appointment.status === 'confirmed' && (
-                                <Button
-                                  size="sm"
-                                  variant="outline"
-                                  onClick={() => handleCompleteAppointment(appointment.id)}
-                                  title="Marcar como concluída"
-                                  className="text-green-600"
-                                >
-                                  <Check className="w-4 h-4 mr-1" />
-                                  Concluir
-                                </Button>
+                                <>
+                                  <button
+                                    style={{
+                                      display: 'inline-flex',
+                                      alignItems: 'center',
+                                      justifyContent: 'center',
+                                      height: '32px',
+                                      padding: '0 12px',
+                                      fontSize: '14px',
+                                      fontWeight: '500',
+                                      color: 'white',
+                                      backgroundColor: '#2563eb',
+                                      border: 'none',
+                                      borderRadius: '6px',
+                                      cursor: 'pointer',
+                                      transition: 'background-color 0.2s'
+                                    }}
+                                    onClick={() => handleCompleteAppointment(appointment.id)}
+                                    onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#1d4ed8'}
+                                    onMouseOut={(e) => e.currentTarget.style.backgroundColor = '#2563eb'}
+                                    title="Marcar como concluída"
+                                  >
+                                    <Check className="w-4 h-4 mr-1" />
+                                    Concluir
+                                  </button>
+                                  <button
+                                    style={{
+                                      display: 'inline-flex',
+                                      alignItems: 'center',
+                                      justifyContent: 'center',
+                                      height: '32px',
+                                      padding: '0 12px',
+                                      fontSize: '14px',
+                                      fontWeight: '500',
+                                      color: '#ea580c',
+                                      backgroundColor: 'white',
+                                      border: '1px solid #fed7aa',
+                                      borderRadius: '6px',
+                                      cursor: 'pointer',
+                                      transition: 'background-color 0.2s'
+                                    }}
+                                    onClick={() => handleNoShowAppointment(appointment.id)}
+                                    onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#fff7ed'}
+                                    onMouseOut={(e) => e.currentTarget.style.backgroundColor = 'white'}
+                                    title="Paciente não compareceu"
+                                  >
+                                    <X className="w-4 h-4 mr-1" />
+                                    Faltou
+                                  </button>
+                                  <button
+                                    style={{
+                                      display: 'inline-flex',
+                                      alignItems: 'center',
+                                      justifyContent: 'center',
+                                      height: '32px',
+                                      padding: '0 12px',
+                                      fontSize: '14px',
+                                      fontWeight: '500',
+                                      color: '#dc2626',
+                                      backgroundColor: 'white',
+                                      border: '1px solid #fca5a5',
+                                      borderRadius: '6px',
+                                      cursor: 'pointer',
+                                      transition: 'background-color 0.2s'
+                                    }}
+                                    onClick={() => handleCancelAppointment(appointment.id)}
+                                    onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#fef2f2'}
+                                    onMouseOut={(e) => e.currentTarget.style.backgroundColor = 'white'}
+                                    title="Cancelar consulta"
+                                  >
+                                    <X className="w-4 h-4 mr-1" />
+                                    Cancelar
+                                  </button>
+                                </>
                               )}
                             </div>
 
@@ -700,7 +827,7 @@ export function DoctorArea({ onSectionChange }: DoctorAreaProps) {
                               <Button
                                 size="sm"
                                 variant="outline"
-                                onClick={() => window.open(`tel:${appointment.patient?.user?.phone}`)}
+                                onClick={() => window.open(`tel:${appointment.patient?.phone}`)}
                                 title="Ligar para o paciente"
                                 className="text-green-600 hover:text-green-700"
                               >
@@ -709,7 +836,7 @@ export function DoctorArea({ onSectionChange }: DoctorAreaProps) {
                               <Button
                                 size="sm"
                                 variant="outline"
-                                onClick={() => window.open(`mailto:${appointment.patient?.user?.email}`)}
+                                onClick={() => window.open(`mailto:${appointment.patient?.email}`)}
                                 title="Enviar email para o paciente"
                                 className="text-blue-600 hover:text-blue-700"
                               >

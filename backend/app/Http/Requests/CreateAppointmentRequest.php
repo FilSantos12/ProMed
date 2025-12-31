@@ -8,7 +8,14 @@ class CreateAppointmentRequest extends FormRequest
 {
     public function authorize(): bool
     {
+        \Log::info('CreateAppointmentRequest - Request data: ' . json_encode($this->all()));
         return true;
+    }
+
+    protected function failedValidation(\Illuminate\Contracts\Validation\Validator $validator)
+    {
+        \Log::error('CreateAppointmentRequest - Validation failed: ' . json_encode($validator->errors()->toArray()));
+        parent::failedValidation($validator);
     }
 
     public function rules(): array
