@@ -45,7 +45,7 @@ class DoctorProfileController extends Controller
 
             return response()->json([
                 'doctor' => $doctor,
-                'stats' => $this->getDoctorStats($doctor->id)
+                'stats' => $this->getDoctorStats($doctor->user_id)
             ]);
         } catch (\Exception $e) {
             Log::error('Erro ao carregar perfil do médico: ' . $e->getMessage());

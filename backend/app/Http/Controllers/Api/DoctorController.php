@@ -223,7 +223,7 @@ public function toggleStatus($id)
         $doctor = Doctor::findOrFail($id);
 
         $appointments = $doctor->appointments()
-            ->with(['patient.user', 'specialty'])
+            ->with(['patient', 'specialty'])
             ->orderBy('appointment_date', 'desc')
             ->orderBy('appointment_time', 'desc')
             ->get();

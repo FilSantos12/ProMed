@@ -36,7 +36,7 @@ class Appointment extends Model
      */
     public function patient()
     {
-        return $this->belongsTo(User::class, 'patient_id')->with('patient');
+        return $this->belongsTo(User::class, 'patient_id');
     }
 
     /**
@@ -44,7 +44,7 @@ class Appointment extends Model
      */
     public function doctor()
     {
-        return $this->belongsTo(User::class, 'doctor_id')->with('doctor.specialty');
+        return $this->belongsTo(User::class, 'doctor_id');
     }
 
     /**
