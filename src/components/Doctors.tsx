@@ -1328,9 +1328,9 @@ const getDocumentIcon = (type: string) => {
                         </div>
 
                      {/* Card clicável (sem preview) */}
-                     <div 
+                     <div
                         className="mb-3 w-full h-32 bg-gradient-to-br from-gray-50 to-gray-100 rounded-lg border-2 border-gray-200 flex items-center justify-center cursor-pointer hover:shadow-lg hover:border-blue-400 transition-all"
-                        onClick={() => window.open(`http://localhost:8000/api/public/doctors/${selectedDoctor.id}/documents/${doc.id}/view/${localStorage.getItem('token')}`, '_blank')}
+                        onClick={() => window.open(`http://localhost:8000/api/v1/public/doctors/${selectedDoctor.id}/documents/${doc.id}/view/${localStorage.getItem('token')}`, '_blank')}
                         >
                         <div className="text-center">
                             {doc.mime_type?.startsWith('image/') ? (
@@ -1384,7 +1384,7 @@ const getDocumentIcon = (type: string) => {
                         <Button
                             size="sm"
                             variant="outline"
-                            onClick={() => window.open(`http://localhost:8000/api/public/doctors/${selectedDoctor.id}/documents/${doc.id}/download/${localStorage.getItem('token')}`, '_blank')}
+                            onClick={() => window.open(`http://localhost:8000/api/v1/public/doctors/${selectedDoctor.id}/documents/${doc.id}/download/${localStorage.getItem('token')}`, '_blank')}
                             className="flex-1"
                             >
                             <Download className="w-4 h-4 mr-1" />
