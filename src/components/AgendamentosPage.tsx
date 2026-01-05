@@ -6,12 +6,45 @@ import { Label } from './ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 import { Textarea } from './ui/textarea';
 import { Badge } from './ui/badge';
-import { CalendarIcon, Clock, User, FileText, AlertCircle, CheckCircle2 } from 'lucide-react';
+import {
+  CalendarIcon, Clock, User, FileText, AlertCircle, CheckCircle2,
+  Heart, Brain, Eye, Ear, Bone, Activity, Stethoscope,
+  Pill, Syringe, TestTube, Microscope, Thermometer,
+  Baby, Users, Hospital, Ambulance, Cross,
+  Shield, Bandage, Clipboard, HeartPulse,
+  type LucideIcon
+} from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 import { useToast } from '../contexts/ToastContext';
 import { appointmentService, Specialty, Doctor, DoctorSchedule } from '../services/appointmentService';
 import { LoadingSpinner } from './ui/loading-spinner';
 import { Alert, AlertDescription } from './ui/alert';
+
+// Mapa de ícones médicos (sincronizado com IconPicker)
+const ICON_MAP: Record<string, LucideIcon> = {
+  Heart,
+  Brain,
+  Eye,
+  Ear,
+  Bone,
+  Activity,
+  HeartPulse,
+  Baby,
+  Stethoscope,
+  Pill,
+  Syringe,
+  TestTube,
+  Microscope,
+  Thermometer,
+  Clipboard,
+  Bandage,
+  Hospital,
+  Ambulance,
+  Cross,
+  Shield,
+  Users,
+  User,
+};
 
 export function AgendamentosPage() {
   const { user } = useAuth();
@@ -282,6 +315,13 @@ export function AgendamentosPage() {
     return doctors.find(d => d.id.toString() === selectedDoctor);
   };
 
+  // Renderizar ícone da especialidade
+  const getSpecialtyIcon = (iconName: string | null | undefined) => {
+    if (!iconName) return null;
+    const IconComponent = ICON_MAP[iconName] || Stethoscope;
+    return <IconComponent className="w-4 h-4" />;
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -354,7 +394,10 @@ export function AgendamentosPage() {
                     <SelectContent>
                       {specialties.map((spec) => (
                         <SelectItem key={spec.id} value={spec.id.toString()}>
-                          {spec.icon} {spec.name}
+                          <div className="flex items-center gap-2">
+                            {getSpecialtyIcon(spec.icon)}
+                            <span>{spec.name}</span>
+                          </div>
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -538,8 +581,8 @@ export function AgendamentosPage() {
                   <div className="space-y-2 text-sm">
                     {selectedSpecialty && (
                       <div className="flex items-center space-x-2">
-                        <Badge variant="secondary">
-                          {specialties.find(s => s.id.toString() === selectedSpecialty)?.icon}{' '}
+                        <Badge variant="secondary" className="flex items-center gap-1.5">
+                          {getSpecialtyIcon(specialties.find(s => s.id.toString() === selectedSpecialty)?.icon)}
                           {specialties.find(s => s.id.toString() === selectedSpecialty)?.name}
                         </Badge>
                       </div>
