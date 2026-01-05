@@ -130,6 +130,15 @@ Route::middleware('auth:sanctum')->prefix('v1')->group(function () {
         Route::post('/appointments/{id}/complete', [AppointmentController::class, 'complete']);
         Route::post('/appointments/{id}/reschedule', [AppointmentController::class, 'reschedule']);
         Route::get('/appointments-statistics', [AppointmentController::class, 'statistics']);
+
+        // ========================================
+        // SPECIALTIES (Admin)
+        // ========================================
+        Route::get('/specialties', [SpecialtyController::class, 'index']); // Listar todas
+        Route::post('/specialties', [SpecialtyController::class, 'store']); // Criar
+        Route::get('/specialties/{id}', [SpecialtyController::class, 'show']); // Ver detalhes
+        Route::put('/specialties/{id}', [SpecialtyController::class, 'update']); // Editar
+        Route::delete('/specialties/{id}', [SpecialtyController::class, 'destroy']); // Deletar
     });
 
     // ============================================

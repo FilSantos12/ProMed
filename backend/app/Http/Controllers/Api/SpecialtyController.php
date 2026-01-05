@@ -11,9 +11,21 @@ class SpecialtyController extends Controller
     /**
      * Listar todas as especialidades
      */
-    public function index()
+    public function index(Request $request)
     {
-        $specialties = Specialty::where('is_active', true)
+        // Se for admin, mostrar todas (incluindo inativas)
+        // Se for público, mostrar apenas ativas
+        $query = Specialty::query();
+
+        // Verifica se a requisição vem de um admin autenticado
+        $user = $request->user();
+        $isAdmin = $user && $user->role === 'admin';
+
+        if (!$isAdmin) {
+            $query->where('is_active', true);
+        }
+
+        $specialties = $query
             ->withCount('doctors')
             ->orderBy('name')
             ->get();

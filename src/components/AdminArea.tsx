@@ -17,6 +17,7 @@ import Appointments from './Appointments';
 import Patients from './Patients';
 import Doctors from './Doctors';
 import Dashboard from './Dashboard';
+import Specialties from './Specialties';
 
 interface AdminAreaProps {
   onSectionChange?: (section: string) => void;
@@ -117,7 +118,7 @@ export function AdminArea({ onSectionChange }: AdminAreaProps) {
 
         {/* Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="grid w-full grid-cols-4 md:grid-cols-4 lg:grid-cols-6 gap-2 mb-6">
+          <TabsList className="grid w-full grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-2 mb-6">
             <TabsTrigger value="dashboard" className="flex items-center space-x-2">
               <BarChart3 className="w-4 h-4" />
               <span>Dashboard</span>
@@ -129,6 +130,10 @@ export function AdminArea({ onSectionChange }: AdminAreaProps) {
             <TabsTrigger value="pacientes" className="flex items-center space-x-2">
               <Users className="w-4 h-4" />
               <span>Pacientes</span>
+            </TabsTrigger>
+            <TabsTrigger value="especialidades" className="flex items-center space-x-2">
+              <Stethoscope className="w-4 h-4" />
+              <span>Especialidades</span>
             </TabsTrigger>
             <TabsTrigger value="agendamentos" className="flex items-center space-x-2">
               <Calendar className="w-4 h-4" />
@@ -153,6 +158,11 @@ export function AdminArea({ onSectionChange }: AdminAreaProps) {
           {/* Pacientes Tab */}
           <TabsContent value="pacientes" className="space-y-6">
             <Patients />
+          </TabsContent>
+
+          {/* Especialidades Tab */}
+          <TabsContent value="especialidades" className="space-y-6">
+            <Specialties />
           </TabsContent>
 
           {/* Agendamentos Tab */}
