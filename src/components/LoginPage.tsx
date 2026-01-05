@@ -6,6 +6,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
 import { Separator } from './ui/separator';
 import { User, Stethoscope, Shield } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
+import { usePendingAppointment } from '../contexts/PendingAppointmentContext';
 import { LoadingSpinner } from './ui/loading-spinner';
 import { ErrorModal } from './ui/error-modal';
 import { SuccessModal } from './ui/success-modal';
@@ -23,6 +24,7 @@ interface LoginPageProps {
 export function LoginPage({ onSectionChange }: LoginPageProps) {
   const { login } = useAuth();
   const toast = useToast();
+  const { hasPendingAppointment, completePendingAppointment, pendingAppointment } = usePendingAppointment();
 
   const [loginData, setLoginData] = useState({
     email: '',
@@ -92,17 +94,33 @@ export function LoginPage({ onSectionChange }: LoginPageProps) {
       setSuccessMessage(`Bem-vindo, ${user.name}!`);
       setShowSuccessModal(true);
 
-      setTimeout(() => {
-        setShowSuccessModal(false);
+      // Se há agendamento pendente e é paciente, completá-lo
+      if (hasPendingAppointment && user.role === 'patient') {
+        setTimeout(async () => {
+          setShowSuccessModal(false);
+          const success = await completePendingAppointment(user.id);
 
-        if (user.role === 'admin') {
-          onSectionChange('admin-area');
-        } else if (user.role === 'doctor') {
-          onSectionChange('doctor-area');
-        } else {
-          onSectionChange('patient-area');
-        }
-      }, 2000);
+          if (success) {
+            // Redirecionar para área do paciente para ver o agendamento
+            onSectionChange('patient-area');
+          } else {
+            // Se falhou, redirecionar para página de agendamentos para tentar novamente
+            onSectionChange('agendamentos');
+          }
+        }, 2000);
+      } else {
+        setTimeout(() => {
+          setShowSuccessModal(false);
+
+          if (user.role === 'admin') {
+            onSectionChange('admin-area');
+          } else if (user.role === 'doctor') {
+            onSectionChange('doctor-area');
+          } else {
+            onSectionChange('patient-area');
+          }
+        }, 2000);
+      }
 
     } catch (err: any) {
       e.preventDefault();

@@ -39,11 +39,20 @@ Route::prefix('v1')->group(function () {
     
     // Especialidades - PÚBLICA
     Route::get('/specialties', [SpecialtyController::class, 'index']);
-    
+
+    // Médicos - PÚBLICO (para visualização em agendamentos)
+    Route::get('/doctors', [DoctorController::class, 'index']);
+    Route::get('/doctors/{id}', [DoctorController::class, 'show']);
+
+    // Horários - PÚBLICO (para visualização em agendamentos)
+    Route::get('/schedules', [ScheduleController::class, 'index']);
+    Route::get('/schedules/{id}', [ScheduleController::class, 'show']);
+    Route::get('/schedules/{id}/slots', [ScheduleController::class, 'getAvailableSlots']);
+
     // Rotas públicas de documentos (com token na URL)
-    Route::get('/public/doctors/{doctorId}/documents/{documentId}/view/{token}', 
+    Route::get('/public/doctors/{doctorId}/documents/{documentId}/view/{token}',
         [DoctorController::class, 'viewDocumentPublic']);
-    Route::get('/public/doctors/{doctorId}/documents/{documentId}/download/{token}', 
+    Route::get('/public/doctors/{doctorId}/documents/{documentId}/download/{token}',
         [DoctorController::class, 'downloadDocumentPublic']);
 });
 
@@ -58,27 +67,22 @@ Route::middleware('auth:sanctum')->prefix('v1')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);
     Route::get('/me', [AuthController::class, 'me']);
     Route::get('/user', [AuthController::class, 'user']);
-    
+
     // ========================================
-    // DOCTORS (público autenticado)
-    // ========================================
-    Route::get('/doctors', [DoctorController::class, 'index']);
-    Route::get('/doctors/{id}', [DoctorController::class, 'show']);
-    
-    // ========================================
-    // APPOINTMENTS (público autenticado)
+    // APPOINTMENTS (requer autenticação)
     // ========================================
     Route::get('/appointments', [AppointmentController::class, 'index']);
     Route::post('/appointments', [AppointmentController::class, 'store']);
     Route::get('/appointments/{id}', [AppointmentController::class, 'show']);
     Route::put('/appointments/{id}', [AppointmentController::class, 'update']);
     Route::delete('/appointments/{id}', [AppointmentController::class, 'destroy']);
-    
+
     // ========================================
-    // SCHEDULES (público autenticado)
+    // SCHEDULES (gerenciamento - requer autenticação)
     // ========================================
-    Route::apiResource('schedules', ScheduleController::class);
-    Route::get('schedules/{id}/slots', [ScheduleController::class, 'getAvailableSlots']);
+    Route::post('/schedules', [ScheduleController::class, 'store']);
+    Route::put('/schedules/{id}', [ScheduleController::class, 'update']);
+    Route::delete('/schedules/{id}', [ScheduleController::class, 'destroy']);
     
     // ========================================
     // ROTAS DE ADMIN

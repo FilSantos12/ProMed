@@ -11,14 +11,16 @@ import {
   Heart, Brain, Eye, Ear, Bone, Activity, Stethoscope,
   Pill, Syringe, TestTube, Microscope, Thermometer,
   Baby, Users, Hospital, Ambulance, Cross,
-  Shield, Bandage, Clipboard, HeartPulse,
+  Shield, Bandage, Clipboard, HeartPulse, LogIn, UserPlus,
   type LucideIcon
 } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 import { useToast } from '../contexts/ToastContext';
+import { usePendingAppointment } from '../contexts/PendingAppointmentContext';
 import { appointmentService, Specialty, Doctor, DoctorSchedule } from '../services/appointmentService';
 import { LoadingSpinner } from './ui/loading-spinner';
 import { Alert, AlertDescription } from './ui/alert';
+import InputMask from 'react-input-mask';
 
 // Mapa de ícones médicos (sincronizado com IconPicker)
 const ICON_MAP: Record<string, LucideIcon> = {
@@ -46,9 +48,14 @@ const ICON_MAP: Record<string, LucideIcon> = {
   User,
 };
 
-export function AgendamentosPage() {
+interface AgendamentosPageProps {
+  onSectionChange?: (section: string) => void;
+}
+
+export function AgendamentosPage({ onSectionChange }: AgendamentosPageProps = {}) {
   const { user } = useAuth();
   const toast = useToast();
+  const { savePendingAppointment } = usePendingAppointment();
 
   // Estados para dados do backend
   const [specialties, setSpecialties] = useState<Specialty[]>([]);
@@ -79,6 +86,9 @@ export function AgendamentosPage() {
 
   // Estado de sucesso
   const [appointmentCreated, setAppointmentCreated] = useState(false);
+
+  // Estado para modal de login/cadastro
+  const [showAuthPrompt, setShowAuthPrompt] = useState(false);
 
   // Carregar especialidades ao montar o componente
   useEffect(() => {
@@ -244,14 +254,32 @@ export function AgendamentosPage() {
       return;
     }
 
-    if (!user) {
-      toast.error('Você precisa estar logado para agendar uma consulta');
-      return;
-    }
-
     const selectedDoctorInfo = getSelectedDoctorInfo();
     if (!selectedDoctorInfo) {
       toast.error('Médico não encontrado');
+      return;
+    }
+
+    // Se usuário não está logado, salvar agendamento pendente e mostrar prompt de autenticação
+    if (!user) {
+      const selectedSpecialtyInfo = specialties.find(s => s.id.toString() === selectedSpecialty);
+
+      savePendingAppointment({
+        specialty_id: parseInt(selectedSpecialty),
+        doctor_id: selectedDoctorInfo.user_id,
+        appointment_date: selectedDate,
+        appointment_time: selectedTime,
+        patient_notes: formData.observations || undefined,
+        specialty_name: selectedSpecialtyInfo?.name,
+        doctor_name: selectedDoctorInfo.user.name,
+        // Salvar dados do paciente para pré-preencher cadastro
+        patient_name: formData.name,
+        patient_cpf: formData.cpf,
+        patient_phone: formData.phone,
+        patient_email: formData.email,
+      });
+
+      setShowAuthPrompt(true);
       return;
     }
 
@@ -350,6 +378,89 @@ export function AgendamentosPage() {
             <Button onClick={resetForm} className="mt-4">
               Fazer Novo Agendamento
             </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  if (showAuthPrompt) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+        <Card className="max-w-lg w-full">
+          <CardContent className="p-8">
+            <div className="text-center mb-6">
+              <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <AlertCircle className="w-10 h-10 text-blue-600" />
+              </div>
+              <h2 className="text-2xl font-bold text-gray-900 mb-2">
+                Faça login ou cadastre-se para continuar
+              </h2>
+              <p className="text-gray-600">
+                Para confirmar seu agendamento, você precisa ter uma conta em nosso sistema.
+              </p>
+            </div>
+
+            <div className="bg-blue-50 p-4 rounded-lg mb-6">
+              <h4 className="font-semibold text-gray-900 mb-2">Seu agendamento:</h4>
+              <div className="space-y-2 text-sm text-gray-700">
+                {selectedSpecialty && (
+                  <div className="flex items-center space-x-2">
+                    <Badge variant="secondary" className="flex items-center gap-1.5">
+                      {getSpecialtyIcon(specialties.find(s => s.id.toString() === selectedSpecialty)?.icon)}
+                      {specialties.find(s => s.id.toString() === selectedSpecialty)?.name}
+                    </Badge>
+                  </div>
+                )}
+                {getSelectedDoctorInfo() && (
+                  <div className="flex items-center space-x-2">
+                    <User className="w-4 h-4 text-blue-600" />
+                    <span>Dr(a). {getSelectedDoctorInfo()?.user.name}</span>
+                  </div>
+                )}
+                {selectedDate && (
+                  <div className="flex items-center space-x-2">
+                    <CalendarIcon className="w-4 h-4 text-blue-600" />
+                    <span>{formatDateDisplay(selectedDate)}</span>
+                  </div>
+                )}
+                {selectedTime && (
+                  <div className="flex items-center space-x-2">
+                    <Clock className="w-4 h-4 text-blue-600" />
+                    <span>{selectedTime}</span>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <div className="space-y-3">
+              <Button
+                onClick={() => onSectionChange?.('login')}
+                className="w-full"
+                size="lg"
+              >
+                <LogIn className="w-5 h-5 mr-2" />
+                Já tenho conta - Fazer Login
+              </Button>
+
+              <Button
+                onClick={() => onSectionChange?.('cadastro-paciente')}
+                variant="outline"
+                className="w-full"
+                size="lg"
+              >
+                <UserPlus className="w-5 h-5 mr-2" />
+                Criar nova conta
+              </Button>
+
+              <Button
+                onClick={() => setShowAuthPrompt(false)}
+                variant="ghost"
+                className="w-full"
+              >
+                Voltar ao formulário
+              </Button>
+            </div>
           </CardContent>
         </Card>
       </div>
@@ -527,26 +638,40 @@ export function AgendamentosPage() {
 
                   <div className="space-y-2">
                     <Label htmlFor="cpf">CPF *</Label>
-                    <Input
-                      id="cpf"
+                    <InputMask
+                      mask="999.999.999-99"
                       value={formData.cpf}
-                      onChange={(e) => handleInputChange('cpf', e.target.value)}
-                      placeholder="000.000.000-00"
-                      required
-                    />
+                      onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleInputChange('cpf', e.target.value)}
+                    >
+                      {(inputProps: any) => (
+                        <Input
+                          {...inputProps}
+                          id="cpf"
+                          placeholder="000.000.000-00"
+                          required
+                        />
+                      )}
+                    </InputMask>
                   </div>
                 </div>
 
                 <div className="grid md:grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="phone">Telefone *</Label>
-                    <Input
-                      id="phone"
+                    <InputMask
+                      mask="(99) 99999-9999"
                       value={formData.phone}
-                      onChange={(e) => handleInputChange('phone', e.target.value)}
-                      placeholder="(11) 99999-9999"
-                      required
-                    />
+                      onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleInputChange('phone', e.target.value)}
+                    >
+                      {(inputProps: any) => (
+                        <Input
+                          {...inputProps}
+                          id="phone"
+                          placeholder="(11) 99999-9999"
+                          required
+                        />
+                      )}
+                    </InputMask>
                   </div>
 
                   <div className="space-y-2">

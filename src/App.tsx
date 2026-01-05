@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { AuthProvider } from './contexts/AuthContext';
 import { ToastProvider } from './contexts/ToastContext';
+import { PendingAppointmentProvider } from './contexts/PendingAppointmentContext';
 import { Header } from './components/Header';
 import { HomePage } from './components/HomePage';
 import { EspecialidadesPage } from './components/EspecialidadesPage';
@@ -48,7 +49,7 @@ function AppContent() {
       case 'contato':
         return <ContatoPage onSectionChange={handleSectionChange} />;
       case 'agendamentos':
-        return <AgendamentosPage />;
+        return <AgendamentosPage onSectionChange={handleSectionChange} />;
       case 'reset-password':
         return <ResetPasswordPage onSectionChange={handleSectionChange} />;
       case 'login':
@@ -136,7 +137,9 @@ export default function App() {
   return (
     <AuthProvider>
       <ToastProvider>
-        <AppContent />
+        <PendingAppointmentProvider>
+          <AppContent />
+        </PendingAppointmentProvider>
       </ToastProvider>
     </AuthProvider>
   );

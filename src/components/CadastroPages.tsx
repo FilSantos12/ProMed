@@ -9,6 +9,7 @@ import { Checkbox } from './ui/checkbox';
 import { Separator } from './ui/separator';
 import { User, Stethoscope, FileText, Shield, Mail, Upload, Image, X } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
+import { usePendingAppointment } from '../contexts/PendingAppointmentContext';
 import { Alert, AlertDescription } from './ui/alert';
 import { AlertCircle, CheckCircle2 } from 'lucide-react';
 import api from '../services/api';
@@ -90,11 +91,6 @@ export function CadastroPages({ type, onSectionChange }: CadastroPagesProps) {
 
 const handleRegister = async (e: React.FormEvent) => {
   e.preventDefault();
-  console.log('🟢 handleRegister FOI CHAMADA!');
-  console.log('📦 Dados do formulário:', formData);
-  console.log('👤 Tipo de cadastro:', type);
-  console.log('📋 Especialidades disponíveis:', specialties);
-  
   setLoading(true);
   setErrorMessage('');
 
@@ -178,27 +174,17 @@ if (type === 'professional') {
   // ========================================
   if (documents.diploma) {
     formDataToSend.append('diploma', documents.diploma);
-    console.log('✅ Diploma adicionado:', documents.diploma.name);
   }
   if (documents.crm_document) {
     formDataToSend.append('crm_document', documents.crm_document);
-    console.log('✅ CRM Document adicionado:', documents.crm_document.name);
   }
   if (documents.rg_document) {
     formDataToSend.append('rg_document', documents.rg_document);
-    console.log('✅ RG Document adicionado (opcional):', documents.rg_document.name);
   }
   if (documents.photo) {
     formDataToSend.append('photo', documents.photo);
-    console.log('✅ Photo adicionado:', documents.photo.name);
   }
 }
-
-console.log('🔵 CRM State:', formData.crmState);
-console.log('🔵 CRM:', formData.crm);
-console.log('🔵 Specialty:', formData.specialty);
-
-console.log('🔵 Enviando FormData com arquivos...');
 
   try {
         const response = await api.post('/register', formDataToSend, {
@@ -211,21 +197,16 @@ console.log('🔵 Enviando FormData com arquivos...');
             (progressEvent.loaded * 100) / progressEvent.total
           );
           setUploadProgress(percentCompleted);
-          console.log('📊 Upload progress:', percentCompleted + '%');
         }
       },
     });
-    
-    console.log('✅ Cadastro realizado com sucesso:', response.data);
     
       // Salvar nome do usuário e abrir modal
       setRegisteredUserName(formData.name);
       setShowSuccessModal(true);
     
  } catch (err: any) {
-    console.error('❌ Erro no cadastro:', err);
-    console.error('📛 Detalhes do erro:', err.response?.data);
-    
+
     let errorMsg = 'Ocorreu um erro ao realizar o cadastro. Tente novamente.';
     
     // Tratar erros específicos do backend
@@ -235,7 +216,6 @@ console.log('🔵 Enviando FormData com arquivos...');
     
     // Mostrar erros de validação do backend
     if (err.response?.data?.errors) {
-      console.error('❌ Erros de validação:', err.response.data.errors);
       const errors = err.response.data.errors;
     // Mapeamento manual (BACKUP)
     const errorTranslations: { [key: string]: string } = {
@@ -292,15 +272,27 @@ console.log('🔵 Enviando FormData com arquivos...');
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
   const { register } = useAuth();
+  const { hasPendingAppointment, completePendingAppointment, pendingAppointment } = usePendingAppointment();
+
+  // Pré-preencher dados do agendamento pendente se houver
+  useEffect(() => {
+    if (type === 'patient' && pendingAppointment) {
+      setFormData(prev => ({
+        ...prev,
+        name: pendingAppointment.patient_name || prev.name,
+        cpf: pendingAppointment.patient_cpf || prev.cpf,
+        phone: pendingAppointment.patient_phone || prev.phone,
+        email: pendingAppointment.patient_email || prev.email,
+      }));
+    }
+  }, [pendingAppointment, type]);
 
   useEffect(() => {
   const fetchSpecialties = async () => {
     try {
       const response = await api.get('/specialties');
       // Atualizar o estado das especialidades se você tiver um
-      console.log('Especialidades:', response.data);
     } catch (error) {
-      console.error('Erro ao carregar especialidades:', error);
     }
   };
 
@@ -312,7 +304,6 @@ console.log('🔵 Enviando FormData com arquivos...');
       // Estado para documentos enviados
         const handleFileChange = (field: string, file: File | null) => {
           setDocuments(prev => ({ ...prev, [field]: file }));
-          console.log(`📄 Arquivo ${field}:`, file);
         };
       
       const [documents, setDocuments] = useState<{
@@ -335,9 +326,7 @@ console.log('🔵 Enviando FormData com arquivos...');
           try {
             const data = await specialtyService.getAll();
             setSpecialties(data);
-            console.log('✅ Especialidades carregadas:', data);
           } catch (error) {
-            console.error('❌ Erro ao buscar especialidades:', error);
           } finally {
             setLoadingSpecialties(false);
           }
@@ -379,11 +368,27 @@ const handleSubmitForm = async (e: React.FormEvent) => {
     });
 
     setSuccess(true);
-    
-    // Redirecionar após 2 segundos
-    setTimeout(() => {
-      onSectionChange('patient-area');
-    }, 2000);
+
+    // Se há agendamento pendente, completá-lo
+    if (hasPendingAppointment) {
+      setTimeout(async () => {
+        const user = JSON.parse(localStorage.getItem('user') || '{}');
+        const success = await completePendingAppointment(user.id);
+
+        if (success) {
+          // Redirecionar para área do paciente para ver o agendamento
+          onSectionChange('patient-area');
+        } else {
+          // Se falhou, redirecionar para página de agendamentos para tentar novamente
+          onSectionChange('agendamentos');
+        }
+      }, 2000);
+    } else {
+      // Redirecionar após 2 segundos normalmente
+      setTimeout(() => {
+        onSectionChange('patient-area');
+      }, 2000);
+    }
 
   } catch (err: any) {
     const errorMessage = err.response?.data?.message 
@@ -1203,8 +1208,6 @@ const handleSubmitForm = async (e: React.FormEvent) => {
                   disabled={!formData.acceptTerms || !formData.acceptPrivacy || loading}
                   onClick={(e: React.MouseEvent<HTMLButtonElement>) => {
                       e.preventDefault();
-                      console.log('🔴 BOTÃO CLICADO DIRETAMENTE!');
-                      console.log('📦 FormData:', formData);
                       handleRegister(e as any);
                     }}
                 >
