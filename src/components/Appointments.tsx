@@ -40,7 +40,7 @@ interface Appointment {
   specialty_id: number;
   appointment_date: string;
   appointment_time: string;
-  status: 'scheduled' | 'confirmed' | 'completed' | 'cancelled';
+  status: 'scheduled' | 'confirmed' | 'completed' | 'cancelled' | 'no_show' | 'in_progress';
   patient_notes?: string;
   doctor_notes?: string;
   cancellation_reason?: string;
@@ -213,6 +213,8 @@ const Appointments: React.FC = () => {
       case 'cancelled': return 'bg-red-100 text-red-800';
       case 'scheduled': return 'bg-yellow-100 text-yellow-800';
       case 'pending': return 'bg-orange-100 text-orange-800';
+      case 'no_show': return 'bg-orange-100 text-orange-800';
+      case 'in_progress': return 'bg-cyan-100 text-cyan-800';
       default: return 'bg-gray-100 text-gray-800';
     }
   };
@@ -223,6 +225,8 @@ const Appointments: React.FC = () => {
       case 'confirmed': return 'Confirmado';
       case 'completed': return 'Concluído';
       case 'cancelled': return 'Cancelado';
+      case 'no_show': return 'Não Compareceu';
+      case 'in_progress': return 'Em Andamento';
       case 'pending': return 'Pendente';
       default: return status;
     }
@@ -656,7 +660,9 @@ const Appointments: React.FC = () => {
                   >
                     <option value="scheduled">Agendado</option>
                     <option value="confirmed">Confirmado</option>
+                    <option value="in_progress">Em Andamento</option>
                     <option value="completed">Concluído</option>
+                    <option value="no_show">Não Compareceu</option>
                     <option value="cancelled">Cancelado</option>
                   </select>
                 </div>

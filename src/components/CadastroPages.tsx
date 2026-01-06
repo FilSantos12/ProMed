@@ -16,7 +16,7 @@ import api from '../services/api';
 import { Modal } from './ui/modal';
 import { ErrorModal } from './ui/error-modal';
 import { TermsModal } from './ui/terms-modal';
-import InputMask from 'react-input-mask';
+import { MaskedInput } from './ui/masked-input';
 import { LoadingSpinner } from './ui/loading-spinner';
 import { ProgressBar } from './ui/progress-bar';
 import { specialtyService, Specialty } from '../services/specialtyService';
@@ -557,40 +557,28 @@ const handleSubmitForm = async (e: React.FormEvent) => {
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="cpf">CPF *</Label>
-                      <InputMask
-                        mask="999.999.999-99"
-                        value={formData.cpf}
-                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleInputChange('cpf', e.target.value)}
-                      >
-                        {(inputProps: any) => (
-                          <Input 
-                            {...inputProps}
-                            id="cpf"
-                            placeholder="000.000.000-00"
-                            required
-                          />
-                        )}
-                      </InputMask>
+                    <MaskedInput
+                      mask="000.000.000-00"
+                      value={formData.cpf}
+                      onChange={(value) => handleInputChange('cpf', value)}
+                      id="cpf"
+                      placeholder="000.000.000-00"
+                      required
+                    />
                   </div>
                 </div>
 
                 <div className="grid md:grid-cols-3 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="rg">RG *</Label>
-                    <InputMask
-                      mask="99.999.999-9"
+                    <MaskedInput
+                      mask="00.000.000-0"
                       value={formData.rg}
-                      onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleInputChange('rg', e.target.value)}
-                    >
-                      {(inputProps: any) => (
-                        <Input 
-                          {...inputProps}
-                          id="rg"
-                          placeholder="00.000.000-0"
-                          required
-                        />
-                      )}
-                    </InputMask>
+                      onChange={(value) => handleInputChange('rg', value)}
+                      id="rg"
+                      placeholder="00.000.000-0"
+                      required
+                    />
                   </div>
      
                   <div className="space-y-2">
@@ -605,20 +593,14 @@ const handleSubmitForm = async (e: React.FormEvent) => {
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="phone">Telefone *</Label>
-                    <InputMask
-                      mask="(99) 99999-9999"
+                    <MaskedInput
+                      mask="(00) 00000-0000"
                       value={formData.phone}
-                      onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleInputChange('phone', e.target.value)}
-                    >
-                      {(inputProps: any) => (
-                        <Input 
-                          {...inputProps}
-                          id="phone"
-                          placeholder="(11) 99999-9999"
-                          required
-                        />
-                      )}
-                    </InputMask>
+                      onChange={(value) => handleInputChange('phone', value)}
+                      id="phone"
+                      placeholder="(11) 99999-9999"
+                      required
+                    />
                   </div>
                 </div>
 
@@ -716,20 +698,14 @@ const handleSubmitForm = async (e: React.FormEvent) => {
                 <div className="grid md:grid-cols-3 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="cep">CEP *</Label>
-                    <InputMask
-                      mask="99999-999"
+                    <MaskedInput
+                      mask="00000-000"
                       value={formData.cep}
-                      onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleInputChange('cep', e.target.value)}
-                    >
-                      {(inputProps: any) => (
-                        <Input 
-                          {...inputProps}
-                          id="cep"
-                          placeholder="00000-000"
-                          required
-                        />
-                      )}
-                    </InputMask>
+                      onChange={(value) => handleInputChange('cep', value)}
+                      id="cep"
+                      placeholder="00000-000"
+                      required
+                    />
                   </div>
                   <div className="space-y-2 md:col-span-2">
                     <Label htmlFor="address">Endereço *</Label>
@@ -813,21 +789,14 @@ const handleSubmitForm = async (e: React.FormEvent) => {
                     <div className="grid md:grid-cols-2 gap-4">
                       <div className="space-y-2">
                         <Label htmlFor="crm">CRM *</Label>
-                        <InputMask
-                          mask="999999"
-                          maskChar={null}
+                        <MaskedInput
+                          mask="000000"
                           value={formData.crm}
-                          onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleInputChange('crm', e.target.value.toUpperCase())}
-                        >
-                          {(inputProps: any) => (
-                            <Input 
-                              {...inputProps}
-                              id="crm"
-                              placeholder="CRM 123456"
-                              required
-                            />
-                          )}
-                        </InputMask>
+                          onChange={(value) => handleInputChange('crm', value.toUpperCase())}
+                          id="crm"
+                          placeholder="123456"
+                          required
+                        />
                       </div>
 
                        {/* Estado do CRM */}

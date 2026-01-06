@@ -20,7 +20,7 @@ import { usePendingAppointment } from '../contexts/PendingAppointmentContext';
 import { appointmentService, Specialty, Doctor, DoctorSchedule } from '../services/appointmentService';
 import { LoadingSpinner } from './ui/loading-spinner';
 import { Alert, AlertDescription } from './ui/alert';
-import InputMask from 'react-input-mask';
+import { MaskedInput } from './ui/masked-input';
 
 // Mapa de ícones médicos (sincronizado com IconPicker)
 const ICON_MAP: Record<string, LucideIcon> = {
@@ -638,40 +638,28 @@ export function AgendamentosPage({ onSectionChange }: AgendamentosPageProps = {}
 
                   <div className="space-y-2">
                     <Label htmlFor="cpf">CPF *</Label>
-                    <InputMask
-                      mask="999.999.999-99"
+                    <MaskedInput
+                      mask="000.000.000-00"
                       value={formData.cpf}
-                      onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleInputChange('cpf', e.target.value)}
-                    >
-                      {(inputProps: any) => (
-                        <Input
-                          {...inputProps}
-                          id="cpf"
-                          placeholder="000.000.000-00"
-                          required
-                        />
-                      )}
-                    </InputMask>
+                      onChange={(value) => handleInputChange('cpf', value)}
+                      id="cpf"
+                      placeholder="000.000.000-00"
+                      required
+                    />
                   </div>
                 </div>
 
                 <div className="grid md:grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="phone">Telefone *</Label>
-                    <InputMask
-                      mask="(99) 99999-9999"
+                    <MaskedInput
+                      mask="(00) 00000-0000"
                       value={formData.phone}
-                      onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleInputChange('phone', e.target.value)}
-                    >
-                      {(inputProps: any) => (
-                        <Input
-                          {...inputProps}
-                          id="phone"
-                          placeholder="(11) 99999-9999"
-                          required
-                        />
-                      )}
-                    </InputMask>
+                      onChange={(value) => handleInputChange('phone', value)}
+                      id="phone"
+                      placeholder="(11) 99999-9999"
+                      required
+                    />
                   </div>
 
                   <div className="space-y-2">
