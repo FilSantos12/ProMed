@@ -60,7 +60,7 @@ class DashboardController extends Controller
             }
             
             // Consultas recentes de hoje
-            $recentAppointments = Appointment::with(['patient.user', 'doctor.user', 'doctor.specialty'])
+            $recentAppointments = Appointment::with(['patient', 'doctor', 'specialty'])
                 ->whereDate('appointment_date', $today)
                 ->orderBy('appointment_time', 'asc')
                 ->limit(10)
@@ -69,9 +69,9 @@ class DashboardController extends Controller
                     return [
                         'id' => $appointment->id,
                         'time' => substr($appointment->appointment_time, 0, 5),
-                        'patient' => $appointment->patient->user->name ?? 'N/A',
-                        'doctor' => $appointment->doctor->user->name ?? 'N/A',
-                        'specialty' => $appointment->doctor->specialty->name ?? 'N/A',
+                        'patient' => $appointment->patient->name ?? 'N/A',
+                        'doctor' => $appointment->doctor->name ?? 'N/A',
+                        'specialty' => $appointment->specialty->name ?? 'N/A',
                         'status' => $appointment->status,
                     ];
                 });

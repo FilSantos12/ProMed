@@ -5,8 +5,28 @@ import { Button } from './ui/button';
 import { Badge } from './ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from './ui/table';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
-import { Calendar, Edit, Eye } from 'lucide-react';
+import {
+  Calendar, Edit, Eye,
+  Stethoscope, Heart, Brain, Bone, Baby, Activity, Eye as EyeIcon, Ear, Users,
+  Pill, Syringe, TestTube, Microscope, Thermometer, UserCircle, UserCheck,
+  Circle, Square, Triangle, Star, AlertCircle, CheckCircle, XCircle, Info, Zap,
+  Sparkles, Sun, Moon, Cloud, Droplet, Shield, Cross,
+  Hospital, Ambulance, Bandage, FileHeart, Clipboard, HeartPulse,
+  Radar, Target, LucideIcon
+} from 'lucide-react';
 import { useToast } from '../contexts/ToastContext';
+
+// Mapa de ícones disponíveis (mesmo padrão do Specialties.tsx)
+const ICON_MAP: Record<string, LucideIcon> = {
+  Heart, Brain, Eye: EyeIcon, Ear, Bone, Activity, Stethoscope,
+  Pill, Syringe, TestTube, Microscope, Thermometer,
+  Baby, User: Users, Users, UserCircle, UserCheck,
+  Circle, Square, Triangle, Star,
+  AlertCircle, CheckCircle, XCircle, Info, Zap,
+  Sparkles, Sun, Moon, Cloud, Droplet,
+  Shield, Cross, Hospital, Ambulance, Bandage,
+  FileHeart, Clipboard, HeartPulse, Radar, Target
+};
 
 interface Doctor {
   id: number;
@@ -436,16 +456,18 @@ const Appointments: React.FC = () => {
       </CardContent>
 
       {/* Modal de Visualização */}
-      {showViewModal && selectedAppointment && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 animate-fade-in">
-          {/* Overlay */}
-          <div
-            className="absolute inset-0 bg-black/50 backdrop-blur-sm"
-            onClick={closeModals}
-          />
+      {showViewModal && selectedAppointment && (() => {
+        const IconComponent = ICON_MAP[selectedAppointment.specialty?.icon || 'Stethoscope'] || Stethoscope;
+        return (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 animate-fade-in">
+            {/* Overlay */}
+            <div
+              className="absolute inset-0 bg-black/50 backdrop-blur-sm"
+              onClick={closeModals}
+            />
 
-          {/* Modal Content */}
-          <div className="relative bg-white rounded-lg shadow-2xl w-full max-w-3xl animate-zoom-in">
+            {/* Modal Content */}
+            <div className="relative bg-white rounded-lg shadow-2xl w-full max-w-3xl animate-zoom-in">
             {/* Header - Fixo */}
             <div className="flex items-center justify-between p-6 border-b bg-gradient-to-r from-blue-50 to-white">
               <div className="flex items-center space-x-3">
@@ -484,12 +506,17 @@ const Appointments: React.FC = () => {
               <div className="grid grid-cols-2 gap-6">
                 <div className="bg-purple-50 p-4 rounded-lg">
                   <label className="block text-sm font-semibold text-purple-900 mb-2">Especialidade</label>
-                  <p className="text-gray-900 font-medium">
-                    {selectedAppointment.specialty?.icon} {selectedAppointment.specialty?.name || 'N/A'}
-                  </p>
-                  {selectedAppointment.specialty?.description && (
-                    <p className="text-sm text-gray-600 mt-1">{selectedAppointment.specialty.description}</p>
-                  )}
+                  <div className="flex items-center space-x-2">
+                    <div className="flex items-center justify-center w-10 h-10 bg-gray-100 rounded-lg">
+                      <IconComponent className="w-5 h-5 text-gray-700" />
+                    </div>
+                    <div>
+                      <p className="text-gray-900 font-medium">{selectedAppointment.specialty?.name || 'N/A'}</p>
+                      {selectedAppointment.specialty?.description && (
+                        <p className="text-sm text-gray-600">{selectedAppointment.specialty.description}</p>
+                      )}
+                    </div>
+                  </div>
                 </div>
 
                 <div className="bg-gray-50 p-4 rounded-lg">
@@ -574,7 +601,8 @@ const Appointments: React.FC = () => {
             </div>
           </div>
         </div>
-      )}
+        );
+      })()}
 
       {/* Modal de Edição */}
       {showEditModal && selectedAppointment && (

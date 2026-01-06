@@ -6,8 +6,29 @@ import { Badge } from './ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from './ui/table';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 import { Input } from './ui/input';
-import { Stethoscope, Edit, Eye, Power, Search, Calendar, CheckCircle, XCircle, FileText, Download, GraduationCap, Building2, CreditCard, Camera, Award, File } from 'lucide-react';
+import {
+  Stethoscope, Edit, Eye, Power, Search, Calendar, CheckCircle, XCircle,
+  FileText, Download, GraduationCap, Building2, CreditCard, Camera, Award, File,
+  Heart, Brain, Bone, Baby, Activity, Eye as EyeIcon, Ear, Users, Pill,
+  Syringe, TestTube, Microscope, Thermometer, UserCircle, UserCheck,
+  Circle, Square, Triangle, Star, AlertCircle, Info, Zap,
+  Sparkles, Sun, Moon, Cloud, Droplet, Shield, Cross,
+  Hospital, Ambulance, Bandage, FileHeart, Clipboard, HeartPulse,
+  Radar, Target, LucideIcon
+} from 'lucide-react';
 import { useToast } from '../contexts/ToastContext';
+
+// Mapa de ícones disponíveis (mesmo padrão do Specialties.tsx)
+const ICON_MAP: Record<string, LucideIcon> = {
+  Heart, Brain, Eye: EyeIcon, Ear, Bone, Activity, Stethoscope,
+  Pill, Syringe, TestTube, Microscope, Thermometer,
+  Baby, User: Users, Users, UserCircle, UserCheck,
+  Circle, Square, Triangle, Star,
+  AlertCircle, CheckCircle, XCircle, Info, Zap,
+  Sparkles, Sun, Moon, Cloud, Droplet,
+  Shield, Cross, Hospital, Ambulance, Bandage,
+  FileHeart, Clipboard, HeartPulse, Radar, Target
+};
 
 
 interface User {
@@ -540,11 +561,19 @@ const getDocumentIcon = (type: string) => {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">Todas</SelectItem>
-                {specialties.map(spec => (
-                  <SelectItem key={spec.id} value={spec.id.toString()}>
-                    {spec.icon} {spec.name}
-                  </SelectItem>
-                ))}
+                {specialties.map(spec => {
+                  const IconComponent = ICON_MAP[spec.icon || 'Stethoscope'] || Stethoscope;
+                  return (
+                    <SelectItem key={spec.id} value={spec.id.toString()}>
+                      <div className="flex items-center space-x-2">
+                        <div className="flex items-center justify-center w-6 h-6 bg-gray-100 rounded">
+                          <IconComponent className="w-4 h-4 text-gray-700" />
+                        </div>
+                        <span>{spec.name}</span>
+                      </div>
+                    </SelectItem>
+                  );
+                })}
               </SelectContent>
             </Select>
           </div>
@@ -572,16 +601,23 @@ const getDocumentIcon = (type: string) => {
                 </TableCell>
               </TableRow>
             ) : (
-              filteredDoctors.map((doctor) => (
-                <TableRow key={doctor.id}>
-                  <TableCell className="font-medium">{doctor.user.name}</TableCell>
-                  <TableCell>{doctor.crm} - {doctor.crm_state}</TableCell>
-                  <TableCell>
-                    {doctor.specialty?.icon} {doctor.specialty?.name}
-                  </TableCell>
-                  <TableCell>{doctor.user.email}</TableCell>
-                  <TableCell>{doctor.user.phone}</TableCell>
-                  <TableCell>{getStatusBadge(doctor)}</TableCell>
+              filteredDoctors.map((doctor) => {
+                const IconComponent = ICON_MAP[doctor.specialty?.icon || 'Stethoscope'] || Stethoscope;
+                return (
+                  <TableRow key={doctor.id}>
+                    <TableCell className="font-medium">{doctor.user.name}</TableCell>
+                    <TableCell>{doctor.crm} - {doctor.crm_state}</TableCell>
+                    <TableCell>
+                      <div className="flex items-center space-x-2">
+                        <div className="flex items-center justify-center w-8 h-8 bg-gray-100 rounded-lg">
+                          <IconComponent className="w-4 h-4 text-gray-700" />
+                        </div>
+                        <span>{doctor.specialty?.name}</span>
+                      </div>
+                    </TableCell>
+                    <TableCell>{doctor.user.email}</TableCell>
+                    <TableCell>{doctor.user.phone}</TableCell>
+                    <TableCell>{getStatusBadge(doctor)}</TableCell>
                     <TableCell>
                         <div className="flex space-x-2">
                             <Button 
@@ -667,20 +703,23 @@ const getDocumentIcon = (type: string) => {
                             )}
                         </div>
                         </TableCell>
-                  
-                </TableRow>
-              ))
+
+                  </TableRow>
+                );
+              })
             )}
           </TableBody>
         </Table>
       </CardContent>
 
       {/* Modal de Visualização */}
-      {showViewModal && selectedDoctor && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={closeModals} />
-          
-          <div className="relative bg-white rounded-lg shadow-2xl w-full max-w-3xl">
+      {showViewModal && selectedDoctor && (() => {
+        const IconComponent = ICON_MAP[selectedDoctor.specialty?.icon || 'Stethoscope'] || Stethoscope;
+        return (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={closeModals} />
+
+            <div className="relative bg-white rounded-lg shadow-2xl w-full max-w-3xl">
             <div className="flex items-center justify-between p-6 border-b bg-gradient-to-r from-blue-50 to-white">
               <div className="flex items-center space-x-3">
                 <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
@@ -735,7 +774,12 @@ const getDocumentIcon = (type: string) => {
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700">Especialidade</label>
-                    <p className="text-gray-900">{selectedDoctor.specialty?.icon} {selectedDoctor.specialty?.name}</p>
+                    <div className="flex items-center space-x-2">
+                      <div className="flex items-center justify-center w-10 h-10 bg-gray-100 rounded-lg">
+                        <IconComponent className="w-5 h-5 text-gray-700" />
+                      </div>
+                      <span className="text-gray-900">{selectedDoctor.specialty?.name}</span>
+                    </div>
                   </div>
                   {selectedDoctor.years_experience && (
                     <div>
@@ -790,7 +834,8 @@ const getDocumentIcon = (type: string) => {
             </div>
           </div>
         </div>
-      )}
+        );
+      })()}
 
       {/* Modal de Edição */}
       {showEditModal && selectedDoctor && (
@@ -886,7 +931,7 @@ const getDocumentIcon = (type: string) => {
                         <option value="">Selecione</option>
                         {specialties.map(spec => (
                           <option key={spec.id} value={spec.id}>
-                            {spec.icon} {spec.name}
+                            {spec.name}
                           </option>
                         ))}
                       </select>

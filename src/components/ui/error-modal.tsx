@@ -36,8 +36,8 @@ export function ErrorModal({ isOpen, onClose, title = 'Erro!', message }: ErrorM
   }
 
   return (
-    <div 
-      className="fixed inset-0 flex items-center justify-center p-4 animate-fade-in"
+    <div
+      className="fixed inset-0 flex items-center justify-center p-4 animate-fade-in z-50"
       onClick={(e) => {
         // Só fecha se clicar no overlay, não no modal
         if (e.target === e.currentTarget) {
