@@ -39,24 +39,32 @@ export interface PatientAppointment {
   confirmed_at: string | null;
   cancelled_at: string | null;
   completed_at: string | null;
+  // doctor é o User (médico)
   doctor: {
     id: number;
-    user_id: number;
-    specialty_id: number;
-    crm: string;
-    crm_state: string;
-    user: {
+    name: string;
+    email: string;
+    phone: string;
+    avatar: string | null;
+    // doctor.doctor é o registro Doctor
+    doctor?: {
       id: number;
-      name: string;
-      email: string;
-      phone: string;
-      avatar: string | null;
+      user_id: number;
+      specialty_id: number;
+      crm: string;
+      crm_state: string;
+      specialty: {
+        id: number;
+        name: string;
+        icon: string;
+      };
     };
-    specialty: {
-      id: number;
-      name: string;
-      icon: string;
-    };
+  };
+  // Relação direta com specialty
+  specialty?: {
+    id: number;
+    name: string;
+    icon: string;
   };
 }
 

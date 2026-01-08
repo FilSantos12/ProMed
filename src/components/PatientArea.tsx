@@ -7,12 +7,32 @@ import { Badge } from './ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from './ui/table';
 import { Textarea } from './ui/textarea';
-import { Calendar, Clock, User, FileText, Download, Eye, Plus, Phone, Camera, Edit, X, AlertCircle } from 'lucide-react';
+import {
+  Calendar, Clock, User, FileText, Download, Eye, Plus, Phone, Camera, Edit, X, AlertCircle,
+  Stethoscope, Heart, Brain, Bone, Baby, Activity, Eye as EyeIcon, Ear, Users,
+  Pill, Syringe, TestTube, Microscope, Thermometer, UserCircle, UserCheck,
+  Circle, Square, Triangle, Star, CheckCircle, XCircle, Info, Zap,
+  Sparkles, Sun, Moon, Cloud, Droplet, Shield, Cross,
+  Hospital, Ambulance, Bandage, FileHeart, Clipboard, HeartPulse,
+  Radar, Target, LucideIcon
+} from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 import { useToast } from '../contexts/ToastContext';
 import { patientService, PatientProfile, PatientAppointment, PatientStats } from '../services/patientService';
 import { LoadingSpinner } from './ui/loading-spinner';
 import { Alert, AlertDescription } from './ui/alert';
+
+// Mapa de ícones disponíveis (mesmo padrão do Specialties.tsx)
+const ICON_MAP: Record<string, LucideIcon> = {
+  Heart, Brain, Eye: EyeIcon, Ear, Bone, Activity, Stethoscope,
+  Pill, Syringe, TestTube, Microscope, Thermometer,
+  Baby, User, Users, UserCircle, UserCheck,
+  Circle, Square, Triangle, Star,
+  AlertCircle, CheckCircle, XCircle, Info, Zap,
+  Sparkles, Sun, Moon, Cloud, Droplet,
+  Shield, Cross, Hospital, Ambulance, Bandage,
+  FileHeart, Clipboard, HeartPulse, Radar, Target
+};
 
 interface PatientAreaProps {
   onSectionChange: (section: string) => void;
@@ -394,28 +414,40 @@ export function PatientArea({ onSectionChange }: PatientAreaProps) {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {appointments.map((appointment) => (
-                        <TableRow key={appointment.id}>
-                          <TableCell>
-                            <div>
-                              <div className="font-medium">{formatDate(appointment.appointment_date)}</div>
-                              <div className="text-sm text-gray-600 flex items-center">
-                                <Clock className="w-3 h-3 mr-1" />
-                                {appointment.appointment_time}
+                      {appointments.map((appointment) => {
+                        // Estrutura: appointment.doctor = User, appointment.doctor.doctor = Doctor
+                        const doctorName = appointment.doctor?.name || 'N/A';
+                        const specialtyName = appointment.doctor?.doctor?.specialty?.name || appointment.specialty?.name || 'N/A';
+                        const specialtyIcon = appointment.doctor?.doctor?.specialty?.icon || appointment.specialty?.icon || 'Stethoscope';
+                        const IconComponent = ICON_MAP[specialtyIcon] || Stethoscope;
+
+                        return (
+                          <TableRow key={appointment.id}>
+                            <TableCell>
+                              <div>
+                                <div className="font-medium">{formatDate(appointment.appointment_date)}</div>
+                                <div className="text-sm text-gray-600 flex items-center">
+                                  <Clock className="w-3 h-3 mr-1" />
+                                  {appointment.appointment_time}
+                                </div>
                               </div>
-                            </div>
-                          </TableCell>
-                          <TableCell className="font-medium">
-                            {appointment.doctor?.name || 'N/A'}
-                          </TableCell>
-                          <TableCell>
-                            {appointment.doctor?.doctor?.specialty?.icon} {appointment.doctor?.doctor?.specialty?.name || 'N/A'}
-                          </TableCell>
-                          <TableCell>
-                            <Badge className={getStatusColor(appointment.status)}>
-                              {getStatusLabel(appointment.status)}
-                            </Badge>
-                          </TableCell>
+                            </TableCell>
+                            <TableCell className="font-medium">
+                              {doctorName}
+                            </TableCell>
+                            <TableCell>
+                              <div className="flex items-center space-x-2">
+                                <div className="flex items-center justify-center w-8 h-8 bg-gray-100 rounded-lg">
+                                  <IconComponent className="w-4 h-4 text-gray-700" />
+                                </div>
+                                <span>{specialtyName}</span>
+                              </div>
+                            </TableCell>
+                            <TableCell>
+                              <Badge className={getStatusColor(appointment.status)}>
+                                {getStatusLabel(appointment.status)}
+                              </Badge>
+                            </TableCell>
                           <TableCell>
                             {(appointment.status === 'pending' || appointment.status === 'confirmed') ? (
                               <Button
@@ -432,8 +464,9 @@ export function PatientArea({ onSectionChange }: PatientAreaProps) {
                               </Button>
                             )}
                           </TableCell>
-                        </TableRow>
-                      ))}
+                          </TableRow>
+                        );
+                      })}
                     </TableBody>
                   </Table>
                 )}
@@ -609,7 +642,7 @@ export function PatientArea({ onSectionChange }: PatientAreaProps) {
               </CardContent>
             </Card>
 
-            <Card>
+            {/*<Card>
               <CardHeader>
                 <CardTitle>Convênio</CardTitle>
                 <CardDescription>
@@ -638,7 +671,7 @@ export function PatientArea({ onSectionChange }: PatientAreaProps) {
                   </div>
                 </div>
               </CardContent>
-            </Card>
+            </Card>*/}
           </TabsContent>
         </Tabs>
       </div>
