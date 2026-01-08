@@ -24,3 +24,11 @@ build/
 # OS
 .DS_Store
 Thumbs.db
+
+# Tests
+e2e/
+playwright-report/
+playwright.config.ts
+test-results/
+test-results.json
+nul
