@@ -18,7 +18,7 @@ interface DoctorAreaProps {
   onSectionChange?: (section: string) => void;
 }
 
-export function DoctorArea({ onSectionChange }: DoctorAreaProps) {
+export function DoctorArea({ onSectionChange: _onSectionChange }: DoctorAreaProps) {
   const { user } = useAuth();
   const toast = useToast();
   const [activeTab, setActiveTab] = useState('agenda');
@@ -26,12 +26,14 @@ export function DoctorArea({ onSectionChange }: DoctorAreaProps) {
   // Estados para dados do backend
   const [profile, setProfile] = useState<DoctorProfile | null>(null);
   const [appointments, setAppointments] = useState<DoctorAppointment[]>([]);
+  const [appointmentsHistory, setAppointmentsHistory] = useState<DoctorAppointment[]>([]);
   const [schedules, setSchedules] = useState<DoctorSchedule[]>([]);
   const [stats, setStats] = useState<DoctorStats | null>(null);
 
   // Estados de loading e erro
   const [loading, setLoading] = useState(true);
   const [loadingAppointments, setLoadingAppointments] = useState(false);
+  const [loadingHistory, setLoadingHistory] = useState(false);
   const [loadingSchedules, setLoadingSchedules] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -133,9 +135,28 @@ export function DoctorArea({ onSectionChange }: DoctorAreaProps) {
     }
   };
 
+  // Carregar histórico de consultas
+  const loadHistory = async () => {
+    try {
+      setLoadingHistory(true);
+      // Buscar consultas concluídas, canceladas e no_show
+      const historyData = await doctorService.getAppointments({
+        status: 'completed,cancelled,no_show'
+      });
+      setAppointmentsHistory(historyData);
+    } catch (err: any) {
+      console.error('Erro ao carregar histórico:', err);
+      toast.error('Erro ao carregar histórico de consultas', 6000);
+    } finally {
+      setLoadingHistory(false);
+    }
+  };
+
   useEffect(() => {
     if (activeTab === 'controle-agenda') {
       loadSchedules();
+    } else if (activeTab === 'historico') {
+      loadHistory();
     }
   }, [activeTab]);
 
@@ -180,11 +201,13 @@ export function DoctorArea({ onSectionChange }: DoctorAreaProps) {
       await doctorService.completeAppointment(appointmentId);
       toast.success('Consulta marcada como concluída!', 3000);
 
-      setAppointments(prev =>
-        prev.map(appt =>
-          appt.id === appointmentId ? { ...appt, status: 'completed' } : appt
-        )
-      );
+      // Remover da lista de próximas consultas
+      setAppointments(prev => prev.filter(appt => appt.id !== appointmentId));
+
+      // Se estiver na aba de histórico, recarregar
+      if (activeTab === 'historico') {
+        loadHistory();
+      }
     } catch (err: any) {
       console.error('Erro ao completar consulta:', err);
       toast.error('Erro ao completar consulta', 6000);
@@ -196,11 +219,13 @@ export function DoctorArea({ onSectionChange }: DoctorAreaProps) {
       await doctorService.noShowAppointment(appointmentId);
       toast.success('Consulta marcada como faltou', 3000);
 
-      setAppointments(prev =>
-        prev.map(appt =>
-          appt.id === appointmentId ? { ...appt, status: 'no_show' } : appt
-        )
-      );
+      // Remover da lista de próximas consultas
+      setAppointments(prev => prev.filter(appt => appt.id !== appointmentId));
+
+      // Se estiver na aba de histórico, recarregar
+      if (activeTab === 'historico') {
+        loadHistory();
+      }
     } catch (err: any) {
       console.error('Erro ao marcar como faltou:', err);
       toast.error('Erro ao marcar como faltou', 6000);
@@ -552,7 +577,7 @@ export function DoctorArea({ onSectionChange }: DoctorAreaProps) {
                 Área do Médico
               </h1>
               <p className="text-gray-600">
-                Bem-vindo, {profile?.user.name ?? user?.name ?? 'Usuário'} - {profile?.specialty.name ?? 'Especialidade'} | CRM {profile?.crm ?? 'N/A'}/{profile?.crm_state ?? ''}
+                Bem-vindo, {profile?.user?.name || user?.name || 'Usuário'} - {profile?.specialty?.name || 'Especialidade'} | CRM {profile?.crm || 'N/A'}/{profile?.crm_state || ''}
               </p>
             </div>
           </div>
@@ -563,7 +588,7 @@ export function DoctorArea({ onSectionChange }: DoctorAreaProps) {
           <Card>
             <CardContent className="p-4 text-center">
               <div className="text-2xl font-bold text-blue-600 mb-1">
-                {stats?.appointmentsToday ?? 0}
+                {stats?.appointmentsToday || 0}
               </div>
               <div className="text-sm text-gray-600">Consultas Hoje</div>
             </CardContent>
@@ -571,7 +596,7 @@ export function DoctorArea({ onSectionChange }: DoctorAreaProps) {
           <Card>
             <CardContent className="p-4 text-center">
               <div className="text-2xl font-bold text-green-600 mb-1">
-                {stats?.appointmentsWeek ?? 0}
+                {stats?.appointmentsWeek || 0}
               </div>
               <div className="text-sm text-gray-600">Esta Semana</div>
             </CardContent>
@@ -579,7 +604,7 @@ export function DoctorArea({ onSectionChange }: DoctorAreaProps) {
           <Card>
             <CardContent className="p-4 text-center">
               <div className="text-2xl font-bold text-purple-600 mb-1">
-                {stats?.appointmentsMonth ?? 0}
+                {stats?.appointmentsMonth || 0}
               </div>
               <div className="text-sm text-gray-600">Este Mês</div>
             </CardContent>
@@ -587,7 +612,7 @@ export function DoctorArea({ onSectionChange }: DoctorAreaProps) {
           <Card>
             <CardContent className="p-4 text-center">
               <div className="text-2xl font-bold text-orange-600 mb-1">
-                {stats?.activePatients ?? 0}
+                {stats?.activePatients || 0}
               </div>
               <div className="text-sm text-gray-600">Pacientes Ativos</div>
             </CardContent>
@@ -596,7 +621,7 @@ export function DoctorArea({ onSectionChange }: DoctorAreaProps) {
 
         {/* Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="grid w-full grid-cols-3">
+          <TabsList className="grid w-full grid-cols-4">
             <TabsTrigger value="agenda" className="flex items-center space-x-2">
               <Calendar className="w-4 h-4" />
               <span>Agenda</span>
@@ -604,6 +629,10 @@ export function DoctorArea({ onSectionChange }: DoctorAreaProps) {
             <TabsTrigger value="controle-agenda" className="flex items-center space-x-2">
               <Clock className="w-4 h-4" />
               <span>Controle de Agenda</span>
+            </TabsTrigger>
+            <TabsTrigger value="historico" className="flex items-center space-x-2">
+              <FileText className="w-4 h-4" />
+              <span>Histórico</span>
             </TabsTrigger>
             <TabsTrigger value="configuracoes" className="flex items-center space-x-2">
               <User className="w-4 h-4" />
@@ -653,7 +682,7 @@ export function DoctorArea({ onSectionChange }: DoctorAreaProps) {
                               </div>
                               <div className="flex items-center space-x-2">
                                 <User className="w-4 h-4 text-gray-600" />
-                                <span className="font-medium">{appointment.patient?.name ?? 'Paciente'}</span>
+                                <span className="font-medium">{appointment.patient?.name || 'Paciente'}</span>
                               </div>
                               <Badge className={getStatusColor(appointment.status)}>
                                 {getStatusLabel(appointment.status)}
@@ -663,11 +692,11 @@ export function DoctorArea({ onSectionChange }: DoctorAreaProps) {
                             <div className="flex items-center space-x-4 text-sm text-gray-600 mb-2">
                               <div className="flex items-center space-x-1">
                                 <Phone className="w-4 h-4" />
-                                <span>{appointment.patient?.phone ?? 'N/A'}</span>
+                                <span>{appointment.patient?.phone || 'N/A'}</span>
                               </div>
                               <div className="flex items-center space-x-1">
                                 <Mail className="w-4 h-4" />
-                                <span>{appointment.patient?.email ?? 'N/A'}</span>
+                                <span>{appointment.patient?.email || 'N/A'}</span>
                               </div>
                             </div>
 
@@ -1202,6 +1231,117 @@ export function DoctorArea({ onSectionChange }: DoctorAreaProps) {
             </Card>
           </TabsContent>
 
+          {/* Histórico Tab */}
+          <TabsContent value="historico" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center space-x-2">
+                  <FileText className="w-5 h-5 text-purple-600" />
+                  <span>Histórico de Consultas</span>
+                </CardTitle>
+                <CardDescription>
+                  Consultas concluídas, canceladas e não compareceu
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                {loadingHistory ? (
+                  <div className="text-center py-8">
+                    <LoadingSpinner />
+                    <p className="mt-2 text-gray-600">Carregando histórico...</p>
+                  </div>
+                ) : appointmentsHistory.length === 0 ? (
+                  <div className="text-center py-8 text-gray-500">
+                    <FileText className="w-12 h-12 mx-auto mb-3 text-gray-300" />
+                    <p>Nenhuma consulta no histórico</p>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {appointmentsHistory.map((appointment) => (
+                      <div key={appointment.id} className="border rounded-lg p-4 hover:shadow-md transition-shadow bg-gray-50">
+                        <div className="flex items-start justify-between">
+                          <div className="flex-1">
+                            <div className="flex items-center space-x-4 mb-2">
+                              <div className="flex items-center space-x-2">
+                                <Calendar className="w-4 h-4 text-purple-600" />
+                                <span className="font-medium">
+                                  {new Date(appointment.appointment_date).toLocaleDateString('pt-BR')}
+                                </span>
+                              </div>
+                              <div className="flex items-center space-x-2">
+                                <Clock className="w-4 h-4 text-purple-600" />
+                                <span className="font-medium">{appointment.appointment_time.substring(0, 5)}</span>
+                              </div>
+                              <div className="flex items-center space-x-2">
+                                <User className="w-4 h-4 text-gray-600" />
+                                <span className="font-medium">{appointment.patient?.name || 'Paciente'}</span>
+                              </div>
+                              <Badge className={getStatusColor(appointment.status)}>
+                                {getStatusLabel(appointment.status)}
+                              </Badge>
+                            </div>
+
+                            <div className="flex items-center space-x-4 text-sm text-gray-600 mb-2">
+                              <div className="flex items-center space-x-1">
+                                <Phone className="w-4 h-4" />
+                                <span>{appointment.patient?.phone || 'N/A'}</span>
+                              </div>
+                              <div className="flex items-center space-x-1">
+                                <Mail className="w-4 h-4" />
+                                <span>{appointment.patient?.email || 'N/A'}</span>
+                              </div>
+                            </div>
+
+                            {appointment.patient_notes && (
+                              <div className="mb-2">
+                                <p className="text-xs text-gray-500 mb-1">Observações do paciente:</p>
+                                <p className="text-sm text-gray-600 bg-blue-50 p-2 rounded">
+                                  {appointment.patient_notes}
+                                </p>
+                              </div>
+                            )}
+
+                            {appointment.doctor_notes && (
+                              <div className="mb-2">
+                                <p className="text-xs text-gray-500 mb-1">Suas anotações:</p>
+                                <p className="text-sm text-gray-600 bg-gray-100 p-2 rounded">
+                                  {appointment.doctor_notes}
+                                </p>
+                              </div>
+                            )}
+
+                            {appointment.cancellation_reason && (
+                              <div className="mb-2">
+                                <p className="text-xs text-gray-500 mb-1">Motivo do cancelamento:</p>
+                                <p className="text-sm text-red-700 bg-red-50 p-2 rounded">
+                                  {appointment.cancellation_reason}
+                                </p>
+                              </div>
+                            )}
+
+                            <div className="flex items-center space-x-4 text-xs text-gray-500 mt-2">
+                              {appointment.completed_at && (
+                                <div className="flex items-center space-x-1">
+                                  <Check className="w-3 h-3 text-green-600" />
+                                  <span>Concluído em: {new Date(appointment.completed_at).toLocaleDateString('pt-BR')}</span>
+                                </div>
+                              )}
+                              {appointment.cancelled_at && (
+                                <div className="flex items-center space-x-1">
+                                  <X className="w-3 h-3 text-red-600" />
+                                  <span>Cancelado em: {new Date(appointment.cancelled_at).toLocaleDateString('pt-BR')}</span>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
           {/* Configurações Tab */}
           <TabsContent value="configuracoes" className="space-y-6">
             <Card>
@@ -1230,7 +1370,7 @@ export function DoctorArea({ onSectionChange }: DoctorAreaProps) {
                     <Label htmlFor="name">Nome Completo</Label>
                     <Input
                       id="name"
-                      value={profile?.user.name ?? ''}
+                      value={profile?.user?.name || ''}
                       disabled
                       className="bg-gray-50"
                     />
@@ -1242,7 +1382,7 @@ export function DoctorArea({ onSectionChange }: DoctorAreaProps) {
                     <Label htmlFor="specialty">Especialidade</Label>
                     <Input
                       id="specialty"
-                      value={profile?.specialty.name ?? ''}
+                      value={profile?.specialty?.name || ''}
                       disabled
                       className="bg-gray-50"
                     />
@@ -1254,7 +1394,7 @@ export function DoctorArea({ onSectionChange }: DoctorAreaProps) {
                     <Label htmlFor="crm">CRM</Label>
                     <Input
                       id="crm"
-                      value={profile?.crm ?? ''}
+                      value={profile?.crm || ''}
                       disabled
                       className="bg-gray-50"
                     />
@@ -1263,7 +1403,7 @@ export function DoctorArea({ onSectionChange }: DoctorAreaProps) {
                     <Label htmlFor="crm_state">UF</Label>
                     <Input
                       id="crm_state"
-                      value={profile?.crm_state ?? ''}
+                      value={profile?.crm_state || ''}
                       disabled
                       className="bg-gray-50"
                     />
@@ -1272,7 +1412,7 @@ export function DoctorArea({ onSectionChange }: DoctorAreaProps) {
                     <Label htmlFor="phone">Telefone</Label>
                     <Input
                       id="phone"
-                      value={profile?.user.phone ?? ''}
+                      value={profile?.user?.phone || ''}
                       disabled
                       className="bg-gray-50"
                     />
