@@ -38,6 +38,7 @@ Route::prefix('v1')->group(function () {
     Route::post('/reset-password', [PasswordResetController::class, 'resetPassword']);
     
     // Especialidades - PÚBLICA
+    Route::get('/specialties/available', [SpecialtyController::class, 'available']);
     Route::get('/specialties', [SpecialtyController::class, 'index']);
 
     // Médicos - PÚBLICO (para visualização em agendamentos)
