@@ -258,6 +258,7 @@ export function SobrePage({ onSectionChange }: SobrePageProps) {
                 className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 value={selectedSpecialty || ''}
                 onChange={(e) => setSelectedSpecialty(e.target.value ? Number(e.target.value) : null)}
+                aria-label="Filtrar por especialidade"
               >
                 <option value="">Todas as especialidades</option>
                 {specialties.map((specialty) => (
