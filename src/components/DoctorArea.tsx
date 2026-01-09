@@ -1,11 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Label } from './ui/label';
 import { Badge } from './ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from './ui/table';
 import { Textarea } from './ui/textarea';
 import { Calendar, Clock, User, FileText, Phone, Edit, Check, X, Mail, Plus, Camera, AlertCircle, Trash2, Power } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
@@ -58,7 +57,6 @@ export function DoctorArea({ onSectionChange: _onSectionChange }: DoctorAreaProp
     break_time: 0,
     lunch_break: '12:00-13:00',
   });
-  const [editingSchedule, setEditingSchedule] = useState<number | null>(null);
 
   // Estados para modal de confirmação
   const [showDeleteModal, setShowDeleteModal] = useState(false);
