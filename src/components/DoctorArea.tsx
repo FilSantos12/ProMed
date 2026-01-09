@@ -31,7 +31,7 @@ export function DoctorArea({ onSectionChange: _onSectionChange }: DoctorAreaProp
 
   // Estados de loading e erro
   const [loading, setLoading] = useState(true);
-  const [loadingAppointments, setLoadingAppointments] = useState(false);
+  const [loadingAppointments] = useState(false);
   const [loadingHistory, setLoadingHistory] = useState(false);
   const [loadingSchedules, setLoadingSchedules] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -282,15 +282,6 @@ export function DoctorArea({ onSectionChange: _onSectionChange }: DoctorAreaProp
   };
 
   // Funções de Controle de Agenda
-  const handleToggleDay = (day: number) => {
-    setScheduleForm(prev => ({
-      ...prev,
-      days_of_week: prev.days_of_week.includes(day)
-        ? prev.days_of_week.filter(d => d !== day)
-        : [...prev.days_of_week, day]
-    }));
-  };
-
   // Extrair dias da semana únicos de um intervalo de datas
   const extractDaysOfWeek = (startDate: string, endDate: string): number[] => {
     if (!startDate || !endDate) return [];
@@ -389,17 +380,6 @@ export function DoctorArea({ onSectionChange: _onSectionChange }: DoctorAreaProp
     }
   };
 
-  const handleUpdateSchedule = async (scheduleId: number, updates: any) => {
-    try {
-      await doctorService.updateSchedule(scheduleId, updates);
-      toast.success('Horário atualizado com sucesso!', 3000);
-      loadSchedules();
-    } catch (err: any) {
-      console.error('Erro ao atualizar horário:', err);
-      toast.error('Erro ao atualizar horário', 6000);
-    }
-  };
-
   const handleDeleteSchedule = (scheduleId: number) => {
     setScheduleToDelete(scheduleId);
     setShowDeleteModal(true);
@@ -474,20 +454,6 @@ export function DoctorArea({ onSectionChange: _onSectionChange }: DoctorAreaProp
   const getDayName = (dayNumber: number): string => {
     const days = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
     return days[dayNumber] || '';
-  };
-
-  // Converter nome do dia (string) para índice (number)
-  const dayNameToIndex = (dayName: string): number => {
-    const mapping: { [key: string]: number } = {
-      'sunday': 0,
-      'monday': 1,
-      'tuesday': 2,
-      'wednesday': 3,
-      'thursday': 4,
-      'friday': 5,
-      'saturday': 6
-    };
-    return mapping[dayName.toLowerCase()] ?? 0;
   };
 
   const getStatusColor = (status: string) => {
