@@ -100,11 +100,17 @@ export function PatientArea({ onSectionChange }: PatientAreaProps) {
 
       // Atualizar estados do formulário
       if (profileData) {
+        // Converter birth_date de ISO para YYYY-MM-DD se necessário
+        let birthDate = profileData.user?.birth_date || '';
+        if (birthDate && birthDate.includes('T')) {
+          birthDate = birthDate.split('T')[0];
+        }
+
         setProfileData({
           name: profileData.user?.name || '',
           email: profileData.user?.email || '',
           phone: profileData.user?.phone || '',
-          birth_date: profileData.user?.birth_date || '',
+          birth_date: birthDate,
           gender: profileData.user?.gender || '',
           rg: profileData.user?.rg || '',
           emergency_contact: profileData.emergency_contact || '',
