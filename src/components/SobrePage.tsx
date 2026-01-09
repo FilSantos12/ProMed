@@ -4,7 +4,7 @@ import { Badge } from './ui/badge';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { ImageWithFallback } from './figma/ImageWithFallback';
-import { Award, Users, Heart, Shield, Search, MapPin, Calendar, User, Stethoscope, type LucideIcon } from 'lucide-react';
+import { Award, Users, Heart, Shield, Search, Calendar, User, Stethoscope, type LucideIcon } from 'lucide-react';
 import { LoadingSpinner } from './ui/loading-spinner';
 import api from '../services/api';
 import { specialtyService } from '../services/specialtyService';
@@ -204,7 +204,7 @@ export function SobrePage({ onSectionChange }: SobrePageProps) {
                     const Icon = value.icon;
                     return (
                       <div key={index} className="flex items-start space-x-3">
-                        <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-">
+                        <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
                           <Icon className="w-5 h-5 text-blue-600" />
                         </div>
                         <div>
