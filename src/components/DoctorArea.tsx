@@ -84,9 +84,9 @@ export function DoctorArea({ onSectionChange: _onSectionChange }: DoctorAreaProp
       const [profileData, statsData, appointmentsData] = await Promise.all([
         doctorService.getProfile(),
         doctorService.getStats(),
-        // Buscar consultas futuras (a partir de hoje)
+        // Buscar apenas consultas NÃO finalizadas (pending e confirmed)
         doctorService.getAppointments({
-          startDate: new Date().toISOString().split('T')[0]
+          status: 'pending,confirmed'
         }),
       ]);
 
@@ -187,12 +187,13 @@ export function DoctorArea({ onSectionChange: _onSectionChange }: DoctorAreaProp
       await doctorService.cancelAppointment(appointmentId, reason || undefined);
       toast.success('Consulta cancelada', 3000);
 
-      // Atualizar lista de consultas
-      setAppointments(prev =>
-        prev.map(appt =>
-          appt.id === appointmentId ? { ...appt, status: 'cancelled' } : appt
-        )
-      );
+      // Remover da lista de próximas consultas (vai para o histórico)
+      setAppointments(prev => prev.filter(appt => appt.id !== appointmentId));
+
+      // Se estiver na aba de histórico, recarregar
+      if (activeTab === 'historico') {
+        loadHistory();
+      }
     } catch (err: any) {
       console.error('Erro ao cancelar consulta:', err);
       toast.error('Erro ao cancelar consulta', 6000);
@@ -652,7 +653,7 @@ export function DoctorArea({ onSectionChange: _onSectionChange }: DoctorAreaProp
                   <span>Próximas Consultas</span>
                 </CardTitle>
                 <CardDescription>
-                  Consultas agendadas a partir de hoje
+                  Consultas pendentes e confirmadas (não finalizadas)
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -664,7 +665,7 @@ export function DoctorArea({ onSectionChange: _onSectionChange }: DoctorAreaProp
                 ) : appointments.length === 0 ? (
                   <div className="text-center py-8 text-gray-500">
                     <Calendar className="w-12 h-12 mx-auto mb-3 text-gray-300" />
-                    <p>Nenhuma consulta agendada para hoje</p>
+                    <p>Nenhuma consulta pendente ou confirmada</p>
                   </div>
                 ) : (
                   <div className="space-y-4">
