@@ -621,20 +621,20 @@ export function DoctorArea({ onSectionChange: _onSectionChange }: DoctorAreaProp
 
         {/* Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="grid w-full grid-cols-4">
-            <TabsTrigger value="agenda" className="flex items-center space-x-2">
+          <TabsList className="inline-flex w-full h-auto flex-wrap gap-2 bg-gray-100 p-2 rounded-lg">
+            <TabsTrigger value="agenda" className="flex items-center space-x-2 flex-1 min-w-fit">
               <Calendar className="w-4 h-4" />
               <span>Agenda</span>
             </TabsTrigger>
-            <TabsTrigger value="controle-agenda" className="flex items-center space-x-2">
+            <TabsTrigger value="controle-agenda" className="flex items-center space-x-2 flex-1 min-w-fit">
               <Clock className="w-4 h-4" />
               <span>Controle de Agenda</span>
             </TabsTrigger>
-            <TabsTrigger value="historico" className="flex items-center space-x-2">
+            <TabsTrigger value="historico" className="flex items-center space-x-2 flex-1 min-w-fit">
               <FileText className="w-4 h-4" />
               <span>Histórico</span>
             </TabsTrigger>
-            <TabsTrigger value="configuracoes" className="flex items-center space-x-2">
+            <TabsTrigger value="configuracoes" className="flex items-center space-x-2 flex-1 min-w-fit">
               <User className="w-4 h-4" />
               <span>Configurações</span>
             </TabsTrigger>
