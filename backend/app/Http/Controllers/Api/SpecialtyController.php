@@ -121,12 +121,12 @@ class SpecialtyController extends Controller
                 ->get()
                 ->map(function ($specialty) {
                     // Contar horários disponíveis para médicos desta especialidade
-                    $availableSchedules = \DB::table('doctor_schedules')
-                        ->join('doctors', 'doctor_schedules.doctor_id', '=', 'doctors.user_id')
+                    $availableSchedules = \DB::table('schedules')
+                        ->join('doctors', 'schedules.doctor_id', '=', 'doctors.user_id')
                         ->where('doctors.specialty_id', $specialty->id)
                         ->whereIn('doctors.status', ['active', 'approved'])
-                        ->where('doctor_schedules.is_available', true)
-                        ->where('doctor_schedules.schedule_date', '>=', now()->format('Y-m-d'))
+                        ->where('schedules.is_available', true)
+                        ->where('schedules.schedule_date', '>=', now()->format('Y-m-d'))
                         ->count();
 
                     return [
