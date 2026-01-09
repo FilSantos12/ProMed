@@ -316,19 +316,27 @@ export function SobrePage({ onSectionChange }: SobrePageProps) {
             <div className="grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
               {filteredDoctors.map((doctor) => {
                 const IconComponent = ICON_MAP[doctor.specialty.icon] || Stethoscope;
-                const avatarUrl = doctor.user.avatar
-                  ? `${import.meta.env.VITE_API_URL}/storage/${doctor.user.avatar}`
-                  : null;
+
+                // Usar avatar_url se disponível, senão construir URL manualmente
+                const avatarUrl = (doctor.user as any).avatar_url ||
+                                (doctor.user.avatar
+                                  ? `http://localhost:8000/storage/${doctor.user.avatar}`
+                                  : null);
 
                 return (
                   <Card key={doctor.id} className="hover:shadow-lg transition-shadow">
                     <CardHeader className="text-center">
                       <div className="w-24 h-24 mx-auto mb-4 rounded-full overflow-hidden bg-gray-200">
                         {avatarUrl ? (
-                          <ImageWithFallback
+                          <img
                             src={avatarUrl}
                             alt={doctor.user.name}
                             className="w-full h-full object-cover"
+                            onError={(e) => {
+                              console.log('Erro ao carregar avatar:', avatarUrl);
+                              e.currentTarget.style.display = 'none';
+                              e.currentTarget.parentElement!.innerHTML = '<div class="w-full h-full flex items-center justify-center"><svg class="w-12 h-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg></div>';
+                            }}
                           />
                         ) : (
                           <div className="w-full h-full flex items-center justify-center">
@@ -359,12 +367,6 @@ export function SobrePage({ onSectionChange }: SobrePageProps) {
                         <p className="text-sm text-gray-600 leading-relaxed line-clamp-3">
                           {doctor.bio}
                         </p>
-                      )}
-                      {doctor.consultation_price > 0 && (
-                        <div className="text-sm text-gray-700">
-                          <span className="font-medium">Consulta:</span> R${' '}
-                          {doctor.consultation_price.toFixed(2).replace('.', ',')}
-                        </div>
                       )}
                       <Button className="w-full" onClick={handleAgendarConsulta}>
                         <Calendar className="w-4 h-4 mr-2" />
