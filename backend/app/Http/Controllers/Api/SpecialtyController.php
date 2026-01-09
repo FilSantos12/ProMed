@@ -111,40 +111,50 @@ class SpecialtyController extends Controller
      */
     public function available()
     {
-        $specialties = Specialty::where('is_active', true)
-            ->withCount([
-                'doctors' => function ($query) {
-                    $query->where('status', 'active');
-                }
-            ])
-            ->get()
-            ->map(function ($specialty) {
-                // Contar horários disponíveis para médicos desta especialidade
-                $availableSchedules = \DB::table('doctor_schedules')
-                    ->join('doctors', 'doctor_schedules.doctor_id', '=', 'doctors.user_id')
-                    ->where('doctors.specialty_id', $specialty->id)
-                    ->where('doctors.status', 'active')
-                    ->where('doctor_schedules.is_available', true)
-                    ->where('doctor_schedules.schedule_date', '>=', now()->format('Y-m-d'))
-                    ->count();
+        try {
+            $specialties = Specialty::where('is_active', true)
+                ->withCount([
+                    'doctors' => function ($query) {
+                        $query->whereIn('status', ['active', 'approved']);
+                    }
+                ])
+                ->get()
+                ->map(function ($specialty) {
+                    // Contar horários disponíveis para médicos desta especialidade
+                    $availableSchedules = \DB::table('doctor_schedules')
+                        ->join('doctors', 'doctor_schedules.doctor_id', '=', 'doctors.user_id')
+                        ->where('doctors.specialty_id', $specialty->id)
+                        ->whereIn('doctors.status', ['active', 'approved'])
+                        ->where('doctor_schedules.is_available', true)
+                        ->where('doctor_schedules.schedule_date', '>=', now()->format('Y-m-d'))
+                        ->count();
 
-                return [
-                    'id' => $specialty->id,
-                    'name' => $specialty->name,
-                    'description' => $specialty->description,
-                    'icon' => $specialty->icon,
-                    'doctors_count' => $specialty->doctors_count,
-                    'available_schedules_count' => $availableSchedules,
-                    'is_available' => $specialty->doctors_count > 0 && $availableSchedules > 0,
-                    'services' => [], // Pode ser expandido futuramente
-                ];
-            })
-            // Filtrar apenas especialidades com disponibilidade
-            ->filter(function ($specialty) {
-                return $specialty['is_available'];
-            })
-            ->values();
+                    return [
+                        'id' => $specialty->id,
+                        'name' => $specialty->name,
+                        'description' => $specialty->description,
+                        'icon' => $specialty->icon,
+                        'doctors_count' => $specialty->doctors_count,
+                        'available_schedules_count' => $availableSchedules,
+                        'is_available' => $specialty->doctors_count > 0 && $availableSchedules > 0,
+                        'services' => [], // Pode ser expandido futuramente
+                    ];
+                })
+                // Filtrar apenas especialidades com disponibilidade
+                ->filter(function ($specialty) {
+                    return $specialty['is_available'];
+                })
+                ->values();
 
-        return response()->json($specialties);
+            return response()->json($specialties);
+        } catch (\Exception $e) {
+            \Log::error('Erro ao buscar especialidades disponíveis: ' . $e->getMessage());
+            \Log::error($e->getTraceAsString());
+
+            return response()->json([
+                'message' => 'Erro ao buscar especialidades disponíveis',
+                'error' => $e->getMessage()
+            ], 500);
+        }
     }
 }
