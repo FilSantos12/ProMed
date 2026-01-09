@@ -45,7 +45,7 @@ function AppContent() {
       case 'especialidades':
         return <EspecialidadesPage onSectionChange={handleSectionChange} />;
       case 'sobre':
-        return <SobrePage />;
+        return <SobrePage onSectionChange={handleSectionChange} />;
       case 'contato':
         return <ContatoPage onSectionChange={handleSectionChange} />;
       case 'agendamentos':
