@@ -107,14 +107,28 @@ export function SobrePage({ onSectionChange }: SobrePageProps) {
         specialtyService.getAll()
       ]);
 
-      console.log('Dados dos médicos:', doctorsData.data);
+      console.log('Resposta completa dos médicos:', doctorsData.data);
       console.log('Dados das especialidades:', specialtiesData);
 
-      // Garantir que doctorsData.data é um array
-      const doctorsArray = Array.isArray(doctorsData.data) ? doctorsData.data : [];
+      // O backend retorna paginação, então os dados estão em data.data
+      let doctorsArray = [];
+      if (doctorsData.data.data && Array.isArray(doctorsData.data.data)) {
+        // Dados paginados
+        doctorsArray = doctorsData.data.data;
+      } else if (Array.isArray(doctorsData.data)) {
+        // Dados diretos (sem paginação)
+        doctorsArray = doctorsData.data;
+      }
 
-      // Filtrar apenas médicos ativos
-      const activeDoctors = doctorsArray.filter((doc: Doctor) => doc.status === 'active');
+      console.log('Médicos encontrados:', doctorsArray.length);
+      console.log('Médicos:', doctorsArray);
+
+      // Filtrar apenas médicos com status approved ou active
+      const activeDoctors = doctorsArray.filter(
+        (doc: Doctor) => doc.status === 'approved' || doc.status === 'active'
+      );
+
+      console.log('Médicos ativos/aprovados:', activeDoctors.length);
 
       setDoctors(activeDoctors);
       setFilteredDoctors(activeDoctors);
