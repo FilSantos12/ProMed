@@ -143,9 +143,12 @@ export function DoctorArea({ onSectionChange: _onSectionChange }: DoctorAreaProp
       const historyData = await doctorService.getAppointments({
         status: 'completed,cancelled,no_show'
       });
+      console.log('Histórico carregado:', historyData);
+      console.log('Total de consultas no histórico:', historyData.length);
       setAppointmentsHistory(historyData);
     } catch (err: any) {
       console.error('Erro ao carregar histórico:', err);
+      console.error('Detalhes do erro:', err.response?.data);
       toast.error('Erro ao carregar histórico de consultas', 6000);
     } finally {
       setLoadingHistory(false);
@@ -1273,7 +1276,9 @@ export function DoctorArea({ onSectionChange: _onSectionChange }: DoctorAreaProp
                               </div>
                               <div className="flex items-center space-x-2">
                                 <User className="w-4 h-4 text-gray-600" />
-                                <span className="font-medium">{appointment.patient?.name || 'Paciente'}</span>
+                                <span className="font-medium">
+                                  {appointment.patient?.name || appointment.patient?.user?.name || 'Paciente'}
+                                </span>
                               </div>
                               <Badge className={getStatusColor(appointment.status)}>
                                 {getStatusLabel(appointment.status)}
@@ -1283,11 +1288,11 @@ export function DoctorArea({ onSectionChange: _onSectionChange }: DoctorAreaProp
                             <div className="flex items-center space-x-4 text-sm text-gray-600 mb-2">
                               <div className="flex items-center space-x-1">
                                 <Phone className="w-4 h-4" />
-                                <span>{appointment.patient?.phone || 'N/A'}</span>
+                                <span>{appointment.patient?.phone || appointment.patient?.user?.phone || 'N/A'}</span>
                               </div>
                               <div className="flex items-center space-x-1">
                                 <Mail className="w-4 h-4" />
-                                <span>{appointment.patient?.email || 'N/A'}</span>
+                                <span>{appointment.patient?.email || appointment.patient?.user?.email || 'N/A'}</span>
                               </div>
                             </div>
 

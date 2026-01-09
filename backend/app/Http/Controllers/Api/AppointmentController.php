@@ -18,19 +18,42 @@ class AppointmentController extends Controller
     {
         $query = Appointment::with(['patient', 'doctor', 'specialty']);
 
-        // Filtrar por paciente
+        // Filtrar automaticamente baseado no usuário logado
+        $user = $request->user();
+
+        if ($user) {
+            // Se for médico, mostrar apenas suas consultas
+            if ($user->role === 'doctor' && $user->doctor) {
+                $query->where('doctor_id', $user->doctor->user_id);
+            }
+            // Se for paciente, mostrar apenas suas consultas
+            elseif ($user->role === 'patient' && $user->patient) {
+                $query->where('patient_id', $user->patient->id);
+            }
+            // Admin pode ver todas as consultas (não aplica filtro)
+        }
+
+        // Filtrar por paciente (sobrescreve filtro automático se fornecido)
         if ($request->has('patient_id')) {
             $query->where('patient_id', $request->patient_id);
         }
 
-        // Filtrar por médico
+        // Filtrar por médico (sobrescreve filtro automático se fornecido)
         if ($request->has('doctor_id')) {
             $query->where('doctor_id', $request->doctor_id);
         }
 
-        // Filtrar por status
+        // Filtrar por status (aceita múltiplos status separados por vírgula)
         if ($request->has('status')) {
-            $query->where('status', $request->status);
+            $status = $request->status;
+            if (str_contains($status, ',')) {
+                // Múltiplos status separados por vírgula
+                $statusArray = array_map('trim', explode(',', $status));
+                $query->whereIn('status', $statusArray);
+            } else {
+                // Status único
+                $query->where('status', $status);
+            }
         }
 
         // Filtrar por data

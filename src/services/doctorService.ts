@@ -34,11 +34,18 @@ export interface DoctorAppointment {
   appointment_date: string;
   appointment_time: string;
   status: string;
-  patient_notes: string;
-  doctor_notes: string;
+  patient_notes: string | null;
+  doctor_notes: string | null;
+  cancellation_reason: string | null;
+  confirmed_at: string | null;
+  cancelled_at: string | null;
+  completed_at: string | null;
   patient: {
     id: number;
-    user: {
+    name?: string;
+    email?: string;
+    phone?: string;
+    user?: {
       name: string;
       email: string;
       phone: string;
