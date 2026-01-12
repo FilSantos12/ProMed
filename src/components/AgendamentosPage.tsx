@@ -295,11 +295,6 @@ export function AgendamentosPage({ onSectionChange }: AgendamentosPageProps = {}
         patient_notes: formData.observations || undefined,
       };
 
-      console.log('=== DEBUG APPOINTMENT DATA ===');
-      console.log('Dados sendo enviados:', JSON.stringify(appointmentData, null, 2));
-      console.log('Selected Doctor Info:', selectedDoctorInfo);
-      console.log('User Info:', user);
-
       await appointmentService.createAppointment(appointmentData);
 
       toast.success('Agendamento realizado com sucesso!');
@@ -312,13 +307,6 @@ export function AgendamentosPage({ onSectionChange }: AgendamentosPageProps = {}
       }, 3000);
 
     } catch (err: any) {
-      console.error('=== ERRO COMPLETO ===');
-      console.error('Erro ao criar agendamento:', err);
-      console.error('Resposta do servidor:', err.response?.data);
-      console.error('Erros de validação:', err.response?.data?.errors);
-      console.error('Mensagem:', err.response?.data?.message);
-
-      // Mostrar erro detalhado para o usuário
       const errorMessage = err.response?.data?.message || 'Erro ao criar agendamento';
       const validationErrors = err.response?.data?.errors;
 

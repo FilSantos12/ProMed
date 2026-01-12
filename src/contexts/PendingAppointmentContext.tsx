@@ -78,22 +78,12 @@ export function PendingAppointmentProvider({ children }: PendingAppointmentProvi
         patient_notes: pendingAppointment.patient_notes,
       };
 
-      console.log('=== DEBUG PENDING APPOINTMENT ===');
-      console.log('Dados do agendamento pendente:', JSON.stringify(appointmentData, null, 2));
-      console.log('User ID:', userId);
-      console.log('Pending appointment original:', pendingAppointment);
-
       await appointmentService.createAppointment(appointmentData);
 
       toast.success('Agendamento realizado com sucesso!');
       clearPendingAppointment();
       return true;
     } catch (error: any) {
-      console.error('=== ERRO PENDING APPOINTMENT ===');
-      console.error('Erro ao completar agendamento pendente:', error);
-      console.error('Resposta do servidor:', error.response?.data);
-      console.error('Erros de validação:', error.response?.data?.errors);
-
       const errorMessage = error.response?.data?.message || 'Erro ao completar agendamento';
       const validationErrors = error.response?.data?.errors;
 
