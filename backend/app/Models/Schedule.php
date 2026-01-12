@@ -55,8 +55,14 @@ class Schedule extends Model
      */
     public function isTimeSlotAvailable($date, $time)
     {
+        // IMPORTANTE: schedules.doctor_id aponta para doctors.id
+        // mas appointments.doctor_id aponta para users.id (user_id do médico)
+        // Precisamos buscar o user_id do médico para fazer a verificação correta
+
+        $doctorUserId = $this->doctor->user_id;
+
         // Verificar se já existe consulta agendada neste horário
-        return !Appointment::where('doctor_id', $this->doctor_id)
+        return !Appointment::where('doctor_id', $doctorUserId)
             ->where('appointment_date', $date)
             ->where('appointment_time', $time)
             ->whereIn('status', ['pending', 'confirmed'])
