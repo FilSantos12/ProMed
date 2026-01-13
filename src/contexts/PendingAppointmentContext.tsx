@@ -23,7 +23,7 @@ interface PendingAppointmentContextData {
   hasPendingAppointment: boolean;
   savePendingAppointment: (data: PendingAppointmentData) => void;
   clearPendingAppointment: () => void;
-  completePendingAppointment: (userId: number) => Promise<boolean>;
+  completePendingAppointment: (userId: number, showToast?: boolean) => Promise<boolean>;
 }
 
 export const PendingAppointmentContext = createContext<PendingAppointmentContextData>(
@@ -63,7 +63,7 @@ export function PendingAppointmentProvider({ children }: PendingAppointmentProvi
     localStorage.removeItem(STORAGE_KEY);
   };
 
-  const completePendingAppointment = async (userId: number): Promise<boolean> => {
+  const completePendingAppointment = async (userId: number, showToast: boolean = true): Promise<boolean> => {
     if (!pendingAppointment) {
       return false;
     }
@@ -80,18 +80,26 @@ export function PendingAppointmentProvider({ children }: PendingAppointmentProvi
 
       await appointmentService.createAppointment(appointmentData);
 
-      toast.success('Agendamento realizado com sucesso!');
+      if (showToast) {
+        toast.success('Agendamento realizado com sucesso!');
+      }
       clearPendingAppointment();
       return true;
     } catch (error: any) {
-      const errorMessage = error.response?.data?.message || 'Erro ao completar agendamento';
-      const validationErrors = error.response?.data?.errors;
+      // Limpar agendamento pendente inválido/expirado
+      clearPendingAppointment();
 
-      if (validationErrors) {
-        const errorDetails = Object.values(validationErrors).flat().join(', ');
-        toast.error(`${errorMessage}: ${errorDetails}`);
-      } else {
-        toast.error(errorMessage);
+      // Só mostrar erro se showToast for true
+      if (showToast) {
+        const errorMessage = error.response?.data?.message || 'Erro ao completar agendamento';
+        const validationErrors = error.response?.data?.errors;
+
+        if (validationErrors) {
+          const errorDetails = Object.values(validationErrors).flat().join(', ');
+          toast.error(`${errorMessage}: ${errorDetails}`);
+        } else {
+          toast.error(errorMessage);
+        }
       }
       return false;
     }

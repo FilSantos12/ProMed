@@ -89,6 +89,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
       // CORREÇÃO: Removido o prefixo @ProMed: para padronizar
       localStorage.removeItem('token');
       localStorage.removeItem('user');
+      // Limpar agendamento pendente ao fazer logout
+      localStorage.removeItem('pendingAppointment');
       delete api.defaults.headers.common['Authorization'];
       setToken(null);
       setUser(null);

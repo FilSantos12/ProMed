@@ -98,14 +98,22 @@ export function LoginPage({ onSectionChange }: LoginPageProps) {
       if (hasPendingAppointment && user.role === 'patient') {
         setTimeout(async () => {
           setShowSuccessModal(false);
-          const success = await completePendingAppointment(user.id);
 
-          if (success) {
-            // Redirecionar para área do paciente para ver o agendamento
+          try {
+            // Passar showToast: false para não mostrar erro de agendamento antigo/inválido
+            const success = await completePendingAppointment(user.id, false);
+
+            if (success) {
+              // Se sucesso, mostrar mensagem e redirecionar para área do paciente
+              onSectionChange('patient-area');
+            } else {
+              // Se falhou, apenas redirecionar para área do paciente silenciosamente
+              // (agendamento pendente já foi limpo)
+              onSectionChange('patient-area');
+            }
+          } catch (error) {
+            // Se houver erro, apenas redirecionar para área do paciente silenciosamente
             onSectionChange('patient-area');
-          } else {
-            // Se falhou, redirecionar para página de agendamentos para tentar novamente
-            onSectionChange('agendamentos');
           }
         }, 2000);
       } else {
