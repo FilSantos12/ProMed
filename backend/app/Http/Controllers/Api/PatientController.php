@@ -184,8 +184,15 @@ class PatientController extends Controller
         try {
             $patient = Patient::findOrFail($id);
 
+            // Carregar appointments com relacionamentos corretos
+            // doctor = User do médico
+            // doctorProfile = Dados profissionais da tabela doctors (com specialty)
             $appointments = $patient->appointments()
-                ->with(['doctor.user', 'doctor.specialty'])
+                ->with([
+                    'doctor',                      // User do médico
+                    'doctorProfile.specialty',     // Dados profissionais e especialidade
+                    'specialty'                    // Especialidade do agendamento
+                ])
                 ->orderBy('appointment_date', 'desc')
                 ->orderBy('appointment_time', 'desc')
                 ->get();
@@ -195,6 +202,9 @@ class PatientController extends Controller
                 'appointments' => $appointments
             ]);
         } catch (\Exception $e) {
+            \Log::error('Erro ao buscar histórico de consultas: ' . $e->getMessage());
+            \Log::error($e->getTraceAsString());
+
             return response()->json([
                 'message' => 'Erro ao buscar histórico de consultas',
                 'error' => $e->getMessage()

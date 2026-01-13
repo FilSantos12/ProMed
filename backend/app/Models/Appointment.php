@@ -48,6 +48,16 @@ class Appointment extends Model
     }
 
     /**
+     * Relacionamento: Appointment pertence a um Doctor Profile (tabela doctors)
+     * Como doctor_id aponta para users.id e doctors.user_id também aponta para users.id,
+     * podemos buscar o doctor diretamente
+     */
+    public function doctorProfile()
+    {
+        return $this->belongsTo(Doctor::class, 'doctor_id', 'user_id');
+    }
+
+    /**
      * Relacionamento: Appointment pertence a uma Specialty
      */
     public function specialty()
