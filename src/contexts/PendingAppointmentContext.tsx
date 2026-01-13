@@ -16,6 +16,8 @@ export interface PendingAppointmentData {
   patient_cpf?: string;
   patient_phone?: string;
   patient_email?: string;
+  // Timestamp de criação para expiração
+  created_at?: number;
 }
 
 interface PendingAppointmentContextData {
@@ -45,7 +47,24 @@ export function PendingAppointmentProvider({ children }: PendingAppointmentProvi
     const storedAppointment = localStorage.getItem(STORAGE_KEY);
     if (storedAppointment) {
       try {
-        setPendingAppointment(JSON.parse(storedAppointment));
+        const appointment = JSON.parse(storedAppointment);
+
+        // Validar se o agendamento ainda é válido
+        const appointmentDateTime = new Date(`${appointment.appointment_date}T${appointment.appointment_time}`);
+        const now = new Date();
+
+        // Verificar se expirou (data passada ou mais de 7 dias)
+        const isDatePast = appointmentDateTime <= now;
+        const isExpired = appointment.created_at &&
+          (now.getTime() - appointment.created_at) / (1000 * 60 * 60 * 24) > 7;
+
+        if (isDatePast || isExpired) {
+          // Agendamento expirado - remover silenciosamente
+          localStorage.removeItem(STORAGE_KEY);
+        } else {
+          // Agendamento válido - carregar
+          setPendingAppointment(appointment);
+        }
       } catch (error) {
         console.error('Erro ao carregar agendamento pendente:', error);
         localStorage.removeItem(STORAGE_KEY);
@@ -54,8 +73,13 @@ export function PendingAppointmentProvider({ children }: PendingAppointmentProvi
   }, []);
 
   const savePendingAppointment = (data: PendingAppointmentData) => {
-    setPendingAppointment(data);
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+    // Adicionar timestamp de criação
+    const dataWithTimestamp = {
+      ...data,
+      created_at: Date.now()
+    };
+    setPendingAppointment(dataWithTimestamp);
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(dataWithTimestamp));
   };
 
   const clearPendingAppointment = () => {
@@ -63,8 +87,37 @@ export function PendingAppointmentProvider({ children }: PendingAppointmentProvi
     localStorage.removeItem(STORAGE_KEY);
   };
 
+  const isAppointmentValid = (appointment: PendingAppointmentData): boolean => {
+    // Verificar se a data do agendamento ainda é futura
+    const appointmentDateTime = new Date(`${appointment.appointment_date}T${appointment.appointment_time}`);
+    const now = new Date();
+
+    // Se a data/hora já passou, é inválido
+    if (appointmentDateTime <= now) {
+      return false;
+    }
+
+    // Verificar se o agendamento foi criado há mais de 7 dias (expirado)
+    if (appointment.created_at) {
+      const createdAt = new Date(appointment.created_at);
+      const daysSinceCreation = (now.getTime() - createdAt.getTime()) / (1000 * 60 * 60 * 24);
+      if (daysSinceCreation > 7) {
+        return false;
+      }
+    }
+
+    return true;
+  };
+
   const completePendingAppointment = async (userId: number, showToast: boolean = true): Promise<boolean> => {
     if (!pendingAppointment) {
+      return false;
+    }
+
+    // VALIDAÇÃO PRÉVIA: Verificar se o agendamento ainda é válido antes de enviar ao servidor
+    if (!isAppointmentValid(pendingAppointment)) {
+      // Agendamento expirado ou data passada - limpar silenciosamente
+      clearPendingAppointment();
       return false;
     }
 
