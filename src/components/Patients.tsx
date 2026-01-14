@@ -343,7 +343,8 @@ const Patients: React.FC = () => {
       </CardHeader>
 
       <CardContent>
-        <Table>
+        <div className="overflow-x-auto">
+          <Table>
           <TableHeader>
             <TableRow>
               <TableHead>Nome</TableHead>
@@ -424,7 +425,8 @@ const Patients: React.FC = () => {
               ))
             )}
           </TableBody>
-        </Table>
+          </Table>
+        </div>
       </CardContent>
 
       {/* Modal de Visualização */}

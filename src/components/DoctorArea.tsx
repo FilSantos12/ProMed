@@ -552,7 +552,7 @@ export function DoctorArea({ onSectionChange: _onSectionChange }: DoctorAreaProp
         </div>
 
         {/* Estatísticas */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
           <Card>
             <CardContent className="p-4 text-center">
               <div className="text-2xl font-bold text-blue-600 mb-1">
@@ -866,7 +866,7 @@ export function DoctorArea({ onSectionChange: _onSectionChange }: DoctorAreaProp
               </CardHeader>
               <CardContent className="space-y-4">
                 {/* Configurações Rápidas */}
-                <div className="grid grid-cols-3 gap-3 p-3 bg-gray-50 rounded-lg">
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 p-3 bg-gray-50 rounded-lg">
                   <div className="space-y-1">
                     <Label className="text-xs text-gray-600">Duração da Consulta</Label>
                     <select
@@ -913,7 +913,7 @@ export function DoctorArea({ onSectionChange: _onSectionChange }: DoctorAreaProp
                   <h4 className="font-medium mb-3 text-sm">Adicionar Horários de Disponibilidade</h4>
                   <div className="space-y-3">
                     {/* Período de Datas */}
-                    <div className="grid grid-cols-2 gap-3">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       <div className="space-y-1">
                         <Label className="text-xs text-gray-600">📅 Data Início do Período</Label>
                         <Input
@@ -1335,7 +1335,7 @@ export function DoctorArea({ onSectionChange: _onSectionChange }: DoctorAreaProp
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="name">Nome Completo</Label>
                     <Input
@@ -1359,7 +1359,7 @@ export function DoctorArea({ onSectionChange: _onSectionChange }: DoctorAreaProp
                   </div>
                 </div>
 
-                <div className="grid grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="crm">CRM</Label>
                     <Input
@@ -1389,7 +1389,7 @@ export function DoctorArea({ onSectionChange: _onSectionChange }: DoctorAreaProp
                   </div>
                 </div>
 
-                <div className="grid grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="consultation_price">Preço Consulta (R$)</Label>
                     <Input

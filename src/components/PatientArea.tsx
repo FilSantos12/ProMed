@@ -330,7 +330,7 @@ export function PatientArea({ onSectionChange }: PatientAreaProps) {
 
         {/* Quick Stats */}
         {stats && (
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
             <Card>
               <CardContent className="p-4 text-center">
                 <div className="text-2xl font-bold text-blue-600 mb-1">
@@ -428,8 +428,9 @@ export function PatientArea({ onSectionChange }: PatientAreaProps) {
                     </Button>
                   </div>
                 ) : (
-                  <Table>
-                    <TableHeader>
+                  <div className="overflow-x-auto">
+                    <Table>
+                      <TableHeader>
                       <TableRow>
                         <TableHead>Data/Hora</TableHead>
                         <TableHead>Médico</TableHead>
@@ -493,7 +494,8 @@ export function PatientArea({ onSectionChange }: PatientAreaProps) {
                         );
                       })}
                     </TableBody>
-                  </Table>
+                    </Table>
+                  </div>
                 )}
               </CardContent>
             </Card>
@@ -531,7 +533,7 @@ export function PatientArea({ onSectionChange }: PatientAreaProps) {
                 </div>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="name">Nome Completo</Label>
                     <Input
@@ -547,7 +549,7 @@ export function PatientArea({ onSectionChange }: PatientAreaProps) {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="phone">Telefone</Label>
                     <Input
@@ -569,7 +571,7 @@ export function PatientArea({ onSectionChange }: PatientAreaProps) {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="birth">Data de Nascimento</Label>
                     <Input
@@ -591,7 +593,7 @@ export function PatientArea({ onSectionChange }: PatientAreaProps) {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="emergency">Contato de Emergência</Label>
                     <Input
@@ -675,7 +677,7 @@ export function PatientArea({ onSectionChange }: PatientAreaProps) {
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="health_insurance">Convênio</Label>
                     <Input
