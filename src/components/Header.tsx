@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Button } from './ui/button';
-import { Sheet, SheetContent, SheetTrigger } from './ui/sheet';
+import { Sheet, SheetContent, SheetTrigger, SheetTitle, SheetDescription } from './ui/sheet';
 import { Menu, LogOut, Stethoscope, User, Calendar, Shield } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 // import { ConfirmModal } from './ui/confirm-modal'; // ← COMENTADO
@@ -133,6 +133,10 @@ export function Header({ currentSection, onSectionChange }: HeaderProps) {
               </Button>
             </SheetTrigger>
             <SheetContent side="right" className="w-80">
+              <SheetTitle className="sr-only">Menu de Navegação ProMed</SheetTitle>
+              <SheetDescription className="sr-only">
+                Menu principal com opções de navegação e perfil do usuário
+              </SheetDescription>
               <div className="flex flex-col space-y-4 mt-8">
                 <div className="flex items-center space-x-2 pb-4 border-b">
                   <Stethoscope className="w-6 h-6 text-blue-600" />

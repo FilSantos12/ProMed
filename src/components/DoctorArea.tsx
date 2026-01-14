@@ -634,8 +634,8 @@ export function DoctorArea({ onSectionChange: _onSectionChange }: DoctorAreaProp
                 ) : (
                   <div className="space-y-4">
                     {appointments.map((appointment) => (
-                      <div key={appointment.id} className="border rounded-lg p-4 hover:shadow-md transition-shadow">
-                        <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
+                      <div key={appointment.id} className="border rounded-lg p-4 hover:shadow-md transition-shadow overflow-hidden">
+                        <div className="flex flex-col gap-4">
                           <div className="flex-1">
                             <div className="flex flex-wrap items-center gap-2 md:gap-4 mb-2">
                               <div className="flex items-center space-x-2">
@@ -687,53 +687,21 @@ export function DoctorArea({ onSectionChange: _onSectionChange }: DoctorAreaProp
                             )}
                           </div>
 
-                          <div className="flex flex-col gap-2 w-full md:w-auto">
-                            <div className="flex flex-wrap gap-2">
+                          <div className="flex flex-col gap-2 w-full">
+                            <div className="flex flex-wrap gap-2 w-full">
                               {appointment.status === 'pending' && (
                                 <>
                                   <button
-                                    style={{
-                                      display: 'inline-flex',
-                                      alignItems: 'center',
-                                      justifyContent: 'center',
-                                      height: '32px',
-                                      padding: '0 12px',
-                                      fontSize: '14px',
-                                      fontWeight: '500',
-                                      color: 'white',
-                                      backgroundColor: '#16a34a',
-                                      border: 'none',
-                                      borderRadius: '6px',
-                                      cursor: 'pointer',
-                                      transition: 'background-color 0.2s'
-                                    }}
+                                    className="inline-flex items-center justify-center h-8 px-3 text-sm font-medium text-white bg-green-600 hover:bg-green-700 border-0 rounded-md cursor-pointer transition-colors flex-1 min-w-[100px]"
                                     onClick={() => handleConfirmAppointment(appointment.id)}
-                                    onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#15803d'}
-                                    onMouseOut={(e) => e.currentTarget.style.backgroundColor = '#16a34a'}
                                     title="Confirmar consulta"
                                   >
                                     <Check className="w-4 h-4 mr-1" />
                                     Confirmar
                                   </button>
                                   <button
-                                    style={{
-                                      display: 'inline-flex',
-                                      alignItems: 'center',
-                                      justifyContent: 'center',
-                                      height: '32px',
-                                      padding: '0 12px',
-                                      fontSize: '14px',
-                                      fontWeight: '500',
-                                      color: '#dc2626',
-                                      backgroundColor: 'white',
-                                      border: '1px solid #fca5a5',
-                                      borderRadius: '6px',
-                                      cursor: 'pointer',
-                                      transition: 'background-color 0.2s'
-                                    }}
+                                    className="inline-flex items-center justify-center h-8 px-3 text-sm font-medium text-red-600 bg-white hover:bg-red-50 border border-red-200 rounded-md cursor-pointer transition-colors flex-1 min-w-[100px]"
                                     onClick={() => handleCancelAppointment(appointment.id)}
-                                    onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#fef2f2'}
-                                    onMouseOut={(e) => e.currentTarget.style.backgroundColor = 'white'}
                                     title="Cancelar consulta"
                                   >
                                     <X className="w-4 h-4 mr-1" />
@@ -744,72 +712,24 @@ export function DoctorArea({ onSectionChange: _onSectionChange }: DoctorAreaProp
                               {appointment.status === 'confirmed' && (
                                 <>
                                   <button
-                                    style={{
-                                      display: 'inline-flex',
-                                      alignItems: 'center',
-                                      justifyContent: 'center',
-                                      height: '32px',
-                                      padding: '0 12px',
-                                      fontSize: '14px',
-                                      fontWeight: '500',
-                                      color: 'white',
-                                      backgroundColor: '#2563eb',
-                                      border: 'none',
-                                      borderRadius: '6px',
-                                      cursor: 'pointer',
-                                      transition: 'background-color 0.2s'
-                                    }}
+                                    className="inline-flex items-center justify-center h-8 px-3 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 border-0 rounded-md cursor-pointer transition-colors flex-1 min-w-[90px]"
                                     onClick={() => handleCompleteAppointment(appointment.id)}
-                                    onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#1d4ed8'}
-                                    onMouseOut={(e) => e.currentTarget.style.backgroundColor = '#2563eb'}
                                     title="Marcar como concluída"
                                   >
                                     <Check className="w-4 h-4 mr-1" />
                                     Concluir
                                   </button>
                                   <button
-                                    style={{
-                                      display: 'inline-flex',
-                                      alignItems: 'center',
-                                      justifyContent: 'center',
-                                      height: '32px',
-                                      padding: '0 12px',
-                                      fontSize: '14px',
-                                      fontWeight: '500',
-                                      color: '#ea580c',
-                                      backgroundColor: 'white',
-                                      border: '1px solid #fed7aa',
-                                      borderRadius: '6px',
-                                      cursor: 'pointer',
-                                      transition: 'background-color 0.2s'
-                                    }}
+                                    className="inline-flex items-center justify-center h-8 px-3 text-sm font-medium text-orange-600 bg-white hover:bg-orange-50 border border-orange-200 rounded-md cursor-pointer transition-colors flex-1 min-w-[80px]"
                                     onClick={() => handleNoShowAppointment(appointment.id)}
-                                    onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#fff7ed'}
-                                    onMouseOut={(e) => e.currentTarget.style.backgroundColor = 'white'}
                                     title="Paciente não compareceu"
                                   >
                                     <X className="w-4 h-4 mr-1" />
                                     Faltou
                                   </button>
                                   <button
-                                    style={{
-                                      display: 'inline-flex',
-                                      alignItems: 'center',
-                                      justifyContent: 'center',
-                                      height: '32px',
-                                      padding: '0 12px',
-                                      fontSize: '14px',
-                                      fontWeight: '500',
-                                      color: '#dc2626',
-                                      backgroundColor: 'white',
-                                      border: '1px solid #fca5a5',
-                                      borderRadius: '6px',
-                                      cursor: 'pointer',
-                                      transition: 'background-color 0.2s'
-                                    }}
+                                    className="inline-flex items-center justify-center h-8 px-3 text-sm font-medium text-red-600 bg-white hover:bg-red-50 border border-red-200 rounded-md cursor-pointer transition-colors flex-1 min-w-[90px]"
                                     onClick={() => handleCancelAppointment(appointment.id)}
-                                    onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#fef2f2'}
-                                    onMouseOut={(e) => e.currentTarget.style.backgroundColor = 'white'}
                                     title="Cancelar consulta"
                                   >
                                     <X className="w-4 h-4 mr-1" />
@@ -820,7 +740,7 @@ export function DoctorArea({ onSectionChange: _onSectionChange }: DoctorAreaProp
                             </div>
 
                             {/* Botões de Contato Rápido */}
-                            <div className="flex flex-wrap gap-2">
+                            <div className="flex flex-wrap gap-2 w-full">
                               <Button
                                 size="sm"
                                 variant="outline"
@@ -1076,31 +996,33 @@ export function DoctorArea({ onSectionChange: _onSectionChange }: DoctorAreaProp
                                     schedule.is_available ? 'bg-blue-50 border-blue-200' : 'bg-gray-50 border-gray-200'
                                   }`}
                                 >
-                                  <div className="flex items-center justify-between">
+                                  <div className="flex flex-col sm:flex-row sm:items-center gap-3">
                                     {editingScheduleId === schedule.id ? (
                                       // Modo de Edição
-                                      <div className="flex items-center space-x-3 flex-1">
-                                        <Clock className="w-4 h-4 text-blue-600" />
-                                        <div className="flex items-center space-x-2">
-                                          <Input
-                                            type="time"
-                                            value={editForm.start_time}
-                                            onChange={(e) => setEditForm({ ...editForm, start_time: e.target.value })}
-                                            className="w-28 text-sm h-8"
-                                          />
-                                          <span className="text-sm text-gray-600">-</span>
-                                          <Input
-                                            type="time"
-                                            value={editForm.end_time}
-                                            onChange={(e) => setEditForm({ ...editForm, end_time: e.target.value })}
-                                            className="w-28 text-sm h-8"
-                                          />
+                                      <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 flex-1 w-full">
+                                        <div className="flex items-center gap-2 w-full sm:w-auto">
+                                          <Clock className="w-4 h-4 text-blue-600 flex-shrink-0" />
+                                          <div className="flex items-center gap-2 flex-1">
+                                            <Input
+                                              type="time"
+                                              value={editForm.start_time}
+                                              onChange={(e) => setEditForm({ ...editForm, start_time: e.target.value })}
+                                              className="w-24 sm:w-28 text-sm h-8"
+                                            />
+                                            <span className="text-sm text-gray-600">-</span>
+                                            <Input
+                                              type="time"
+                                              value={editForm.end_time}
+                                              onChange={(e) => setEditForm({ ...editForm, end_time: e.target.value })}
+                                              className="w-24 sm:w-28 text-sm h-8"
+                                            />
+                                          </div>
                                         </div>
-                                        <div className="flex items-center space-x-2">
+                                        <div className="flex gap-2 w-full sm:w-auto">
                                           <Button
                                             size="sm"
                                             onClick={handleSaveEditSchedule}
-                                            className="!bg-green-600 hover:!bg-green-700 !text-white h-8 font-semibold"
+                                            className="!bg-green-600 hover:!bg-green-700 !text-white h-8 font-semibold flex-1 sm:flex-initial"
                                             style={{ backgroundColor: '#16a34a', color: '#ffffff' }}
                                           >
                                             <Check className="w-4 h-4 mr-1" />
@@ -1110,7 +1032,7 @@ export function DoctorArea({ onSectionChange: _onSectionChange }: DoctorAreaProp
                                             size="sm"
                                             variant="outline"
                                             onClick={handleCancelEditSchedule}
-                                            className="h-8 text-gray-900 border-gray-300"
+                                            className="h-8 text-gray-900 border-gray-300 flex-1 sm:flex-initial"
                                           >
                                             <X className="w-4 h-4 mr-1" />
                                             Cancelar
@@ -1120,8 +1042,8 @@ export function DoctorArea({ onSectionChange: _onSectionChange }: DoctorAreaProp
                                     ) : (
                                       // Modo de Visualização
                                       <>
-                                        <div className="flex items-center space-x-4 flex-1">
-                                          <div className="flex items-center space-x-2">
+                                        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 flex-1">
+                                          <div className="flex items-center gap-2">
                                             <Clock className={`w-4 h-4 ${schedule.is_available ? 'text-blue-600' : 'text-gray-400'}`} />
                                             <span className="text-sm font-medium">
                                               {schedule.start_time.substring(0, 5)} - {schedule.end_time.substring(0, 5)}
@@ -1131,7 +1053,7 @@ export function DoctorArea({ onSectionChange: _onSectionChange }: DoctorAreaProp
                                             <span>Duração: {scheduleForm.consultation_duration}min</span>
                                           </div>
                                         </div>
-                                        <div className="flex items-center space-x-2">
+                                        <div className="flex flex-wrap items-center gap-2">
                                           <Badge
                                             variant="outline"
                                             className={
