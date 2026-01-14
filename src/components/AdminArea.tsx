@@ -118,7 +118,8 @@ export function AdminArea({ onSectionChange }: AdminAreaProps) {
 
         {/* Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="grid w-full grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-2 mb-6">
+          <div className="overflow-x-auto mb-6">
+            <TabsList className="inline-flex w-full min-w-max md:grid md:grid-cols-3 lg:grid-cols-5 gap-2">
             <TabsTrigger value="dashboard" className="flex items-center space-x-2">
               <BarChart3 className="w-4 h-4" />
               <span>Dashboard</span>
@@ -144,6 +145,7 @@ export function AdminArea({ onSectionChange }: AdminAreaProps) {
               <span>Configurações</span>
             </TabsTrigger>*/}
           </TabsList>
+          </div>
 
           {/* Dashboard Tab */}
           <TabsContent value="dashboard" className="space-y-6">
