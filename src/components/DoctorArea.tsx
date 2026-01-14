@@ -635,9 +635,9 @@ export function DoctorArea({ onSectionChange: _onSectionChange }: DoctorAreaProp
                   <div className="space-y-4">
                     {appointments.map((appointment) => (
                       <div key={appointment.id} className="border rounded-lg p-4 hover:shadow-md transition-shadow">
-                        <div className="flex items-start justify-between">
+                        <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
                           <div className="flex-1">
-                            <div className="flex items-center space-x-4 mb-2">
+                            <div className="flex flex-wrap items-center gap-2 md:gap-4 mb-2">
                               <div className="flex items-center space-x-2">
                                 <Calendar className="w-4 h-4 text-blue-600" />
                                 <span className="font-medium">
@@ -657,7 +657,7 @@ export function DoctorArea({ onSectionChange: _onSectionChange }: DoctorAreaProp
                               </Badge>
                             </div>
 
-                            <div className="flex items-center space-x-4 text-sm text-gray-600 mb-2">
+                            <div className="flex flex-wrap items-center gap-2 md:gap-4 text-sm text-gray-600 mb-2">
                               <div className="flex items-center space-x-1">
                                 <Phone className="w-4 h-4" />
                                 <span>{appointment.patient?.phone || 'N/A'}</span>
@@ -687,8 +687,8 @@ export function DoctorArea({ onSectionChange: _onSectionChange }: DoctorAreaProp
                             )}
                           </div>
 
-                          <div className="flex flex-col space-y-2 ml-4">
-                            <div className="flex space-x-2">
+                          <div className="flex flex-col gap-2 w-full md:w-auto">
+                            <div className="flex flex-wrap gap-2">
                               {appointment.status === 'pending' && (
                                 <>
                                   <button
@@ -820,7 +820,7 @@ export function DoctorArea({ onSectionChange: _onSectionChange }: DoctorAreaProp
                             </div>
 
                             {/* Botões de Contato Rápido */}
-                            <div className="flex space-x-2">
+                            <div className="flex flex-wrap gap-2">
                               <Button
                                 size="sm"
                                 variant="outline"
@@ -1250,7 +1250,7 @@ export function DoctorArea({ onSectionChange: _onSectionChange }: DoctorAreaProp
                               </Badge>
                             </div>
 
-                            <div className="flex items-center space-x-4 text-sm text-gray-600 mb-2">
+                            <div className="flex flex-wrap items-center gap-2 md:gap-4 text-sm text-gray-600 mb-2">
                               <div className="flex items-center space-x-1">
                                 <Phone className="w-4 h-4" />
                                 <span>{appointment.patient?.phone || appointment.patient?.user?.phone || 'N/A'}</span>
