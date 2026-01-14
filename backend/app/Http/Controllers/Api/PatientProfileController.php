@@ -392,4 +392,38 @@ class PatientProfileController extends Controller
             ], 500);
         }
     }
+
+    /**
+     * Buscar prontuários médicos do paciente autenticado
+     */
+    public function getMedicalRecords(Request $request)
+    {
+        try {
+            $user = $request->user();
+
+            if (!$user->patient) {
+                return response()->json([
+                    'message' => 'Perfil de paciente não encontrado'
+                ], 404);
+            }
+
+            // patient_id na tabela medical_records aponta para users.id
+            $medicalRecords = \App\Models\MedicalRecord::with([
+                'appointment',
+                'doctor.user',
+                'doctor.specialty'
+            ])
+                ->where('patient_id', $user->id)
+                ->orderBy('created_at', 'desc')
+                ->get();
+
+            return response()->json($medicalRecords);
+        } catch (\Exception $e) {
+            Log::error('Erro ao buscar prontuários: ' . $e->getMessage());
+            return response()->json([
+                'message' => 'Erro ao buscar prontuários médicos',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
 }

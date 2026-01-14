@@ -32,11 +32,20 @@ class MedicalRecord extends Model
 
     public function patient()
     {
-        return $this->belongsTo(Patient::class);
+        // patient_id aponta para users.id, não para patients.id
+        return $this->belongsTo(User::class, 'patient_id');
     }
 
     public function doctor()
     {
-        return $this->belongsTo(Doctor::class);
+        // doctor_id aponta para doctors.user_id através de users.id
+        // Retorna o registro Doctor (tabela doctors)
+        return $this->belongsTo(Doctor::class, 'doctor_id', 'user_id');
+    }
+
+    public function doctorUser()
+    {
+        // Relacionamento direto com o User do médico
+        return $this->belongsTo(User::class, 'doctor_id');
     }
 }

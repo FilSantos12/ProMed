@@ -18,7 +18,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 import { useToast } from '../contexts/ToastContext';
-import { patientService, PatientProfile, PatientAppointment, PatientStats } from '../services/patientService';
+import { patientService, PatientProfile, PatientAppointment, PatientStats, MedicalRecord } from '../services/patientService';
 import { LoadingSpinner } from './ui/loading-spinner';
 import { Alert, AlertDescription } from './ui/alert';
 
@@ -77,6 +77,11 @@ export function PatientArea({ onSectionChange }: PatientAreaProps) {
   const [showCancelModal, setShowCancelModal] = useState(false);
   const [appointmentToCancel, setAppointmentToCancel] = useState<number | null>(null);
   const [cancellationReason, setCancellationReason] = useState('');
+
+  // Estados para prontuários médicos
+  const [showMedicalRecordsModal, setShowMedicalRecordsModal] = useState(false);
+  const [medicalRecords, setMedicalRecords] = useState<MedicalRecord[]>([]);
+  const [loadingMedicalRecords, setLoadingMedicalRecords] = useState(false);
 
   // Carregar dados iniciais
   useEffect(() => {
@@ -204,6 +209,20 @@ export function PatientArea({ onSectionChange }: PatientAreaProps) {
     } catch (err: any) {
       console.error('Erro ao cancelar consulta:', err);
       toast.error(err.response?.data?.message || 'Erro ao cancelar consulta');
+    }
+  };
+
+  const handleViewMedicalRecords = async () => {
+    try {
+      setLoadingMedicalRecords(true);
+      setShowMedicalRecordsModal(true);
+      const records = await patientService.getMedicalRecords();
+      setMedicalRecords(records);
+    } catch (err: any) {
+      console.error('Erro ao carregar prontuários:', err);
+      toast.error('Erro ao carregar prontuários médicos');
+    } finally {
+      setLoadingMedicalRecords(false);
     }
   };
 
@@ -357,7 +376,7 @@ export function PatientArea({ onSectionChange }: PatientAreaProps) {
             </CardContent>
           </Card>
 
-          <Card className="cursor-pointer hover:shadow-md transition-shadow">
+          <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={handleViewMedicalRecords}>
             <CardContent className="p-6 text-center">
               <FileText className="w-12 h-12 text-purple-600 mx-auto mb-3" />
               <h3 className="font-semibold text-gray-900 mb-2">Histórico Médico</h3>
@@ -715,6 +734,131 @@ export function PatientArea({ onSectionChange }: PatientAreaProps) {
               </Button>
               <Button onClick={() => setShowCancelModal(false)} variant="outline" className="flex-1">
                 Voltar
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de Prontuários Médicos */}
+      {showMedicalRecordsModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 animate-fade-in">
+          <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setShowMedicalRecordsModal(false)} />
+          <div className="relative bg-white rounded-lg shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden animate-zoom-in">
+            <div className="flex items-center justify-between p-6 border-b border-gray-200">
+              <div className="flex items-center space-x-2">
+                <FileText className="w-6 h-6 text-purple-600" />
+                <h3 className="text-xl font-semibold">Meus Prontuários Médicos</h3>
+              </div>
+              <button
+                onClick={() => setShowMedicalRecordsModal(false)}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="p-6 overflow-y-auto max-h-[calc(90vh-80px)]">
+              {loadingMedicalRecords ? (
+                <div className="text-center py-12">
+                  <LoadingSpinner size="lg" />
+                  <p className="mt-4 text-gray-600">Carregando prontuários...</p>
+                </div>
+              ) : medicalRecords.length === 0 ? (
+                <div className="text-center py-12 text-gray-500">
+                  <FileText className="w-16 h-16 mx-auto mb-4 opacity-30" />
+                  <p className="text-lg font-medium">Nenhum prontuário encontrado</p>
+                  <p className="text-sm mt-2">Seus prontuários médicos aparecerão aqui após consultas concluídas</p>
+                </div>
+              ) : (
+                <div className="space-y-6">
+                  {medicalRecords.map((record) => (
+                    <Card key={record.id} className="border-2">
+                      <CardHeader className="bg-gray-50">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <CardTitle className="text-lg flex items-center space-x-2">
+                              <Stethoscope className="w-5 h-5 text-blue-600" />
+                              <span>{record.doctor?.user?.name || 'Médico não informado'}</span>
+                            </CardTitle>
+                            <CardDescription>
+                              {record.doctor?.specialty?.name || 'Especialidade não informada'} - CRM: {record.doctor?.crm || 'N/A'}/{record.doctor?.crm_state || 'N/A'}
+                            </CardDescription>
+                          </div>
+                          <div className="text-right">
+                            <div className="text-sm font-medium text-gray-700">
+                              {record.appointment ? formatDate(record.appointment.appointment_date) : 'Data não informada'}
+                            </div>
+                            <div className="text-xs text-gray-500">
+                              {record.appointment?.appointment_time || 'Horário não informado'}
+                            </div>
+                          </div>
+                        </div>
+                      </CardHeader>
+                      <CardContent className="pt-6 space-y-4">
+                        {record.symptoms && (
+                          <div>
+                            <Label className="text-sm font-semibold text-gray-700 flex items-center space-x-1">
+                              <AlertCircle className="w-4 h-4" />
+                              <span>Sintomas</span>
+                            </Label>
+                            <p className="mt-1 text-gray-900">{record.symptoms}</p>
+                          </div>
+                        )}
+
+                        {record.diagnosis && (
+                          <div>
+                            <Label className="text-sm font-semibold text-gray-700 flex items-center space-x-1">
+                              <Clipboard className="w-4 h-4" />
+                              <span>Diagnóstico</span>
+                            </Label>
+                            <p className="mt-1 text-gray-900">{record.diagnosis}</p>
+                          </div>
+                        )}
+
+                        {record.treatment && (
+                          <div>
+                            <Label className="text-sm font-semibold text-gray-700 flex items-center space-x-1">
+                              <Heart className="w-4 h-4" />
+                              <span>Tratamento</span>
+                            </Label>
+                            <p className="mt-1 text-gray-900">{record.treatment}</p>
+                          </div>
+                        )}
+
+                        {record.prescription && (
+                          <div>
+                            <Label className="text-sm font-semibold text-gray-700 flex items-center space-x-1">
+                              <Pill className="w-4 h-4" />
+                              <span>Prescrição</span>
+                            </Label>
+                            <p className="mt-1 text-gray-900 whitespace-pre-wrap">{record.prescription}</p>
+                          </div>
+                        )}
+
+                        {record.observations && (
+                          <div>
+                            <Label className="text-sm font-semibold text-gray-700 flex items-center space-x-1">
+                              <FileText className="w-4 h-4" />
+                              <span>Observações</span>
+                            </Label>
+                            <p className="mt-1 text-gray-900">{record.observations}</p>
+                          </div>
+                        )}
+
+                        <div className="pt-4 border-t border-gray-200 text-xs text-gray-500">
+                          Prontuário criado em: {new Date(record.created_at).toLocaleString('pt-BR')}
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <div className="p-4 border-t border-gray-200 bg-gray-50 flex justify-end">
+              <Button onClick={() => setShowMedicalRecordsModal(false)}>
+                Fechar
               </Button>
             </div>
           </div>

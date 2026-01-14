@@ -228,11 +228,12 @@ const Patients: React.FC = () => {
         `${API_URL}/patients/${patient.id}/appointments`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
-      
+
       setSelectedPatient(patient);
       setPatientAppointments(response.data.appointments || []);
       setShowAppointmentsModal(true);
     } catch (err: any) {
+      console.error('Erro ao carregar histórico:', err);
       toast.error('❌ Erro ao carregar histórico de consultas', 6000);
     }
   };
@@ -821,11 +822,11 @@ const Patients: React.FC = () => {
                         </div>
                         <div>
                           <label className="block text-sm font-medium text-gray-700">Médico</label>
-                          <p className="text-gray-900">{appointment.doctor?.user?.name || '-'}</p>
+                          <p className="text-gray-900">{appointment.doctor?.name || '-'}</p>
                         </div>
                         <div>
                           <label className="block text-sm font-medium text-gray-700">Especialidade</label>
-                          <p className="text-gray-900">{appointment.doctor?.specialty?.name || '-'}</p>
+                          <p className="text-gray-900">{appointment.doctorProfile?.specialty?.name || appointment.specialty?.name || '-'}</p>
                         </div>
                         <div>
                           <label className="block text-sm font-medium text-gray-700">Status</label>

@@ -39,12 +39,16 @@ class Patient extends Model
 
     public function appointments()
     {
-        return $this->hasMany(Appointment::class);
+        // patient_id na tabela appointments aponta para users.id, não para patients.id
+        // Por isso usamos user_id como local key
+        return $this->hasMany(Appointment::class, 'patient_id', 'user_id');
     }
 
     public function medicalRecords()
     {
-        return $this->hasMany(MedicalRecord::class);
+        // patient_id na tabela medical_records aponta para users.id, não para patients.id
+        // Por isso usamos user_id como local key
+        return $this->hasMany(MedicalRecord::class, 'patient_id', 'user_id');
     }
 
     public function getFullNameAttribute()

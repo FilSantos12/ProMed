@@ -75,6 +75,44 @@ export interface PatientStats {
   cancelled_appointments: number;
 }
 
+export interface MedicalRecord {
+  id: number;
+  appointment_id: number;
+  patient_id: number;
+  doctor_id: number;
+  symptoms: string | null;
+  diagnosis: string | null;
+  treatment: string | null;
+  prescription: string | null;
+  observations: string | null;
+  attachments: string[] | null;
+  created_at: string;
+  updated_at: string;
+  appointment?: {
+    id: number;
+    appointment_date: string;
+    appointment_time: string;
+    status: string;
+  };
+  doctor?: {
+    id: number;
+    user_id: number;
+    specialty_id: number;
+    crm: string;
+    crm_state: string;
+    user: {
+      id: number;
+      name: string;
+      email: string;
+    };
+    specialty: {
+      id: number;
+      name: string;
+      icon: string;
+    };
+  };
+}
+
 class PatientService {
   // Buscar perfil do paciente
   async getProfile(): Promise<PatientProfile> {
@@ -165,6 +203,18 @@ class PatientService {
         completed_appointments: 0,
         cancelled_appointments: 0,
       };
+    }
+  }
+
+  // Buscar prontuários médicos do paciente
+  async getMedicalRecords(): Promise<MedicalRecord[]> {
+    try {
+      const response = await api.get('/patient/medical-records');
+      const data = response.data;
+      return Array.isArray(data) ? data : (data.data || []);
+    } catch (error) {
+      console.error('Erro ao buscar prontuários médicos:', error);
+      return [];
     }
   }
 }

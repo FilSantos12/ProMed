@@ -185,6 +185,9 @@ Route::middleware('auth:sanctum')->prefix('v1')->group(function () {
         Route::get('/appointments/upcoming', [PatientProfileController::class, 'getUpcomingAppointments']);
         Route::post('/appointments/{appointmentId}/cancel', [PatientProfileController::class, 'cancelAppointment']);
 
+        // Prontuários Médicos
+        Route::get('/medical-records', [PatientProfileController::class, 'getMedicalRecords']);
+
         // Estatísticas
         Route::get('/stats', [PatientProfileController::class, 'getStats']);
     });
