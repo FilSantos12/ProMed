@@ -22,11 +22,14 @@ class Doctor extends Model
         'years_experience',
         'status',
         'rejection_notes',
+        'reviewed_by',
+        'reviewed_at',
     ];
 
     protected $casts = [
         'formation' => 'array',
         'consultation_price' => 'decimal:2',
+        'reviewed_at' => 'datetime',
     ];
 
     /**
@@ -60,6 +63,14 @@ class Doctor extends Model
     public function medicalRecords()
     {
         return $this->hasMany(MedicalRecord::class);
+    }
+
+    /**
+     * Admin que aprovou/rejeitou a solicitação
+     */
+    public function reviewer()
+    {
+        return $this->belongsTo(User::class, 'reviewed_by');
     }
 
     public function getFullNameAttribute()

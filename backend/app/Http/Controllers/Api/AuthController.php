@@ -39,8 +39,8 @@ public function login(Request $request)
     // Pegar o usuário
     $user = \App\Models\User::where('email', $request->email)->first();
 
-    // VALIDAR SE O ROLE BATE
-    if ($user->role !== $request->expected_role) {
+    // VALIDAR SE O USUÁRIO TEM O ROLE SOLICITADO (suporte multi-role)
+    if (!$user->hasRole($request->expected_role)) {
         Auth::logout();
 
         $roles = [
@@ -54,6 +54,9 @@ public function login(Request $request)
         ], 403);
     }
 
+    // Definir o perfil ativo
+    $user->update(['active_role' => $request->expected_role]);
+
     // VALIDAR SE ESTÁ ATIVO
     if (!$user->is_active) {
         Auth::logout();
@@ -62,10 +65,10 @@ public function login(Request $request)
         ], 403);
     }
 
-    // SE FOR MÉDICO, verificar status de aprovação
-    if ($user->role === 'doctor') {
+    // SE ESTIVER FAZENDO LOGIN COMO MÉDICO, verificar status de aprovação
+    if ($request->expected_role === 'doctor') {
         $doctor = Doctor::where('user_id', $user->id)->first();
-        
+
         if (!$doctor) {
             Auth::logout();
             return response()->json([
@@ -98,10 +101,11 @@ public function login(Request $request)
     // Criar token
     $token = $user->createToken('auth_token')->plainTextToken;
 
-    // Carregar relações
-    if ($user->role === 'doctor') {
+    // Carregar relações baseado no perfil ativo
+    if ($request->expected_role === 'doctor' && $user->hasRole('doctor')) {
         $user->load('doctor.specialty');
-    } elseif ($user->role === 'patient') {
+    }
+    if ($request->expected_role === 'patient' && $user->hasRole('patient')) {
         $user->load('patient');
     }
 
@@ -278,6 +282,21 @@ public function login(Request $request)
     {
         $request->user()->currentAccessToken()->delete();
         return response()->json(['message' => 'Logout realizado com sucesso!']);
+    }
+
+    public function user(Request $request)
+    {
+        $user = $request->user();
+
+        // Carregar relações baseadas nos roles do usuário
+        if ($user->hasRole('doctor')) {
+            $user->load('doctor.specialty');
+        }
+        if ($user->hasRole('patient')) {
+            $user->load('patient');
+        }
+
+        return response()->json($user);
     }
 
     public function me(Request $request)

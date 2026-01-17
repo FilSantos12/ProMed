@@ -21,6 +21,8 @@ import { useToast } from '../contexts/ToastContext';
 import { patientService, PatientProfile, PatientAppointment, PatientStats, MedicalRecord } from '../services/patientService';
 import { LoadingSpinner } from './ui/loading-spinner';
 import { Alert, AlertDescription } from './ui/alert';
+import doctorApplicationService, { DoctorApplicationStatus as DoctorAppStatus } from '../services/doctorApplicationService';
+import { DoctorApplicationStatus } from './DoctorApplicationStatus';
 
 // Mapa de ícones disponíveis (mesmo padrão do Specialties.tsx)
 const ICON_MAP: Record<string, LucideIcon> = {
@@ -83,9 +85,14 @@ export function PatientArea({ onSectionChange }: PatientAreaProps) {
   const [medicalRecords, setMedicalRecords] = useState<MedicalRecord[]>([]);
   const [loadingMedicalRecords, setLoadingMedicalRecords] = useState(false);
 
+  // Estados para solicitação de médico
+  const [showDoctorApplicationInfo, setShowDoctorApplicationInfo] = useState(false);
+  const [doctorApplicationStatus, setDoctorApplicationStatus] = useState<DoctorAppStatus | null>(null);
+
   // Carregar dados iniciais
   useEffect(() => {
     loadInitialData();
+    loadDoctorApplicationStatus();
   }, []);
 
   const loadInitialData = async () => {
@@ -226,6 +233,31 @@ export function PatientArea({ onSectionChange }: PatientAreaProps) {
     }
   };
 
+  // Funções para solicitação de médico
+  const loadDoctorApplicationStatus = async () => {
+    try {
+      const status = await doctorApplicationService.checkApplicationStatus();
+      setDoctorApplicationStatus(status);
+    } catch (err: any) {
+      console.error('Erro ao carregar status da solicitação:', err);
+    }
+  };
+
+  const handleApplyAsDoctor = () => {
+    setShowDoctorApplicationInfo(true);
+  };
+
+  const handleProceedToApplication = () => {
+    setShowDoctorApplicationInfo(false);
+    // Redirecionar para a página de cadastro profissional existente
+    onSectionChange('cadastro-profissional');
+  };
+
+
+  const handleAccessDoctorArea = () => {
+    onSectionChange('doctor-area');
+  };
+
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'pending': return 'bg-yellow-100 text-yellow-800';
@@ -294,37 +326,52 @@ export function PatientArea({ onSectionChange }: PatientAreaProps) {
       <div className="container mx-auto px-4">
         {/* Header with Avatar */}
         <div className="mb-8">
-          <div className="flex items-center space-x-4 mb-4">
-            <div className="relative group">
-              <div className="w-20 h-20 rounded-full bg-blue-600 flex items-center justify-center text-white overflow-hidden">
-                {profilePhoto ? (
-                  <img src={profilePhoto} alt="Foto de perfil" className="w-full h-full object-cover" />
-                ) : (
-                  <User className="w-10 h-10" />
-                )}
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center space-x-4">
+              <div className="relative group">
+                <div className="w-20 h-20 rounded-full bg-blue-600 flex items-center justify-center text-white overflow-hidden">
+                  {profilePhoto ? (
+                    <img src={profilePhoto} alt="Foto de perfil" className="w-full h-full object-cover" />
+                  ) : (
+                    <User className="w-10 h-10" />
+                  )}
+                </div>
+                <label
+                  htmlFor="patient-photo-upload"
+                  className="absolute inset-0 rounded-full bg-black bg-opacity-50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer">
+                  <Camera className="w-6 h-6 text-white" />
+                </label>
+                <input
+                  id="patient-photo-upload"
+                  type="file"
+                  accept="image/*"
+                  onChange={handlePhotoUpload}
+                  className="hidden"
+                  aria-label="Upload de foto de perfil"
+                />
               </div>
-              <label
-                htmlFor="patient-photo-upload"
-                className="absolute inset-0 rounded-full bg-black bg-opacity-50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer">
-                <Camera className="w-6 h-6 text-white" />
-              </label>
-              <input
-                id="patient-photo-upload"
-                type="file"
-                accept="image/*"
-                onChange={handlePhotoUpload}
-                className="hidden"
-                aria-label="Upload de foto de perfil"
-              />
+              <div>
+                <h1 className="text-3xl font-bold text-gray-900 mb-1">
+                  Área do Paciente
+                </h1>
+                <p className="text-gray-600">
+                  Bem-vindo, {profile?.user?.name || user?.name} - CPF: {profile?.user?.cpf || user?.cpf || 'N/A'}
+                </p>
+              </div>
             </div>
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900 mb-1">
-                Área do Paciente
-              </h1>
-              <p className="text-gray-600">
-                Bem-vindo, {profile?.user?.name || user?.name} - CPF: {profile?.user?.cpf || user?.cpf || 'N/A'}
-              </p>
-            </div>
+
+            {/* Botão discreto para solicitar cadastro como médico */}
+            {doctorApplicationStatus && !doctorApplicationStatus.has_application && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleApplyAsDoctor}
+                className="flex items-center space-x-2 text-blue-600 border-blue-300 hover:bg-blue-50"
+              >
+                <Stethoscope className="w-4 h-4" />
+                <span>Solicitar Cadastro Médico</span>
+              </Button>
+            )}
           </div>
         </div>
 
@@ -363,6 +410,17 @@ export function PatientArea({ onSectionChange }: PatientAreaProps) {
                 <div className="text-sm text-gray-600">Canceladas</div>
               </CardContent>
             </Card>
+          </div>
+        )}
+
+        {/* Doctor Application Status */}
+        {doctorApplicationStatus && doctorApplicationStatus.has_application && (
+          <div className="mb-8">
+            <DoctorApplicationStatus
+              status={doctorApplicationStatus}
+              onApplyAgain={handleApplyAsDoctor}
+              onAccessDoctorArea={handleAccessDoctorArea}
+            />
           </div>
         )}
 
@@ -866,6 +924,83 @@ export function PatientArea({ onSectionChange }: PatientAreaProps) {
           </div>
         </div>
       )}
+
+      {/* Modal de Aviso Informativo */}
+      {showDoctorApplicationInfo && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 animate-fade-in">
+          <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setShowDoctorApplicationInfo(false)} />
+          <div className="relative bg-white rounded-lg shadow-2xl max-w-2xl w-full p-6 animate-zoom-in">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center space-x-3">
+                <div className="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center">
+                  <Stethoscope className="w-6 h-6 text-blue-600" />
+                </div>
+                <h3 className="text-xl font-semibold text-gray-900">Cadastro de Médicos</h3>
+              </div>
+              <button
+                onClick={() => setShowDoctorApplicationInfo(false)}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="space-y-4 mb-6">
+              <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                <p className="text-sm text-blue-800 font-medium mb-2">
+                  ℹ️ Este formulário é destinado exclusivamente para médicos
+                </p>
+                <p className="text-sm text-blue-700">
+                  Se você é um médico e deseja oferecer seus serviços na plataforma ProMed,
+                  você está no lugar certo!
+                </p>
+              </div>
+
+              <div className="space-y-3">
+                <h4 className="font-semibold text-gray-900">Documentos necessários:</h4>
+                <ul className="space-y-2 text-sm text-gray-700">
+                  <li className="flex items-start space-x-2">
+                    <CheckCircle className="w-5 h-5 text-green-600 mt-0.5 flex-shrink-0" />
+                    <span>Diploma de Medicina (PDF, JPG ou PNG)</span>
+                  </li>
+                  <li className="flex items-start space-x-2">
+                    <CheckCircle className="w-5 h-5 text-green-600 mt-0.5 flex-shrink-0" />
+                    <span>Documento do CRM - frente e verso (PDF, JPG ou PNG)</span>
+                  </li>
+                  <li className="flex items-start space-x-2">
+                    <CheckCircle className="w-5 h-5 text-green-600 mt-0.5 flex-shrink-0" />
+                    <span>Documento de Identidade - RG ou CNH (PDF, JPG ou PNG)</span>
+                  </li>
+                </ul>
+              </div>
+
+              <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+                <p className="text-sm text-yellow-800">
+                  <strong>Atenção:</strong> Sua solicitação será analisada pela equipe administrativa.
+                  Você receberá uma notificação por email quando houver uma resposta.
+                </p>
+              </div>
+            </div>
+
+            <div className="flex space-x-3">
+              <Button
+                onClick={handleProceedToApplication}
+                className="flex-1"
+              >
+                Continuar com o Cadastro
+              </Button>
+              <Button
+                onClick={() => setShowDoctorApplicationInfo(false)}
+                variant="outline"
+                className="flex-1"
+              >
+                Cancelar
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }

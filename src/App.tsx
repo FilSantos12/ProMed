@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { AuthProvider } from './contexts/AuthContext';
 import { ToastProvider } from './contexts/ToastContext';
 import { PendingAppointmentProvider } from './contexts/PendingAppointmentContext';
+import { useAuth } from './hooks/useAuth';
 import { Header } from './components/Header';
 import { HomePage } from './components/HomePage';
 import { EspecialidadesPage } from './components/EspecialidadesPage';
@@ -17,6 +18,7 @@ import { ResetPasswordPage } from './components/ResetPasswordPage';
 import './utils/axiosConfig';
 
 function AppContent() {
+  const { user } = useAuth();
   const [currentSection, setCurrentSection] = useState('home');
   const [isProcessing, setIsProcessing] = useState(false);
 
@@ -31,11 +33,33 @@ function AppContent() {
 
   const handleSectionChange = (section: string) => {
     setCurrentSection(section);
-    
+
     // Limpar URL quando sair da página de redefinir senha
     if (section !== 'reset-password' && window.location.pathname === '/redefinir-senha') {
       window.history.pushState({}, '', '/');
     }
+  };
+
+  // Função auxiliar para formatar a data do backend para o formato do input (yyyy-MM-dd)
+  const formatDateForInput = (dateString: string | undefined) => {
+    if (!dateString) return '';
+
+    // Se já estiver no formato yyyy-MM-dd, retornar direto
+    if (/^\d{4}-\d{2}-\d{2}$/.test(dateString)) {
+      return dateString;
+    }
+
+    // Tentar converter de outros formatos
+    try {
+      const date = new Date(dateString);
+      if (!isNaN(date.getTime())) {
+        return date.toISOString().split('T')[0];
+      }
+    } catch (e) {
+      console.error('Erro ao formatar data:', e);
+    }
+
+    return '';
   };
 
   const renderCurrentSection = () => {
@@ -61,7 +85,21 @@ function AppContent() {
       case 'admin-area':
         return <AdminArea onSectionChange={handleSectionChange} />;
       case 'cadastro-profissional':
-        return <CadastroPages type="professional" onSectionChange={handleSectionChange} />;
+        return (
+          <CadastroPages
+            type="professional"
+            onSectionChange={handleSectionChange}
+            prefilledData={user ? {
+              name: user.name,
+              email: user.email,
+              cpf: user.cpf,
+              rg: user.rg,
+              phone: user.phone,
+              birthDate: formatDateForInput(user.birth_date),
+              gender: user.gender,
+            } : undefined}
+          />
+        );
       case 'cadastro-paciente':
         return <CadastroPages type="patient" onSectionChange={handleSectionChange} />;
       default:

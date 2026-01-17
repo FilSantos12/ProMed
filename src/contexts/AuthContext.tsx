@@ -11,6 +11,7 @@ interface AuthContextData {
   login(email: string, password: string, expectedRole: string): Promise<void>;
   logout(): Promise<void>;
   register: (data: RegisterData) => Promise<void>;
+  refreshUser: () => Promise<void>;
   isAuthenticated: boolean;
 }
 
@@ -97,6 +98,20 @@ export function AuthProvider({ children }: AuthProviderProps) {
     }
   };
 
+  // Refresh User - Atualiza os dados do usuário (útil após trocar de perfil)
+  const refreshUser = async () => {
+    try {
+      const response = await api.get('/user');
+      const updatedUser = response.data;
+
+      localStorage.setItem('user', JSON.stringify(updatedUser));
+      setUser(updatedUser);
+    } catch (error) {
+      console.error('Erro ao atualizar dados do usuário:', error);
+      throw error;
+    }
+  };
+
   return (
     <AuthContext.Provider
       value={{
@@ -107,6 +122,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
         login,
         register,
         logout,
+        refreshUser,
         isAuthenticated: !!token,
       }}
     >

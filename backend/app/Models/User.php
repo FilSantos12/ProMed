@@ -27,7 +27,16 @@ class User extends Authenticatable
         'phone',
         'birth_date',
         'gender',
+        'cep',
+        'address',
+        'number',
+        'complement',
+        'neighborhood',
+        'city',
+        'state',
         'role',
+        'active_role',
+        'roles',
         'avatar',
         'is_active',
     ];
@@ -42,7 +51,26 @@ class User extends Authenticatable
         'birth_date' => 'date',
         'is_active' => 'boolean',
         'password' => 'hashed',
+        'roles' => 'array',
     ];
+
+    /**
+     * Boot method para inicializar campos multi-role
+     */
+    protected static function boot()
+    {
+        parent::boot();
+
+        static::creating(function ($user) {
+            // Inicializar active_role e roles se não estiverem definidos
+            if (empty($user->active_role)) {
+                $user->active_role = $user->role;
+            }
+            if (empty($user->roles)) {
+                $user->roles = [$user->role];
+            }
+        });
+    }
 
     /**
      * Atributos que devem ser criptografados (LGPD)
@@ -108,22 +136,61 @@ class User extends Authenticatable
     // Helpers
     public function isDoctor()
     {
-        return $this->role === 'doctor';
+        return $this->active_role === 'doctor' || $this->role === 'doctor';
     }
 
     public function isPatient()
     {
-        return $this->role === 'patient';
+        return $this->active_role === 'patient' || $this->role === 'patient';
     }
 
     public function isAdmin()
     {
-        return $this->role === 'admin';
+        return $this->active_role === 'admin' || $this->role === 'admin';
     }
 
     /**
- * Pegar próximas consultas (para qualquer role)
- */
+     * Verificar se o usuário tem um role específico
+     */
+    public function hasRole($role)
+    {
+        $roles = $this->roles ?? [];
+        return in_array($role, $roles);
+    }
+
+    /**
+     * Verificar se o usuário tem pelo menos um dos roles especificados
+     */
+    public function hasAnyRole($roles)
+    {
+        $userRoles = $this->roles ?? [];
+        return !empty(array_intersect($roles, $userRoles));
+    }
+
+    /**
+     * Trocar o perfil ativo do usuário
+     */
+    public function switchRole($newRole)
+    {
+        if (!$this->hasRole($newRole)) {
+            throw new \Exception("Usuário não possui o role: {$newRole}");
+        }
+
+        $this->update(['active_role' => $newRole]);
+        return $this;
+    }
+
+    /**
+     * Obter o role ativo atual (fallback para role se active_role for null)
+     */
+    public function getActiveRoleAttribute($value)
+    {
+        return $value ?? $this->attributes['role'] ?? null;
+    }
+
+    /**
+     * Pegar próximas consultas (para qualquer role)
+     */
     public function getUpcomingAppointments()
     {
         if ($this->isPatient()) {

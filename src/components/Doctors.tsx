@@ -17,6 +17,7 @@ import {
   Radar, Target, LucideIcon
 } from 'lucide-react';
 import { useToast } from '../contexts/ToastContext';
+import doctorApplicationService from '../services/doctorApplicationService';
 
 // Mapa de ícones disponíveis (mesmo padrão do Specialties.tsx)
 const ICON_MAP: Record<string, LucideIcon> = {
@@ -261,12 +262,7 @@ const Doctors: React.FC<DoctorsProps> = ({ initialFilterStatus }) => {
 
     const confirmApproveMedical = async (doctor: Doctor) => {
     try {
-        const token = localStorage.getItem('token');
-        await axios.put(
-        `${API_URL}/doctors/${doctor.id}/approve`,
-        {},
-        { headers: { Authorization: `Bearer ${token}` } }
-        );
+        await doctorApplicationService.approveDoctor(doctor.id);
 
         setShowApproveMedicalModal(false);
         setSelectedDoctor(null);
@@ -286,12 +282,7 @@ const Doctors: React.FC<DoctorsProps> = ({ initialFilterStatus }) => {
   if (!selectedDoctor) return;
 
   try {
-    const token = localStorage.getItem('token');
-    await axios.put(
-      `${API_URL}/doctors/${selectedDoctor.id}/reject`,
-      { notes: rejectNotes },
-      { headers: { Authorization: `Bearer ${token}` } }
-    );
+    await doctorApplicationService.rejectDoctor(selectedDoctor.id, rejectNotes);
 
     setShowRejectMedicalModal(false);
     setSelectedDoctor(null);

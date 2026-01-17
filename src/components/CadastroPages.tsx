@@ -24,9 +24,18 @@ import { specialtyService, Specialty } from '../services/specialtyService';
 interface CadastroPagesProps {
   type: 'patient' | 'professional';
   onSectionChange: (section: string) => void;
+  prefilledData?: {
+    name?: string;
+    email?: string;
+    cpf?: string;
+    rg?: string;
+    phone?: string;
+    birthDate?: string;
+    gender?: string;
+  };
 }
 
-export function CadastroPages({ type, onSectionChange }: CadastroPagesProps) {
+export function CadastroPages({ type, onSectionChange, prefilledData }: CadastroPagesProps) {
   const [formData, setFormData] = useState({
     // Dados pessoais
     name: '',
@@ -132,7 +141,14 @@ const handleRegister = async (e: React.FormEvent) => {
       setLoading(false);
       return;
     }
-    if (!documents.photo) {
+    if (!documents.rg_document) {
+      setErrorMessage('O documento de identidade (RG/CPF) é obrigatório.');
+      setShowErrorModal(true);
+      setLoading(false);
+      return;
+    }
+    // Foto só é obrigatória para cadastro inicial (não para paciente virando médico)
+    if (!prefilledData && !documents.photo) {
       setErrorMessage('A foto 3x4 é obrigatória.');
       setShowErrorModal(true);
       setLoading(false);
@@ -143,7 +159,7 @@ const handleRegister = async (e: React.FormEvent) => {
   // ========================================
 // PREPARAR DADOS COM FORMDATA (para enviar arquivos)
 // ========================================
-const formDataToSend = new FormData();
+let formDataToSend = new FormData();
 
 // Dados básicos (para todos os tipos de usuário)
 formDataToSend.append('name', formData.name);
@@ -187,33 +203,68 @@ if (type === 'professional') {
 }
 
   try {
-        const response = await api.post('/register', formDataToSend, {
-      headers: {
-        'Content-Type': 'multipart/form-data',
-      },
-          onUploadProgress: (progressEvent) => {
-        if (progressEvent.total) {
-          const percentCompleted = Math.round(
-            (progressEvent.loaded * 100) / progressEvent.total
-          );
-          setUploadProgress(percentCompleted);
+        // Escolher endpoint baseado no tipo de cadastro
+        let endpoint = '/register';
+
+        // Se for profissional e usuário já está logado (tem prefilledData), usar endpoint de aplicação
+        if (type === 'professional' && prefilledData) {
+          endpoint = '/patient/apply-as-doctor';
+
+          // Ajustar nomes dos documentos para o endpoint apply-as-doctor
+          const applyFormData = new FormData();
+          applyFormData.append('crm', formData.crm);
+          applyFormData.append('crm_state', formData.crmState);
+          applyFormData.append('specialty_id', formData.specialty);
+          applyFormData.append('bio', formData.bio || '');
+          applyFormData.append('consultation_price', formData.consultationPrice || '0');
+          applyFormData.append('consultation_duration', formData.consultationDuration || '30');
+          applyFormData.append('years_experience', formData.yearsExperience || '0');
+
+          // Documentos com nomes corretos para o endpoint apply-as-doctor
+          if (documents.diploma) {
+            applyFormData.append('diploma_document', documents.diploma);
+          }
+          if (documents.crm_document) {
+            applyFormData.append('crm_document', documents.crm_document);
+          }
+          if (documents.rg_document) {
+            applyFormData.append('identity_document', documents.rg_document);
+          }
+          // Nota: photo não é enviado para apply-as-doctor pois o usuário já tem avatar
+
+          formDataToSend = applyFormData;
         }
-      },
-    });
-    
+
+        const response = await api.post(endpoint, formDataToSend, {
+          headers: {
+            'Content-Type': 'multipart/form-data',
+          },
+          onUploadProgress: (progressEvent) => {
+            if (progressEvent.total) {
+              const percentCompleted = Math.round(
+                (progressEvent.loaded * 100) / progressEvent.total
+              );
+              setUploadProgress(percentCompleted);
+            }
+          },
+        });
+
       // Salvar nome do usuário e abrir modal
       setRegisteredUserName(formData.name);
       setShowSuccessModal(true);
-    
+
  } catch (err: any) {
+    console.error('Erro completo:', err);
+    console.error('Resposta do servidor:', err.response?.data);
+    console.error('Status:', err.response?.status);
 
     let errorMsg = 'Ocorreu um erro ao realizar o cadastro. Tente novamente.';
-    
+
     // Tratar erros específicos do backend
     if (err.response?.data?.message) {
       errorMsg = err.response.data.message;
     }
-    
+
     // Mostrar erros de validação do backend
     if (err.response?.data?.errors) {
       const errors = err.response.data.errors;
@@ -286,6 +337,28 @@ if (type === 'professional') {
       }));
     }
   }, [pendingAppointment, type]);
+
+  // Preencher dados básicos quando prefilledData for fornecido
+  useEffect(() => {
+    if (prefilledData) {
+      setFormData(prev => ({
+        ...prev,
+        name: prefilledData.name || prev.name,
+        email: prefilledData.email || prev.email,
+        confirmEmail: prefilledData.email || prev.confirmEmail,
+        cpf: prefilledData.cpf || prev.cpf,
+        rg: prefilledData.rg || prev.rg,
+        phone: prefilledData.phone || prev.phone,
+        birthDate: prefilledData.birthDate || prev.birthDate,
+        gender: prefilledData.gender || prev.gender,
+      }));
+    }
+  }, [prefilledData]);
+
+  // Verificar se campo foi pré-preenchido e deve ser desabilitado
+  const isFieldPrefilled = (field: keyof typeof prefilledData) => {
+    return prefilledData && prefilledData[field] !== undefined && prefilledData[field] !== '';
+  };
 
   useEffect(() => {
   const fetchSpecialties = async () => {
@@ -553,6 +626,8 @@ const handleSubmitForm = async (e: React.FormEvent) => {
                       onChange={(e) => handleInputChange('name', e.target.value)}
                       placeholder="Digite seu nome completo"
                       required
+                      disabled={isFieldPrefilled('name')}
+                      className={isFieldPrefilled('name') ? 'bg-gray-100 cursor-not-allowed' : ''}
                     />
                   </div>
                   <div className="space-y-2">
@@ -564,11 +639,13 @@ const handleSubmitForm = async (e: React.FormEvent) => {
                       id="cpf"
                       placeholder="000.000.000-00"
                       required
+                      disabled={isFieldPrefilled('cpf')}
+                      className={isFieldPrefilled('cpf') ? 'bg-gray-100 cursor-not-allowed' : ''}
                     />
                   </div>
                 </div>
 
-                <div className="grid md:grid-cols-3 gap-4">
+                <div className="grid md:grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="rg">RG *</Label>
                     <MaskedInput
@@ -578,9 +655,11 @@ const handleSubmitForm = async (e: React.FormEvent) => {
                       id="rg"
                       placeholder="00.000.000-0"
                       required
+                      disabled={isFieldPrefilled('rg')}
+                      className={isFieldPrefilled('rg') ? 'bg-gray-100 cursor-not-allowed' : ''}
                     />
                   </div>
-     
+
                   <div className="space-y-2">
                     <Label htmlFor="birthDate">Data de Nascimento *</Label>
                     <Input
@@ -589,8 +668,13 @@ const handleSubmitForm = async (e: React.FormEvent) => {
                       value={formData.birthDate}
                       onChange={(e) => handleInputChange('birthDate', e.target.value)}
                       required
+                      disabled={isFieldPrefilled('birthDate')}
+                      className={isFieldPrefilled('birthDate') ? 'bg-gray-100 cursor-not-allowed' : ''}
                     />
                   </div>
+                </div>
+
+                <div className="grid md:grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="phone">Telefone *</Label>
                     <MaskedInput
@@ -600,11 +684,30 @@ const handleSubmitForm = async (e: React.FormEvent) => {
                       id="phone"
                       placeholder="(11) 99999-9999"
                       required
+                      disabled={isFieldPrefilled('phone')}
+                      className={isFieldPrefilled('phone') ? 'bg-gray-100 cursor-not-allowed' : ''}
                     />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="gender">Gênero *</Label>
+                    <Select
+                      value={formData.gender}
+                      onValueChange={(value: string) => handleInputChange('gender', value)}
+                      disabled={isFieldPrefilled('gender')}
+                    >
+                      <SelectTrigger className={isFieldPrefilled('gender') ? 'bg-gray-100 cursor-not-allowed' : ''}>
+                        <SelectValue placeholder="Selecione" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="M">Masculino</SelectItem>
+                        <SelectItem value="F">Feminino</SelectItem>
+                        <SelectItem value="Outro">Outro</SelectItem>
+                      </SelectContent>
+                    </Select>
                   </div>
                 </div>
 
-              <div className="grid md:grid-cols-2 gap-4">         
+              <div className="grid md:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="email">Email *</Label>
                   <Input
@@ -614,6 +717,8 @@ const handleSubmitForm = async (e: React.FormEvent) => {
                     onChange={(e) => handleInputChange('email', e.target.value)}
                     placeholder="seu@email.com"
                     required
+                    disabled={isFieldPrefilled('email')}
+                    className={isFieldPrefilled('email') ? 'bg-gray-100 cursor-not-allowed' : ''}
                   />
                 </div>
                 <div className="space-y-2">
@@ -626,18 +731,21 @@ const handleSubmitForm = async (e: React.FormEvent) => {
                     onBlur={() => setConfirmEmailTouched(true)}
                     placeholder="Confirme seu@email.com"
                     required
-                     className={
-                        confirmEmailTouched && formData.confirmEmail && formData.email !== formData.confirmEmail
+                    disabled={isFieldPrefilled('email')}
+                    className={
+                      isFieldPrefilled('email')
+                        ? 'bg-gray-100 cursor-not-allowed'
+                        : confirmEmailTouched && formData.confirmEmail && formData.email !== formData.confirmEmail
                           ? 'border-red-500 focus:ring-red-500'
                           : confirmEmailTouched && formData.confirmEmail && formData.email === formData.confirmEmail
                           ? 'border-green-500 focus:ring-green-500'
                           : ''
-                      }
-                    />
-                    {confirmEmailTouched && formData.confirmEmail && formData.email !== formData.confirmEmail && (
+                    }
+                  />
+                    {!isFieldPrefilled('email') && confirmEmailTouched && formData.confirmEmail && formData.email !== formData.confirmEmail && (
                       <p className="text-sm text-red-600">Os emails estão diferentes</p>
                     )}
-                    {confirmEmailTouched && formData.confirmEmail && formData.email === formData.confirmEmail && (
+                    {!isFieldPrefilled('email') && confirmEmailTouched && formData.confirmEmail && formData.email === formData.confirmEmail && (
                       <p className="text-sm text-green-600">✓ Correto, os emails são iguais</p>
                     )}
                 </div>
@@ -1052,7 +1160,8 @@ const handleSubmitForm = async (e: React.FormEvent) => {
                         </div>
                       </div>
 
-                      {/* Foto 3x4 */}
+                      {/* Foto 3x4 - apenas para cadastro inicial, não para paciente virando médico */}
+                      {!prefilledData && (
                       <div className="space-y-2">
                         <Label htmlFor="photo" className="flex items-center space-x-2">
                           <User className="w-4 h-4" />
@@ -1065,7 +1174,7 @@ const handleSubmitForm = async (e: React.FormEvent) => {
                             accept=".jpg,.jpeg,.png"
                             onChange={(e) => handleFileChange('photo', e.target.files?.[0] || null)}
                             className="hidden"
-                            required
+                            required={!prefilledData}
                           />
                           <label htmlFor="photo" className="cursor-pointer block text-center">
                             {documents.photo ? (
@@ -1105,6 +1214,7 @@ const handleSubmitForm = async (e: React.FormEvent) => {
                           </label>
                         </div>
                       </div>
+                      )}
                   </div>
                 </>
               )}  

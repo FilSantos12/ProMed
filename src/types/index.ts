@@ -9,6 +9,8 @@ export interface User {
   birth_date: string;
   gender?: 'M' | 'F' | 'Outro';
   role: 'admin' | 'doctor' | 'patient';
+  active_role?: 'admin' | 'doctor' | 'patient';
+  roles?: ('admin' | 'doctor' | 'patient')[];
   avatar?: string;
   is_active: boolean;
   doctor?: Doctor;

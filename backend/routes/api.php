@@ -112,7 +112,12 @@ Route::middleware('auth:sanctum')->prefix('v1')->group(function () {
         Route::get('/doctors/{doctorId}/documents/{documentId}/download', [DoctorController::class, 'downloadDocument']);
         Route::put('/doctors/{doctorId}/documents/{documentId}/approve', [DoctorController::class, 'approveDocument']);
         Route::put('/doctors/{doctorId}/documents/{documentId}/reject', [DoctorController::class, 'rejectDocument']);
-        
+
+        // Solicitações de médicos pendentes
+        Route::get('/doctors/pending', [\App\Http\Controllers\Api\DoctorApplicationController::class, 'getPendingDoctors']);
+        Route::post('/doctors/{id}/approve', [\App\Http\Controllers\Api\DoctorApplicationController::class, 'approveDoctor']);
+        Route::post('/doctors/{id}/reject', [\App\Http\Controllers\Api\DoctorApplicationController::class, 'rejectDoctor']);
+
         // ========================================
         // PATIENTS (Admin)
         // ========================================
@@ -190,6 +195,18 @@ Route::middleware('auth:sanctum')->prefix('v1')->group(function () {
 
         // Estatísticas
         Route::get('/stats', [PatientProfileController::class, 'getStats']);
+
+        // Solicitação para se tornar médico
+        Route::post('/apply-as-doctor', [\App\Http\Controllers\Api\DoctorApplicationController::class, 'applyAsDoctor']);
+        Route::get('/doctor-application-status', [\App\Http\Controllers\Api\DoctorApplicationController::class, 'checkApplicationStatus']);
+    });
+
+    // ========================================
+    // ROTAS DE GERENCIAMENTO DE PERFIL (Todos os usuários autenticados)
+    // ========================================
+    Route::prefix('user')->group(function () {
+        Route::post('/switch-profile', [\App\Http\Controllers\Api\UserProfileController::class, 'switchProfile']);
+        Route::get('/available-profiles', [\App\Http\Controllers\Api\UserProfileController::class, 'getAvailableProfiles']);
     });
 
 });

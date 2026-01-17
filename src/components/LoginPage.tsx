@@ -94,8 +94,11 @@ export function LoginPage({ onSectionChange }: LoginPageProps) {
       setSuccessMessage(`Bem-vindo, ${user.name}!`);
       setShowSuccessModal(true);
 
+      // Usar active_role se disponível, senão usar expectedRole
+      const activeRole = user.active_role || expectedRole;
+
       // Se há agendamento pendente e é paciente, completá-lo
-      if (hasPendingAppointment && user.role === 'patient') {
+      if (hasPendingAppointment && activeRole === 'patient') {
         setTimeout(async () => {
           setShowSuccessModal(false);
 
@@ -120,9 +123,10 @@ export function LoginPage({ onSectionChange }: LoginPageProps) {
         setTimeout(() => {
           setShowSuccessModal(false);
 
-          if (user.role === 'admin') {
+          // Redirecionar baseado no perfil ativo (active_role)
+          if (activeRole === 'admin') {
             onSectionChange('admin-area');
-          } else if (user.role === 'doctor') {
+          } else if (activeRole === 'doctor') {
             onSectionChange('doctor-area');
           } else {
             onSectionChange('patient-area');
