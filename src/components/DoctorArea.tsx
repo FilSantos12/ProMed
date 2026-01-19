@@ -125,7 +125,7 @@ export function DoctorArea({
       setLoading(true);
       setError(null);
 
-      const [profileData, statsData, appointmentsData] = await Promise.all([
+      const [profileData, statsData, appointmentsResponse] = await Promise.all([
         doctorService.getProfile(),
         doctorService.getStats(),
         // Buscar apenas consultas NÃO finalizadas (pending e confirmed)
@@ -136,6 +136,11 @@ export function DoctorArea({
 
       setProfile(profileData);
       setStats(statsData);
+
+      // Extrair array de appointments da resposta paginada
+      const appointmentsData = Array.isArray(appointmentsResponse)
+        ? appointmentsResponse
+        : (appointmentsResponse.data || []);
       setAppointments(appointmentsData);
 
       // Atualizar estados do formulário

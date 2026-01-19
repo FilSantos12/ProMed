@@ -144,6 +144,9 @@ export function PatientArea({ onSectionChange }: PatientAreaProps) {
       setProfile(profileData);
       setStats(statsData);
 
+      // Carregar appointments iniciais
+      await loadAppointments();
+
       // Atualizar estados do formulário
       if (profileData) {
         // Converter birth_date de ISO para YYYY-MM-DD se necessário
