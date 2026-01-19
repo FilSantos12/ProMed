@@ -178,7 +178,22 @@ export function DoctorArea({
     try {
       setLoadingSchedules(true);
       const schedulesData = await doctorService.getSchedules();
-      setSchedules(schedulesData);
+
+      // Filtrar apenas horários com datas futuras
+      const today = new Date();
+      today.setHours(0, 0, 0, 0); // Zerar horas para comparar apenas datas
+
+      const futureSchedules = schedulesData.filter((schedule) => {
+        if (schedule.schedule_date) {
+          const scheduleDate = new Date(schedule.schedule_date);
+          scheduleDate.setHours(0, 0, 0, 0);
+          return scheduleDate >= today;
+        }
+        // Manter horários recorrentes sem data específica
+        return true;
+      });
+
+      setSchedules(futureSchedules);
     } catch (err: any) {
       console.error("Erro ao carregar horários:", err);
       toast.error("Erro ao carregar horários", 6000);
