@@ -167,7 +167,16 @@ public function login(Request $request)
             'birth_date' => 'required|date',
             'gender' => 'nullable|in:M,F,Masculino,Feminino,Outro',
             'role' => 'required|in:patient,doctor,admin',
-            
+
+            // Campos de endereço
+            'cep' => 'nullable|string|max:10',
+            'address' => 'nullable|string|max:255',
+            'number' => 'nullable|string|max:20',
+            'complement' => 'nullable|string|max:255',
+            'neighborhood' => 'nullable|string|max:255',
+            'city' => 'nullable|string|max:255',
+            'state' => 'nullable|string|size:2',
+
             // Campos específicos do médico
             'crm' => 'required_if:role,doctor|nullable|string|unique:doctors',
             'crm_state' => 'required_if:role,doctor|nullable|string|size:2',
@@ -184,7 +193,7 @@ public function login(Request $request)
             'crm_document' => 'required_if:role,doctor|nullable|file|mimes:pdf,jpg,jpeg,png|max:5120',
             'rg_document' => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:5120',
             'photo' => 'required_if:role,doctor|nullable|image|mimes:jpg,jpeg,png|max:5120',
-    
+
         ]);
 
         // Criar usuário
@@ -199,6 +208,13 @@ public function login(Request $request)
             'gender' => $request->gender,
             'role' => $request->role ?? 'patient',
             'is_active' => true,
+            'cep' => $request->cep,
+            'address' => $request->address,
+            'number' => $request->number,
+            'complement' => $request->complement,
+            'neighborhood' => $request->neighborhood,
+            'city' => $request->city,
+            'state' => $request->state,
         ]);
 
         // Se for paciente, criar registro na tabela patients
