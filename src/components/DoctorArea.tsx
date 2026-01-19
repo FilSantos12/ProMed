@@ -1,31 +1,62 @@
-import { useState, useEffect } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
-import { Button } from './ui/button';
-import { Input } from './ui/input';
-import { Label } from './ui/label';
-import { Badge } from './ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
-import { Textarea } from './ui/textarea';
-import { Calendar, Clock, User, FileText, Phone, Edit, Check, X, Mail, Plus, Camera, AlertCircle, Trash2, Power } from 'lucide-react';
-import { useAuth } from '../hooks/useAuth';
-import { useToast } from '../contexts/ToastContext';
-import { doctorService, DoctorProfile, DoctorAppointment, DoctorSchedule, DoctorStats } from '../services/doctorService';
-import { LoadingSpinner } from './ui/loading-spinner';
-import { Alert, AlertDescription } from './ui/alert';
+import { useState, useEffect } from "react";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "./ui/card";
+import { Button } from "./ui/button";
+import { Input } from "./ui/input";
+import { Label } from "./ui/label";
+import { Badge } from "./ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
+import { Textarea } from "./ui/textarea";
+import {
+  Calendar,
+  Clock,
+  User,
+  FileText,
+  Phone,
+  Edit,
+  Check,
+  X,
+  Mail,
+  Plus,
+  Camera,
+  AlertCircle,
+  Trash2,
+  Power,
+} from "lucide-react";
+import { useAuth } from "../hooks/useAuth";
+import { useToast } from "../contexts/ToastContext";
+import {
+  doctorService,
+  DoctorProfile,
+  DoctorAppointment,
+  DoctorSchedule,
+  DoctorStats,
+} from "../services/doctorService";
+import { LoadingSpinner } from "./ui/loading-spinner";
+import { Alert, AlertDescription } from "./ui/alert";
 
 interface DoctorAreaProps {
   onSectionChange?: (section: string) => void;
 }
 
-export function DoctorArea({ onSectionChange: _onSectionChange }: DoctorAreaProps) {
+export function DoctorArea({
+  onSectionChange: _onSectionChange,
+}: DoctorAreaProps) {
   const { user } = useAuth();
   const toast = useToast();
-  const [activeTab, setActiveTab] = useState('agenda');
+  const [activeTab, setActiveTab] = useState("agenda");
 
   // Estados para dados do backend
   const [profile, setProfile] = useState<DoctorProfile | null>(null);
   const [appointments, setAppointments] = useState<DoctorAppointment[]>([]);
-  const [appointmentsHistory, setAppointmentsHistory] = useState<DoctorAppointment[]>([]);
+  const [appointmentsHistory, setAppointmentsHistory] = useState<
+    DoctorAppointment[]
+  >([]);
   const [schedules, setSchedules] = useState<DoctorSchedule[]>([]);
   const [stats, setStats] = useState<DoctorStats | null>(null);
 
@@ -37,10 +68,10 @@ export function DoctorArea({ onSectionChange: _onSectionChange }: DoctorAreaProp
   const [error, setError] = useState<string | null>(null);
 
   // Estados para formulários
-  const [profilePhoto, setProfilePhoto] = useState<string>('');
+  const [profilePhoto, setProfilePhoto] = useState<string>("");
   const [editingProfile, setEditingProfile] = useState(false);
   const [profileData, setProfileData] = useState({
-    bio: '',
+    bio: "",
     consultation_price: 0,
     consultation_duration: 30,
     years_experience: 0,
@@ -48,14 +79,14 @@ export function DoctorArea({ onSectionChange: _onSectionChange }: DoctorAreaProp
 
   // Estados para Controle de Agenda
   const [scheduleForm, setScheduleForm] = useState({
-    start_date: '',
-    end_date: '',
-    start_time: '08:00',
-    end_time: '18:00',
+    start_date: "",
+    end_date: "",
+    start_time: "08:00",
+    end_time: "18:00",
     days_of_week: [] as number[],
     consultation_duration: 30,
     break_time: 0,
-    lunch_break: '12:00-13:00',
+    lunch_break: "12:00-13:00",
   });
 
   // Estados para modal de confirmação
@@ -63,10 +94,12 @@ export function DoctorArea({ onSectionChange: _onSectionChange }: DoctorAreaProp
   const [scheduleToDelete, setScheduleToDelete] = useState<number | null>(null);
 
   // Estados para edição de horários
-  const [editingScheduleId, setEditingScheduleId] = useState<number | null>(null);
+  const [editingScheduleId, setEditingScheduleId] = useState<number | null>(
+    null
+  );
   const [editForm, setEditForm] = useState({
-    start_time: '',
-    end_time: '',
+    start_time: "",
+    end_time: "",
   });
 
   // Carregar dados iniciais
@@ -84,7 +117,7 @@ export function DoctorArea({ onSectionChange: _onSectionChange }: DoctorAreaProp
         doctorService.getStats(),
         // Buscar apenas consultas NÃO finalizadas (pending e confirmed)
         doctorService.getAppointments({
-          status: 'pending,confirmed'
+          status: "pending,confirmed",
         }),
       ]);
 
@@ -94,7 +127,7 @@ export function DoctorArea({ onSectionChange: _onSectionChange }: DoctorAreaProp
 
       // Atualizar estados do formulário
       setProfileData({
-        bio: profileData?.bio || '',
+        bio: profileData?.bio || "",
         consultation_price: profileData?.consultation_price || 0,
         consultation_duration: profileData?.consultation_duration || 30,
         years_experience: profileData?.years_experience || 0,
@@ -103,17 +136,20 @@ export function DoctorArea({ onSectionChange: _onSectionChange }: DoctorAreaProp
       // Carregar avatar do backend (se existir)
       if (profileData?.user?.avatar) {
         // Usar avatar_url se disponível, senão construir URL manualmente
-        const avatarUrl = (profileData.user as any).avatar_url ||
-                         `${import.meta.env.VITE_API_URL}/storage/${profileData.user.avatar}`;
+        const avatarUrl =
+          (profileData.user as any).avatar_url ||
+          `${import.meta.env.VITE_API_URL}/storage/${profileData.user.avatar}`;
         setProfilePhoto(avatarUrl);
-        console.log('Avatar do médico carregado:', avatarUrl);
+        console.log("Avatar do médico carregado:", avatarUrl);
       } else {
-        console.log('Nenhum avatar encontrado no perfil do médico');
+        console.log("Nenhum avatar encontrado no perfil do médico");
       }
     } catch (err: any) {
-      console.error('Erro ao carregar dados:', err);
-      setError(err.response?.data?.message || 'Erro ao carregar dados do médico');
-      toast.error('Erro ao carregar dados', 6000);
+      console.error("Erro ao carregar dados:", err);
+      setError(
+        err.response?.data?.message || "Erro ao carregar dados do médico"
+      );
+      toast.error("Erro ao carregar dados", 6000);
     } finally {
       setLoading(false);
     }
@@ -126,8 +162,8 @@ export function DoctorArea({ onSectionChange: _onSectionChange }: DoctorAreaProp
       const schedulesData = await doctorService.getSchedules();
       setSchedules(schedulesData);
     } catch (err: any) {
-      console.error('Erro ao carregar horários:', err);
-      toast.error('Erro ao carregar horários', 6000);
+      console.error("Erro ao carregar horários:", err);
+      toast.error("Erro ao carregar horários", 6000);
     } finally {
       setLoadingSchedules(false);
     }
@@ -139,24 +175,24 @@ export function DoctorArea({ onSectionChange: _onSectionChange }: DoctorAreaProp
       setLoadingHistory(true);
       // Buscar consultas concluídas, canceladas e no_show
       const historyData = await doctorService.getAppointments({
-        status: 'completed,cancelled,no_show'
+        status: "completed,cancelled,no_show",
       });
-      console.log('Histórico carregado:', historyData);
-      console.log('Total de consultas no histórico:', historyData.length);
+      console.log("Histórico carregado:", historyData);
+      console.log("Total de consultas no histórico:", historyData.length);
       setAppointmentsHistory(historyData);
     } catch (err: any) {
-      console.error('Erro ao carregar histórico:', err);
-      console.error('Detalhes do erro:', err.response?.data);
-      toast.error('Erro ao carregar histórico de consultas', 6000);
+      console.error("Erro ao carregar histórico:", err);
+      console.error("Detalhes do erro:", err.response?.data);
+      toast.error("Erro ao carregar histórico de consultas", 6000);
     } finally {
       setLoadingHistory(false);
     }
   };
 
   useEffect(() => {
-    if (activeTab === 'controle-agenda') {
+    if (activeTab === "controle-agenda") {
       loadSchedules();
-    } else if (activeTab === 'historico') {
+    } else if (activeTab === "historico") {
       loadHistory();
     }
   }, [activeTab]);
@@ -165,72 +201,78 @@ export function DoctorArea({ onSectionChange: _onSectionChange }: DoctorAreaProp
   const handleConfirmAppointment = async (appointmentId: number) => {
     try {
       await doctorService.confirmAppointment(appointmentId);
-      toast.success('Consulta confirmada com sucesso!', 3000);
+      toast.success("Consulta confirmada com sucesso!", 3000);
 
       // Atualizar lista de consultas
-      setAppointments(prev =>
-        prev.map(appt =>
-          appt.id === appointmentId ? { ...appt, status: 'confirmed' } : appt
+      setAppointments((prev) =>
+        prev.map((appt) =>
+          appt.id === appointmentId ? { ...appt, status: "confirmed" } : appt
         )
       );
     } catch (err: any) {
-      console.error('Erro ao confirmar consulta:', err);
-      toast.error('Erro ao confirmar consulta', 6000);
+      console.error("Erro ao confirmar consulta:", err);
+      toast.error("Erro ao confirmar consulta", 6000);
     }
   };
 
   const handleCancelAppointment = async (appointmentId: number) => {
-    const reason = prompt('Motivo do cancelamento (opcional):');
+    const reason = prompt("Motivo do cancelamento (opcional):");
     try {
       await doctorService.cancelAppointment(appointmentId, reason || undefined);
-      toast.success('Consulta cancelada', 3000);
+      toast.success("Consulta cancelada", 3000);
 
       // Remover da lista de próximas consultas (vai para o histórico)
-      setAppointments(prev => prev.filter(appt => appt.id !== appointmentId));
+      setAppointments((prev) =>
+        prev.filter((appt) => appt.id !== appointmentId)
+      );
 
       // Se estiver na aba de histórico, recarregar
-      if (activeTab === 'historico') {
+      if (activeTab === "historico") {
         loadHistory();
       }
     } catch (err: any) {
-      console.error('Erro ao cancelar consulta:', err);
-      toast.error('Erro ao cancelar consulta', 6000);
+      console.error("Erro ao cancelar consulta:", err);
+      toast.error("Erro ao cancelar consulta", 6000);
     }
   };
 
   const handleCompleteAppointment = async (appointmentId: number) => {
     try {
       await doctorService.completeAppointment(appointmentId);
-      toast.success('Consulta marcada como concluída!', 3000);
+      toast.success("Consulta marcada como concluída!", 3000);
 
       // Remover da lista de próximas consultas
-      setAppointments(prev => prev.filter(appt => appt.id !== appointmentId));
+      setAppointments((prev) =>
+        prev.filter((appt) => appt.id !== appointmentId)
+      );
 
       // Se estiver na aba de histórico, recarregar
-      if (activeTab === 'historico') {
+      if (activeTab === "historico") {
         loadHistory();
       }
     } catch (err: any) {
-      console.error('Erro ao completar consulta:', err);
-      toast.error('Erro ao completar consulta', 6000);
+      console.error("Erro ao completar consulta:", err);
+      toast.error("Erro ao completar consulta", 6000);
     }
   };
 
   const handleNoShowAppointment = async (appointmentId: number) => {
     try {
       await doctorService.noShowAppointment(appointmentId);
-      toast.success('Consulta marcada como faltou', 3000);
+      toast.success("Consulta marcada como faltou", 3000);
 
       // Remover da lista de próximas consultas
-      setAppointments(prev => prev.filter(appt => appt.id !== appointmentId));
+      setAppointments((prev) =>
+        prev.filter((appt) => appt.id !== appointmentId)
+      );
 
       // Se estiver na aba de histórico, recarregar
-      if (activeTab === 'historico') {
+      if (activeTab === "historico") {
         loadHistory();
       }
     } catch (err: any) {
-      console.error('Erro ao marcar como faltou:', err);
-      toast.error('Erro ao marcar como faltou', 6000);
+      console.error("Erro ao marcar como faltou:", err);
+      toast.error("Erro ao marcar como faltou", 6000);
     }
   };
 
@@ -253,18 +295,18 @@ export function DoctorArea({ onSectionChange: _onSectionChange }: DoctorAreaProp
       // Usar a URL retornada pelo backend
       setProfilePhoto(response.avatar_url);
 
-      toast.success('Foto atualizada com sucesso!', 3000);
+      toast.success("Foto atualizada com sucesso!", 3000);
 
       // Atualizar o estado do perfil com a nova URL
       if (profile) {
         setProfile({
           ...profile,
-          user: { ...profile.user, avatar: response.avatar_url }
+          user: { ...profile.user, avatar: response.avatar_url },
         });
       }
     } catch (err: any) {
-      console.error('Erro ao fazer upload da foto:', err);
-      toast.error('Erro ao atualizar foto', 6000);
+      console.error("Erro ao fazer upload da foto:", err);
+      toast.error("Erro ao atualizar foto", 6000);
     }
   };
 
@@ -274,10 +316,10 @@ export function DoctorArea({ onSectionChange: _onSectionChange }: DoctorAreaProp
       const updatedProfile = await doctorService.updateProfile(profileData);
       setProfile(updatedProfile);
       setEditingProfile(false);
-      toast.success('Perfil atualizado com sucesso!', 3000);
+      toast.success("Perfil atualizado com sucesso!", 3000);
     } catch (err: any) {
-      console.error('Erro ao atualizar perfil:', err);
-      toast.error('Erro ao atualizar perfil', 6000);
+      console.error("Erro ao atualizar perfil:", err);
+      toast.error("Erro ao atualizar perfil", 6000);
     }
   };
 
@@ -287,12 +329,16 @@ export function DoctorArea({ onSectionChange: _onSectionChange }: DoctorAreaProp
     if (!startDate || !endDate) return [];
 
     // Adicionar T00:00:00 para evitar problemas de timezone
-    const start = new Date(startDate + 'T00:00:00');
-    const end = new Date(endDate + 'T00:00:00');
+    const start = new Date(startDate + "T00:00:00");
+    const end = new Date(endDate + "T00:00:00");
     const daysSet = new Set<number>();
 
     // Iterar por cada dia no intervalo
-    for (let date = new Date(start); date <= end; date.setDate(date.getDate() + 1)) {
+    for (
+      let date = new Date(start);
+      date <= end;
+      date.setDate(date.getDate() + 1)
+    ) {
       daysSet.add(date.getDay()); // 0 = domingo, 1 = segunda, etc.
     }
 
@@ -303,77 +349,97 @@ export function DoctorArea({ onSectionChange: _onSectionChange }: DoctorAreaProp
     try {
       // Validação
       if (!scheduleForm.start_date || !scheduleForm.end_date) {
-        toast.error('Selecione o período de datas (início e fim)', 6000);
+        toast.error("Selecione o período de datas (início e fim)", 6000);
         return;
       }
 
       if (scheduleForm.days_of_week.length === 0) {
-        toast.error('Nenhum dia da semana foi detectado no período selecionado', 6000);
+        toast.error(
+          "Nenhum dia da semana foi detectado no período selecionado",
+          6000
+        );
         return;
       }
 
       if (!scheduleForm.start_time || !scheduleForm.end_time) {
-        toast.error('Preencha os horários de início e fim', 6000);
+        toast.error("Preencha os horários de início e fim", 6000);
         return;
       }
 
       // Gerar lista de todas as datas no intervalo
-      const generateDateRange = (startDate: string, endDate: string): string[] => {
+      const generateDateRange = (
+        startDate: string,
+        endDate: string
+      ): string[] => {
         const dates: string[] = [];
         const start = new Date(startDate);
         const end = new Date(endDate);
 
-        for (let date = new Date(start); date <= end; date.setDate(date.getDate() + 1)) {
-          dates.push(date.toISOString().split('T')[0]);
+        for (
+          let date = new Date(start);
+          date <= end;
+          date.setDate(date.getDate() + 1)
+        ) {
+          dates.push(date.toISOString().split("T")[0]);
         }
 
         return dates;
       };
 
-      const allDates = generateDateRange(scheduleForm.start_date, scheduleForm.end_date);
+      const allDates = generateDateRange(
+        scheduleForm.start_date,
+        scheduleForm.end_date
+      );
 
       // Criar um horário para cada data
-      const promises = allDates.map(date => {
+      const promises = allDates.map((date) => {
         const scheduleData = {
           schedule_date: date,
           start_time: scheduleForm.start_time,
           end_time: scheduleForm.end_time,
           is_available: true,
         };
-        console.log('Enviando dados do horário:', scheduleData);
+        console.log("Enviando dados do horário:", scheduleData);
         return doctorService.addSchedule(scheduleData);
       });
 
       await Promise.all(promises);
 
-      toast.success(`${allDates.length} horários adicionados com sucesso!`, 3000);
+      toast.success(
+        `${allDates.length} horários adicionados com sucesso!`,
+        3000
+      );
 
       // Limpar formulário
       setScheduleForm({
-        start_date: '',
-        end_date: '',
-        start_time: '08:00',
-        end_time: '18:00',
+        start_date: "",
+        end_date: "",
+        start_time: "08:00",
+        end_time: "18:00",
         days_of_week: [],
         consultation_duration: 30,
         break_time: 0,
-        lunch_break: '12:00-13:00',
+        lunch_break: "12:00-13:00",
       });
 
       // Recarregar horários
       loadSchedules();
     } catch (err: any) {
-      console.error('Erro ao adicionar horários:', err);
-      console.error('Detalhes do erro:', err.response?.data);
+      console.error("Erro ao adicionar horários:", err);
+      console.error("Detalhes do erro:", err.response?.data);
 
       // Mostrar mensagem de erro mais específica
-      const errorMessage = err.response?.data?.message || 'Erro ao adicionar horários';
+      const errorMessage =
+        err.response?.data?.message || "Erro ao adicionar horários";
       const errors = err.response?.data?.errors;
 
       if (errors) {
-        console.error('Erros de validação:', errors);
+        console.error("Erros de validação:", errors);
         const firstError = Object.values(errors)[0];
-        toast.error(Array.isArray(firstError) ? firstError[0] : errorMessage, 6000);
+        toast.error(
+          Array.isArray(firstError) ? firstError[0] : errorMessage,
+          6000
+        );
       } else {
         toast.error(errorMessage, 6000);
       }
@@ -390,13 +456,13 @@ export function DoctorArea({ onSectionChange: _onSectionChange }: DoctorAreaProp
 
     try {
       await doctorService.deleteSchedule(scheduleToDelete);
-      toast.success('Horário deletado com sucesso!', 3000);
+      toast.success("Horário deletado com sucesso!", 3000);
       setShowDeleteModal(false);
       setScheduleToDelete(null);
       loadSchedules();
     } catch (err: any) {
-      console.error('Erro ao deletar horário:', err);
-      toast.error('Erro ao deletar horário', 6000);
+      console.error("Erro ao deletar horário:", err);
+      toast.error("Erro ao deletar horário", 6000);
     }
   };
 
@@ -405,19 +471,22 @@ export function DoctorArea({ onSectionChange: _onSectionChange }: DoctorAreaProp
     setScheduleToDelete(null);
   };
 
-  const handleToggleScheduleAvailability = async (scheduleId: number, currentStatus: boolean) => {
+  const handleToggleScheduleAvailability = async (
+    scheduleId: number,
+    currentStatus: boolean
+  ) => {
     try {
       await doctorService.updateSchedule(scheduleId, {
         is_available: !currentStatus,
       });
       toast.success(
-        !currentStatus ? 'Horário ativado!' : 'Horário desativado!',
+        !currentStatus ? "Horário ativado!" : "Horário desativado!",
         3000
       );
       loadSchedules();
     } catch (err: any) {
-      console.error('Erro ao alterar disponibilidade:', err);
-      toast.error('Erro ao alterar disponibilidade', 6000);
+      console.error("Erro ao alterar disponibilidade:", err);
+      toast.error("Erro ao alterar disponibilidade", 6000);
     }
   };
 
@@ -437,45 +506,52 @@ export function DoctorArea({ onSectionChange: _onSectionChange }: DoctorAreaProp
         start_time: editForm.start_time,
         end_time: editForm.end_time,
       });
-      toast.success('Horário atualizado com sucesso!', 3000);
+      toast.success("Horário atualizado com sucesso!", 3000);
       setEditingScheduleId(null);
       loadSchedules();
     } catch (err: any) {
-      console.error('Erro ao atualizar horário:', err);
-      toast.error('Erro ao atualizar horário', 6000);
+      console.error("Erro ao atualizar horário:", err);
+      toast.error("Erro ao atualizar horário", 6000);
     }
   };
 
   const handleCancelEditSchedule = () => {
     setEditingScheduleId(null);
-    setEditForm({ start_time: '', end_time: '' });
+    setEditForm({ start_time: "", end_time: "" });
   };
 
   const getDayName = (dayNumber: number): string => {
-    const days = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
-    return days[dayNumber] || '';
+    const days = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
+    return days[dayNumber] || "";
   };
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'pending': return 'bg-yellow-100 text-yellow-800';
-      case 'confirmed': return 'bg-green-100 text-green-800';
-      case 'scheduled': return 'bg-blue-100 text-blue-800';
-      case 'completed': return 'bg-purple-100 text-purple-800';
-      case 'cancelled': return 'bg-red-100 text-red-800';
-      case 'no_show': return 'bg-orange-100 text-orange-800';
-      default: return 'bg-gray-100 text-gray-800';
+      case "pending":
+        return "bg-yellow-100 text-yellow-800";
+      case "confirmed":
+        return "bg-green-100 text-green-800";
+      case "scheduled":
+        return "bg-blue-100 text-blue-800";
+      case "completed":
+        return "bg-purple-100 text-purple-800";
+      case "cancelled":
+        return "bg-red-100 text-red-800";
+      case "no_show":
+        return "bg-orange-100 text-orange-800";
+      default:
+        return "bg-gray-100 text-gray-800";
     }
   };
 
   const getStatusLabel = (status: string) => {
     const labels: { [key: string]: string } = {
-      'pending': 'Pendente',
-      'scheduled': 'Agendado',
-      'confirmed': 'Confirmado',
-      'completed': 'Concluído',
-      'cancelled': 'Cancelado',
-      'no_show': 'Não Compareceu',
+      pending: "Pendente",
+      scheduled: "Agendado",
+      confirmed: "Confirmado",
+      completed: "Concluído",
+      cancelled: "Cancelado",
+      no_show: "Não Compareceu",
     };
     return labels[status] || status;
   };
@@ -502,9 +578,7 @@ export function DoctorArea({ onSectionChange: _onSectionChange }: DoctorAreaProp
             <AlertDescription>{error}</AlertDescription>
           </Alert>
           <div className="mt-4 text-center">
-            <Button onClick={loadInitialData}>
-              Tentar Novamente
-            </Button>
+            <Button onClick={loadInitialData}>Tentar Novamente</Button>
           </div>
         </div>
       </div>
@@ -520,15 +594,19 @@ export function DoctorArea({ onSectionChange: _onSectionChange }: DoctorAreaProp
             <div className="relative group">
               <div className="w-20 h-20 rounded-full bg-blue-600 flex items-center justify-center text-white overflow-hidden">
                 {profilePhoto ? (
-                  <img src={profilePhoto} alt="Foto de perfil" className="w-full h-full object-cover" />
+                  <img
+                    src={profilePhoto}
+                    alt="Foto de perfil"
+                    className="w-full h-full object-cover"
+                  />
                 ) : (
                   <User className="w-10 h-10" />
                 )}
               </div>
               <label
                 htmlFor="doctor-photo-upload"
-                className="absolute inset-0 rounded-full bg-black bg-opacity-50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer">
-
+                className="absolute inset-0 rounded-full bg-black bg-opacity-50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
+              >
                 <Camera className="w-6 h-6 text-white" />
               </label>
               <input
@@ -545,7 +623,9 @@ export function DoctorArea({ onSectionChange: _onSectionChange }: DoctorAreaProp
                 Área do Médico
               </h1>
               <p className="text-gray-600">
-                Bem-vindo, {profile?.user?.name || user?.name || 'Usuário'} - {profile?.specialty?.name || 'Especialidade'} | CRM {profile?.crm || 'N/A'}/{profile?.crm_state || ''}
+                Bem-vindo, {profile?.user?.name || user?.name || "Usuário"} -{" "}
+                {profile?.specialty?.name || "Especialidade"} | CRM{" "}
+                {profile?.crm || "N/A"}/{profile?.crm_state || ""}
               </p>
             </div>
           </div>
@@ -590,19 +670,31 @@ export function DoctorArea({ onSectionChange: _onSectionChange }: DoctorAreaProp
         {/* Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           <TabsList className="inline-flex w-full h-auto flex-wrap gap-2 bg-gray-100 p-2 rounded-lg">
-            <TabsTrigger value="agenda" className="flex items-center space-x-2 flex-1 min-w-fit">
+            <TabsTrigger
+              value="agenda"
+              className="flex items-center space-x-2 flex-1 min-w-fit"
+            >
               <Calendar className="w-4 h-4" />
               <span>Agenda</span>
             </TabsTrigger>
-            <TabsTrigger value="controle-agenda" className="flex items-center space-x-2 flex-1 min-w-fit">
+            <TabsTrigger
+              value="controle-agenda"
+              className="flex items-center space-x-2 flex-1 min-w-fit"
+            >
               <Clock className="w-4 h-4" />
               <span>Controle de Agenda</span>
             </TabsTrigger>
-            <TabsTrigger value="historico" className="flex items-center space-x-2 flex-1 min-w-fit">
+            <TabsTrigger
+              value="historico"
+              className="flex items-center space-x-2 flex-1 min-w-fit"
+            >
               <FileText className="w-4 h-4" />
               <span>Histórico</span>
             </TabsTrigger>
-            <TabsTrigger value="configuracoes" className="flex items-center space-x-2 flex-1 min-w-fit">
+            <TabsTrigger
+              value="configuracoes"
+              className="flex items-center space-x-2 flex-1 min-w-fit"
+            >
               <User className="w-4 h-4" />
               <span>Configurações</span>
             </TabsTrigger>
@@ -624,7 +716,9 @@ export function DoctorArea({ onSectionChange: _onSectionChange }: DoctorAreaProp
                 {loadingAppointments ? (
                   <div className="text-center py-8">
                     <LoadingSpinner />
-                    <p className="mt-2 text-gray-600">Carregando consultas...</p>
+                    <p className="mt-2 text-gray-600">
+                      Carregando consultas...
+                    </p>
                   </div>
                 ) : appointments.length === 0 ? (
                   <div className="text-center py-8 text-gray-500">
@@ -634,25 +728,36 @@ export function DoctorArea({ onSectionChange: _onSectionChange }: DoctorAreaProp
                 ) : (
                   <div className="space-y-4">
                     {appointments.map((appointment) => (
-                      <div key={appointment.id} className="border rounded-lg p-4 hover:shadow-md transition-shadow overflow-hidden">
+                      <div
+                        key={appointment.id}
+                        className="border rounded-lg p-4 hover:shadow-md transition-shadow overflow-hidden"
+                      >
                         <div className="flex flex-col gap-4">
                           <div className="flex-1">
                             <div className="flex flex-wrap items-center gap-2 md:gap-4 mb-2">
                               <div className="flex items-center space-x-2">
                                 <Calendar className="w-4 h-4 text-blue-600" />
                                 <span className="font-medium">
-                                  {new Date(appointment.appointment_date).toLocaleDateString('pt-BR')}
+                                  {new Date(
+                                    appointment.appointment_date
+                                  ).toLocaleDateString("pt-BR")}
                                 </span>
                               </div>
                               <div className="flex items-center space-x-2">
                                 <Clock className="w-4 h-4 text-blue-600" />
-                                <span className="font-medium">{appointment.appointment_time.substring(0, 5)}</span>
+                                <span className="font-medium">
+                                  {appointment.appointment_time.substring(0, 5)}
+                                </span>
                               </div>
                               <div className="flex items-center space-x-2">
                                 <User className="w-4 h-4 text-gray-600" />
-                                <span className="font-medium">{appointment.patient?.name || 'Paciente'}</span>
+                                <span className="font-medium">
+                                  {appointment.patient?.name || "Paciente"}
+                                </span>
                               </div>
-                              <Badge className={getStatusColor(appointment.status)}>
+                              <Badge
+                                className={getStatusColor(appointment.status)}
+                              >
                                 {getStatusLabel(appointment.status)}
                               </Badge>
                             </div>
@@ -660,17 +765,23 @@ export function DoctorArea({ onSectionChange: _onSectionChange }: DoctorAreaProp
                             <div className="flex flex-wrap items-center gap-2 md:gap-4 text-sm text-gray-600 mb-2">
                               <div className="flex items-center space-x-1">
                                 <Phone className="w-4 h-4" />
-                                <span>{appointment.patient?.phone || 'N/A'}</span>
+                                <span>
+                                  {appointment.patient?.phone || "N/A"}
+                                </span>
                               </div>
                               <div className="flex items-center space-x-1">
                                 <Mail className="w-4 h-4" />
-                                <span>{appointment.patient?.email || 'N/A'}</span>
+                                <span>
+                                  {appointment.patient?.email || "N/A"}
+                                </span>
                               </div>
                             </div>
 
                             {appointment.patient_notes && (
                               <div className="mb-2">
-                                <p className="text-xs text-gray-500 mb-1">Observações do paciente:</p>
+                                <p className="text-xs text-gray-500 mb-1">
+                                  Observações do paciente:
+                                </p>
                                 <p className="text-sm text-gray-600 bg-blue-50 p-2 rounded">
                                   {appointment.patient_notes}
                                 </p>
@@ -679,7 +790,9 @@ export function DoctorArea({ onSectionChange: _onSectionChange }: DoctorAreaProp
 
                             {appointment.doctor_notes && (
                               <div>
-                                <p className="text-xs text-gray-500 mb-1">Suas anotações:</p>
+                                <p className="text-xs text-gray-500 mb-1">
+                                  Suas anotações:
+                                </p>
                                 <p className="text-sm text-gray-600 bg-gray-50 p-2 rounded">
                                   {appointment.doctor_notes}
                                 </p>
@@ -689,11 +802,13 @@ export function DoctorArea({ onSectionChange: _onSectionChange }: DoctorAreaProp
 
                           <div className="flex flex-col gap-2 w-full">
                             <div className="flex flex-wrap gap-2 w-full">
-                              {appointment.status === 'pending' && (
+                              {appointment.status === "pending" && (
                                 <>
                                   <button
-                                    className="inline-flex items-center justify-center h-8 px-3 text-sm font-medium text-white bg-green-600 hover:bg-green-700 border-0 rounded-md cursor-pointer transition-colors flex-1 min-w-[100px]"
-                                    onClick={() => handleConfirmAppointment(appointment.id)}
+                                    className="inline-flex items-center justify-center h-8 px-3 text-sm font-medium text-green-600 bg-white hover:bg-green-700 border border-green-200 rounded-md cursor-pointer transition-colors flex-1 min-w-[100px]"
+                                    onClick={() =>
+                                      handleConfirmAppointment(appointment.id)
+                                    }
                                     title="Confirmar consulta"
                                   >
                                     <Check className="w-4 h-4 mr-1" />
@@ -701,7 +816,9 @@ export function DoctorArea({ onSectionChange: _onSectionChange }: DoctorAreaProp
                                   </button>
                                   <button
                                     className="inline-flex items-center justify-center h-8 px-3 text-sm font-medium text-red-600 bg-white hover:bg-red-50 border border-red-200 rounded-md cursor-pointer transition-colors flex-1 min-w-[100px]"
-                                    onClick={() => handleCancelAppointment(appointment.id)}
+                                    onClick={() =>
+                                      handleCancelAppointment(appointment.id)
+                                    }
                                     title="Cancelar consulta"
                                   >
                                     <X className="w-4 h-4 mr-1" />
@@ -709,11 +826,13 @@ export function DoctorArea({ onSectionChange: _onSectionChange }: DoctorAreaProp
                                   </button>
                                 </>
                               )}
-                              {appointment.status === 'confirmed' && (
+                              {appointment.status === "confirmed" && (
                                 <>
                                   <button
                                     className="inline-flex items-center justify-center h-8 px-3 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 border-0 rounded-md cursor-pointer transition-colors flex-1 min-w-[90px]"
-                                    onClick={() => handleCompleteAppointment(appointment.id)}
+                                    onClick={() =>
+                                      handleCompleteAppointment(appointment.id)
+                                    }
                                     title="Marcar como concluída"
                                   >
                                     <Check className="w-4 h-4 mr-1" />
@@ -721,7 +840,9 @@ export function DoctorArea({ onSectionChange: _onSectionChange }: DoctorAreaProp
                                   </button>
                                   <button
                                     className="inline-flex items-center justify-center h-8 px-3 text-sm font-medium text-orange-600 bg-white hover:bg-orange-50 border border-orange-200 rounded-md cursor-pointer transition-colors flex-1 min-w-[80px]"
-                                    onClick={() => handleNoShowAppointment(appointment.id)}
+                                    onClick={() =>
+                                      handleNoShowAppointment(appointment.id)
+                                    }
                                     title="Paciente não compareceu"
                                   >
                                     <X className="w-4 h-4 mr-1" />
@@ -729,7 +850,9 @@ export function DoctorArea({ onSectionChange: _onSectionChange }: DoctorAreaProp
                                   </button>
                                   <button
                                     className="inline-flex items-center justify-center h-8 px-3 text-sm font-medium text-red-600 bg-white hover:bg-red-50 border border-red-200 rounded-md cursor-pointer transition-colors flex-1 min-w-[90px]"
-                                    onClick={() => handleCancelAppointment(appointment.id)}
+                                    onClick={() =>
+                                      handleCancelAppointment(appointment.id)
+                                    }
                                     title="Cancelar consulta"
                                   >
                                     <X className="w-4 h-4 mr-1" />
@@ -744,7 +867,11 @@ export function DoctorArea({ onSectionChange: _onSectionChange }: DoctorAreaProp
                               <Button
                                 size="sm"
                                 variant="outline"
-                                onClick={() => window.open(`tel:${appointment.patient?.phone}`)}
+                                onClick={() =>
+                                  window.open(
+                                    `tel:${appointment.patient?.phone}`
+                                  )
+                                }
                                 title="Ligar para o paciente"
                                 className="text-green-600 hover:text-green-700"
                               >
@@ -753,7 +880,11 @@ export function DoctorArea({ onSectionChange: _onSectionChange }: DoctorAreaProp
                               <Button
                                 size="sm"
                                 variant="outline"
-                                onClick={() => window.open(`mailto:${appointment.patient?.email}`)}
+                                onClick={() =>
+                                  window.open(
+                                    `mailto:${appointment.patient?.email}`
+                                  )
+                                }
                                 title="Enviar email para o paciente"
                                 className="text-blue-600 hover:text-blue-700"
                               >
@@ -788,12 +919,19 @@ export function DoctorArea({ onSectionChange: _onSectionChange }: DoctorAreaProp
                 {/* Configurações Rápidas */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 p-3 bg-gray-50 rounded-lg">
                   <div className="space-y-1">
-                    <Label className="text-xs text-gray-600">Duração da Consulta</Label>
+                    <Label className="text-xs text-gray-600">
+                      Duração da Consulta
+                    </Label>
                     <select
                       className="w-full p-2 border rounded text-sm"
                       aria-label="Duração da Consulta"
                       value={scheduleForm.consultation_duration}
-                      onChange={(e) => setScheduleForm({ ...scheduleForm, consultation_duration: Number(e.target.value) })}
+                      onChange={(e) =>
+                        setScheduleForm({
+                          ...scheduleForm,
+                          consultation_duration: Number(e.target.value),
+                        })
+                      }
                     >
                       <option value="30">30 min</option>
                       <option value="45">45 min</option>
@@ -806,7 +944,12 @@ export function DoctorArea({ onSectionChange: _onSectionChange }: DoctorAreaProp
                       className="w-full p-2 border rounded text-sm"
                       aria-label="Intervalo entre Consultas"
                       value={scheduleForm.break_time}
-                      onChange={(e) => setScheduleForm({ ...scheduleForm, break_time: Number(e.target.value) })}
+                      onChange={(e) =>
+                        setScheduleForm({
+                          ...scheduleForm,
+                          break_time: Number(e.target.value),
+                        })
+                      }
                     >
                       <option value="0">Sem intervalo</option>
                       <option value="15">15 min</option>
@@ -819,7 +962,12 @@ export function DoctorArea({ onSectionChange: _onSectionChange }: DoctorAreaProp
                       className="w-full p-2 border rounded text-sm"
                       aria-label="Intervalo para Almoço"
                       value={scheduleForm.lunch_break}
-                      onChange={(e) => setScheduleForm({ ...scheduleForm, lunch_break: e.target.value })}
+                      onChange={(e) =>
+                        setScheduleForm({
+                          ...scheduleForm,
+                          lunch_break: e.target.value,
+                        })
+                      }
                     >
                       <option value="12:00-13:00">12h - 13h</option>
                       <option value="13:00-14:00">13h - 14h</option>
@@ -830,38 +978,62 @@ export function DoctorArea({ onSectionChange: _onSectionChange }: DoctorAreaProp
 
                 {/* Novo Período - Formulário Compacto */}
                 <div className="border rounded-lg p-4 bg-blue-50 border-blue-200">
-                  <h4 className="font-medium mb-3 text-sm">Adicionar Horários de Disponibilidade</h4>
+                  <h4 className="font-medium mb-3 text-sm">
+                    Adicionar Horários de Disponibilidade
+                  </h4>
                   <div className="space-y-3">
                     {/* Período de Datas */}
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       <div className="space-y-1">
-                        <Label className="text-xs text-gray-600">📅 Data Início do Período</Label>
+                        <Label className="text-xs text-gray-600">
+                          📅 Data Início do Período
+                        </Label>
                         <Input
                           type="date"
                           className="text-sm"
                           value={scheduleForm.start_date}
                           onChange={(e) => {
-                            setScheduleForm({ ...scheduleForm, start_date: e.target.value });
+                            setScheduleForm({
+                              ...scheduleForm,
+                              start_date: e.target.value,
+                            });
                             // Auto-detectar dias da semana se ambas as datas estiverem preenchidas
                             if (e.target.value && scheduleForm.end_date) {
-                              const days = extractDaysOfWeek(e.target.value, scheduleForm.end_date);
-                              setScheduleForm(prev => ({ ...prev, days_of_week: days }));
+                              const days = extractDaysOfWeek(
+                                e.target.value,
+                                scheduleForm.end_date
+                              );
+                              setScheduleForm((prev) => ({
+                                ...prev,
+                                days_of_week: days,
+                              }));
                             }
                           }}
                         />
                       </div>
                       <div className="space-y-1">
-                        <Label className="text-xs text-gray-600">📅 Data Fim do Período</Label>
+                        <Label className="text-xs text-gray-600">
+                          📅 Data Fim do Período
+                        </Label>
                         <Input
                           type="date"
                           className="text-sm"
                           value={scheduleForm.end_date}
                           onChange={(e) => {
-                            setScheduleForm({ ...scheduleForm, end_date: e.target.value });
+                            setScheduleForm({
+                              ...scheduleForm,
+                              end_date: e.target.value,
+                            });
                             // Auto-detectar dias da semana se ambas as datas estiverem preenchidas
                             if (scheduleForm.start_date && e.target.value) {
-                              const days = extractDaysOfWeek(scheduleForm.start_date, e.target.value);
-                              setScheduleForm(prev => ({ ...prev, days_of_week: days }));
+                              const days = extractDaysOfWeek(
+                                scheduleForm.start_date,
+                                e.target.value
+                              );
+                              setScheduleForm((prev) => ({
+                                ...prev,
+                                days_of_week: days,
+                              }));
                             }
                           }}
                         />
@@ -871,25 +1043,43 @@ export function DoctorArea({ onSectionChange: _onSectionChange }: DoctorAreaProp
                     {/* Horários */}
                     <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
                       <div className="space-y-1">
-                        <Label className="text-xs text-gray-600">⏰ Horário Início</Label>
+                        <Label className="text-xs text-gray-600">
+                          ⏰ Horário Início
+                        </Label>
                         <Input
                           type="time"
                           className="text-sm"
                           value={scheduleForm.start_time}
-                          onChange={(e) => setScheduleForm({ ...scheduleForm, start_time: e.target.value })}
+                          onChange={(e) =>
+                            setScheduleForm({
+                              ...scheduleForm,
+                              start_time: e.target.value,
+                            })
+                          }
                         />
                       </div>
                       <div className="space-y-1">
-                        <Label className="text-xs text-gray-600">⏰ Horário Fim</Label>
+                        <Label className="text-xs text-gray-600">
+                          ⏰ Horário Fim
+                        </Label>
                         <Input
                           type="time"
                           className="text-sm"
                           value={scheduleForm.end_time}
-                          onChange={(e) => setScheduleForm({ ...scheduleForm, end_time: e.target.value })}
+                          onChange={(e) =>
+                            setScheduleForm({
+                              ...scheduleForm,
+                              end_time: e.target.value,
+                            })
+                          }
                         />
                       </div>
                       <div className="flex items-end">
-                        <Button className="w-full" size="sm" onClick={handleAddSchedule}>
+                        <Button
+                          className="w-full"
+                          size="sm"
+                          onClick={handleAddSchedule}
+                        >
                           <Plus className="w-3 h-3 mr-1" />
                           Adicionar
                         </Button>
@@ -899,10 +1089,16 @@ export function DoctorArea({ onSectionChange: _onSectionChange }: DoctorAreaProp
                     {/* Dias da Semana Detectados */}
                     {scheduleForm.days_of_week.length > 0 && (
                       <div className="bg-white border border-blue-300 rounded-md p-3">
-                        <p className="text-xs text-gray-600 mb-2 font-medium">✓ Dias da semana detectados automaticamente:</p>
+                        <p className="text-xs text-gray-600 mb-2 font-medium">
+                          ✓ Dias da semana detectados automaticamente:
+                        </p>
                         <div className="flex flex-wrap gap-2">
-                          {scheduleForm.days_of_week.map(dayIndex => (
-                            <Badge key={dayIndex} variant="outline" className="bg-blue-100 text-blue-700 border-blue-300">
+                          {scheduleForm.days_of_week.map((dayIndex) => (
+                            <Badge
+                              key={dayIndex}
+                              variant="outline"
+                              className="bg-blue-100 text-blue-700 border-blue-300"
+                            >
                               {getDayName(dayIndex)}
                             </Badge>
                           ))}
@@ -910,11 +1106,16 @@ export function DoctorArea({ onSectionChange: _onSectionChange }: DoctorAreaProp
                       </div>
                     )}
 
-                    {scheduleForm.start_date && scheduleForm.end_date && scheduleForm.days_of_week.length === 0 && (
-                      <div className="bg-yellow-50 border border-yellow-300 rounded-md p-2">
-                        <p className="text-xs text-yellow-800">⚠️ Nenhum dia detectado. Verifique se a data de fim é posterior à data de início.</p>
-                      </div>
-                    )}
+                    {scheduleForm.start_date &&
+                      scheduleForm.end_date &&
+                      scheduleForm.days_of_week.length === 0 && (
+                        <div className="bg-yellow-50 border border-yellow-300 rounded-md p-2">
+                          <p className="text-xs text-yellow-800">
+                            ⚠️ Nenhum dia detectado. Verifique se a data de fim
+                            é posterior à data de início.
+                          </p>
+                        </div>
+                      )}
                   </div>
                 </div>
 
@@ -925,7 +1126,9 @@ export function DoctorArea({ onSectionChange: _onSectionChange }: DoctorAreaProp
                   {loadingSchedules ? (
                     <div className="text-center py-8">
                       <LoadingSpinner />
-                      <p className="mt-2 text-gray-600 text-sm">Carregando horários...</p>
+                      <p className="mt-2 text-gray-600 text-sm">
+                        Carregando horários...
+                      </p>
                     </div>
                   ) : schedules.length === 0 ? (
                     <div className="text-center py-8 text-gray-500">
@@ -940,171 +1143,263 @@ export function DoctorArea({ onSectionChange: _onSectionChange }: DoctorAreaProp
                       {/* Agrupar horários por data específica */}
                       {schedules
                         .sort((a, b) => {
-                          const dateA = a.schedule_date ? new Date(a.schedule_date).getTime() : 0;
-                          const dateB = b.schedule_date ? new Date(b.schedule_date).getTime() : 0;
+                          const dateA = a.schedule_date
+                            ? new Date(a.schedule_date).getTime()
+                            : 0;
+                          const dateB = b.schedule_date
+                            ? new Date(b.schedule_date).getTime()
+                            : 0;
                           return dateA - dateB;
                         })
                         .reduce((groups: any[], schedule) => {
-                          const dateKey = schedule.schedule_date || 'sem-data';
-                          const existing = groups.find(g => g.date === dateKey);
+                          const dateKey = schedule.schedule_date || "sem-data";
+                          const existing = groups.find(
+                            (g) => g.date === dateKey
+                          );
                           if (existing) {
                             existing.schedules.push(schedule);
                           } else {
-                            groups.push({ date: dateKey, schedules: [schedule] });
+                            groups.push({
+                              date: dateKey,
+                              schedules: [schedule],
+                            });
                           }
                           return groups;
                         }, [])
                         .map((group) => {
                           const formatDate = (dateString: string) => {
-                            if (!dateString || dateString === 'sem-data') return 'Sem data';
+                            if (!dateString || dateString === "sem-data")
+                              return "Sem data";
 
                             try {
                               // Extrair apenas a parte da data (YYYY-MM-DD)
-                              const datePart = dateString.split('T')[0];
-                              const [year, month, day] = datePart.split('-').map(Number);
+                              const datePart = dateString.split("T")[0];
+                              const [year, month, day] = datePart
+                                .split("-")
+                                .map(Number);
 
                               // Criar data sem problemas de timezone
                               const date = new Date(year, month - 1, day);
 
-                              const dayNames = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
+                              const dayNames = [
+                                "Dom",
+                                "Seg",
+                                "Ter",
+                                "Qua",
+                                "Qui",
+                                "Sex",
+                                "Sáb",
+                              ];
                               const dayName = dayNames[date.getDay()];
-                              const dayStr = String(day).padStart(2, '0');
-                              const monthStr = String(month).padStart(2, '0');
+                              const dayStr = String(day).padStart(2, "0");
+                              const monthStr = String(month).padStart(2, "0");
 
                               return `${dayName}, ${dayStr}/${monthStr}/${year}`;
                             } catch (e) {
-                              console.error('Erro ao formatar data:', dateString, e);
-                              return 'Data inválida';
+                              console.error(
+                                "Erro ao formatar data:",
+                                dateString,
+                                e
+                              );
+                              return "Data inválida";
                             }
                           };
 
                           return (
-                            <div key={group.date} className="border rounded-lg p-4 bg-white">
+                            <div
+                              key={group.date}
+                              className="border rounded-lg p-4 bg-white"
+                            >
                               <div className="flex items-center mb-3">
                                 <Calendar className="w-5 h-5 text-blue-600 mr-2" />
-                                <h5 className="font-medium text-gray-900">{formatDate(group.date)}</h5>
-                                <Badge variant="outline" className="ml-2 text-xs">
-                                  {group.schedules.length} {group.schedules.length === 1 ? 'horário' : 'horários'}
+                                <h5 className="font-medium text-gray-900">
+                                  {formatDate(group.date)}
+                                </h5>
+                                <Badge
+                                  variant="outline"
+                                  className="ml-2 text-xs"
+                                >
+                                  {group.schedules.length}{" "}
+                                  {group.schedules.length === 1
+                                    ? "horário"
+                                    : "horários"}
                                 </Badge>
                               </div>
 
                               <div className="space-y-2">
-                                {group.schedules.map((schedule: DoctorSchedule) => (
-                                <div
-                                  key={schedule.id}
-                                  className={`border rounded-md p-3 ${
-                                    schedule.is_available ? 'bg-blue-50 border-blue-200' : 'bg-gray-50 border-gray-200'
-                                  }`}
-                                >
-                                  <div className="flex flex-col sm:flex-row sm:items-center gap-3">
-                                    {editingScheduleId === schedule.id ? (
-                                      // Modo de Edição
-                                      <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 flex-1 w-full">
-                                        <div className="flex items-center gap-2 w-full sm:w-auto">
-                                          <Clock className="w-4 h-4 text-blue-600 flex-shrink-0" />
-                                          <div className="flex items-center gap-2 flex-1">
-                                            <Input
-                                              type="time"
-                                              value={editForm.start_time}
-                                              onChange={(e) => setEditForm({ ...editForm, start_time: e.target.value })}
-                                              className="w-24 sm:w-28 text-sm h-8"
-                                            />
-                                            <span className="text-sm text-gray-600">-</span>
-                                            <Input
-                                              type="time"
-                                              value={editForm.end_time}
-                                              onChange={(e) => setEditForm({ ...editForm, end_time: e.target.value })}
-                                              className="w-24 sm:w-28 text-sm h-8"
-                                            />
+                                {group.schedules.map(
+                                  (schedule: DoctorSchedule) => (
+                                    <div
+                                      key={schedule.id}
+                                      className={`border rounded-md p-3 ${
+                                        schedule.is_available
+                                          ? "bg-blue-50 border-blue-200"
+                                          : "bg-gray-50 border-gray-200"
+                                      }`}
+                                    >
+                                      <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+                                        {editingScheduleId === schedule.id ? (
+                                          // Modo de Edição
+                                          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 flex-1 w-full">
+                                            <div className="flex items-center gap-2 w-full sm:w-auto">
+                                              <Clock className="w-4 h-4 text-blue-600 flex-shrink-0" />
+                                              <div className="flex items-center gap-2 flex-1">
+                                                <Input
+                                                  type="time"
+                                                  value={editForm.start_time}
+                                                  onChange={(e) =>
+                                                    setEditForm({
+                                                      ...editForm,
+                                                      start_time:
+                                                        e.target.value,
+                                                    })
+                                                  }
+                                                  className="w-24 sm:w-28 text-sm h-8"
+                                                />
+                                                <span className="text-sm text-gray-600">
+                                                  -
+                                                </span>
+                                                <Input
+                                                  type="time"
+                                                  value={editForm.end_time}
+                                                  onChange={(e) =>
+                                                    setEditForm({
+                                                      ...editForm,
+                                                      end_time: e.target.value,
+                                                    })
+                                                  }
+                                                  className="w-24 sm:w-28 text-sm h-8"
+                                                />
+                                              </div>
+                                            </div>
+                                            <div className="flex gap-2 w-full sm:w-auto">
+                                              <Button
+                                                size="sm"
+                                                onClick={handleSaveEditSchedule}
+                                                className="!bg-green-600 hover:!bg-green-700 !text-white h-8 font-semibold flex-1 sm:flex-initial"
+                                                style={{
+                                                  backgroundColor: "#16a34a",
+                                                  color: "#ffffff",
+                                                }}
+                                              >
+                                                <Check className="w-4 h-4 mr-1" />
+                                                Salvar
+                                              </Button>
+                                              <Button
+                                                size="sm"
+                                                variant="outline"
+                                                onClick={
+                                                  handleCancelEditSchedule
+                                                }
+                                                className="h-8 text-gray-900 border-gray-300 flex-1 sm:flex-initial"
+                                              >
+                                                <X className="w-4 h-4 mr-1" />
+                                                Cancelar
+                                              </Button>
+                                            </div>
                                           </div>
-                                        </div>
-                                        <div className="flex gap-2 w-full sm:w-auto">
-                                          <Button
-                                            size="sm"
-                                            onClick={handleSaveEditSchedule}
-                                            className="!bg-green-600 hover:!bg-green-700 !text-white h-8 font-semibold flex-1 sm:flex-initial"
-                                            style={{ backgroundColor: '#16a34a', color: '#ffffff' }}
-                                          >
-                                            <Check className="w-4 h-4 mr-1" />
-                                            Salvar
-                                          </Button>
-                                          <Button
-                                            size="sm"
-                                            variant="outline"
-                                            onClick={handleCancelEditSchedule}
-                                            className="h-8 text-gray-900 border-gray-300 flex-1 sm:flex-initial"
-                                          >
-                                            <X className="w-4 h-4 mr-1" />
-                                            Cancelar
-                                          </Button>
-                                        </div>
+                                        ) : (
+                                          // Modo de Visualização
+                                          <>
+                                            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 flex-1">
+                                              <div className="flex items-center gap-2">
+                                                <Clock
+                                                  className={`w-4 h-4 ${schedule.is_available ? "text-blue-600" : "text-gray-400"}`}
+                                                />
+                                                <span className="text-sm font-medium">
+                                                  {schedule.start_time.substring(
+                                                    0,
+                                                    5
+                                                  )}{" "}
+                                                  -{" "}
+                                                  {schedule.end_time.substring(
+                                                    0,
+                                                    5
+                                                  )}
+                                                </span>
+                                              </div>
+                                              <div className="text-xs text-gray-600">
+                                                <span>
+                                                  Duração:{" "}
+                                                  {
+                                                    scheduleForm.consultation_duration
+                                                  }
+                                                  min
+                                                </span>
+                                              </div>
+                                            </div>
+                                            <div className="flex flex-wrap items-center gap-2">
+                                              <Badge
+                                                variant="outline"
+                                                className={
+                                                  schedule.is_available
+                                                    ? "bg-green-50 text-green-700 border-green-200"
+                                                    : "bg-gray-100 text-gray-600 border-gray-300"
+                                                }
+                                              >
+                                                {schedule.is_available
+                                                  ? "Ativo"
+                                                  : "Inativo"}
+                                              </Badge>
+                                              <Button
+                                                size="sm"
+                                                variant="ghost"
+                                                onClick={() =>
+                                                  handleStartEditSchedule(
+                                                    schedule
+                                                  )
+                                                }
+                                                title="Editar horário"
+                                                className="hover:bg-blue-100"
+                                              >
+                                                <Edit className="w-4 h-4 text-blue-600" />
+                                              </Button>
+                                              <Button
+                                                size="sm"
+                                                variant="ghost"
+                                                onClick={() =>
+                                                  handleToggleScheduleAvailability(
+                                                    schedule.id,
+                                                    schedule.is_available
+                                                  )
+                                                }
+                                                title={
+                                                  schedule.is_available
+                                                    ? "Desativar"
+                                                    : "Ativar"
+                                                }
+                                                className="hover:bg-orange-100"
+                                              >
+                                                {schedule.is_available ? (
+                                                  <Power className="w-4 h-4 text-orange-600" />
+                                                ) : (
+                                                  <Check className="w-4 h-4 text-green-600" />
+                                                )}
+                                              </Button>
+                                              <Button
+                                                size="sm"
+                                                variant="ghost"
+                                                onClick={() =>
+                                                  handleDeleteSchedule(
+                                                    schedule.id
+                                                  )
+                                                }
+                                                title="Deletar permanentemente"
+                                                className="hover:bg-red-100"
+                                              >
+                                                <Trash2 className="w-4 h-4 text-red-600" />
+                                              </Button>
+                                            </div>
+                                          </>
+                                        )}
                                       </div>
-                                    ) : (
-                                      // Modo de Visualização
-                                      <>
-                                        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 flex-1">
-                                          <div className="flex items-center gap-2">
-                                            <Clock className={`w-4 h-4 ${schedule.is_available ? 'text-blue-600' : 'text-gray-400'}`} />
-                                            <span className="text-sm font-medium">
-                                              {schedule.start_time.substring(0, 5)} - {schedule.end_time.substring(0, 5)}
-                                            </span>
-                                          </div>
-                                          <div className="text-xs text-gray-600">
-                                            <span>Duração: {scheduleForm.consultation_duration}min</span>
-                                          </div>
-                                        </div>
-                                        <div className="flex flex-wrap items-center gap-2">
-                                          <Badge
-                                            variant="outline"
-                                            className={
-                                              schedule.is_available
-                                                ? 'bg-green-50 text-green-700 border-green-200'
-                                                : 'bg-gray-100 text-gray-600 border-gray-300'
-                                            }
-                                          >
-                                            {schedule.is_available ? 'Ativo' : 'Inativo'}
-                                          </Badge>
-                                          <Button
-                                            size="sm"
-                                            variant="ghost"
-                                            onClick={() => handleStartEditSchedule(schedule)}
-                                            title="Editar horário"
-                                            className="hover:bg-blue-100"
-                                          >
-                                            <Edit className="w-4 h-4 text-blue-600" />
-                                          </Button>
-                                          <Button
-                                            size="sm"
-                                            variant="ghost"
-                                            onClick={() => handleToggleScheduleAvailability(schedule.id, schedule.is_available)}
-                                            title={schedule.is_available ? 'Desativar' : 'Ativar'}
-                                            className="hover:bg-orange-100"
-                                          >
-                                            {schedule.is_available ? (
-                                              <Power className="w-4 h-4 text-orange-600" />
-                                            ) : (
-                                              <Check className="w-4 h-4 text-green-600" />
-                                            )}
-                                          </Button>
-                                          <Button
-                                            size="sm"
-                                            variant="ghost"
-                                            onClick={() => handleDeleteSchedule(schedule.id)}
-                                            title="Deletar permanentemente"
-                                            className="hover:bg-red-100"
-                                          >
-                                            <Trash2 className="w-4 h-4 text-red-600" />
-                                          </Button>
-                                        </div>
-                                      </>
-                                    )}
-                                  </div>
-                                </div>
-                              ))}
+                                    </div>
+                                  )
+                                )}
+                              </div>
                             </div>
-                          </div>
-                        );
-                      })}
+                          );
+                        })}
                     </div>
                   )}
                 </div>
@@ -1112,9 +1407,11 @@ export function DoctorArea({ onSectionChange: _onSectionChange }: DoctorAreaProp
                 {/* Dica */}
                 <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
                   <p className="text-xs text-blue-800">
-                    <strong>Dica:</strong> Configure seus horários de disponibilidade selecionando os dias da semana e
-                    definindo o período (início e fim). Você pode adicionar vários horários diferentes para cada dia.
-                    Use os botões de ação para ativar/desativar ou deletar horários existentes.
+                    <strong>Dica:</strong> Configure seus horários de
+                    disponibilidade selecionando os dias da semana e definindo o
+                    período (início e fim). Você pode adicionar vários horários
+                    diferentes para cada dia. Use os botões de ação para
+                    ativar/desativar ou deletar horários existentes.
                   </p>
                 </div>
               </CardContent>
@@ -1137,7 +1434,9 @@ export function DoctorArea({ onSectionChange: _onSectionChange }: DoctorAreaProp
                 {loadingHistory ? (
                   <div className="text-center py-8">
                     <LoadingSpinner />
-                    <p className="mt-2 text-gray-600">Carregando histórico...</p>
+                    <p className="mt-2 text-gray-600">
+                      Carregando histórico...
+                    </p>
                   </div>
                 ) : appointmentsHistory.length === 0 ? (
                   <div className="text-center py-8 text-gray-500">
@@ -1147,27 +1446,38 @@ export function DoctorArea({ onSectionChange: _onSectionChange }: DoctorAreaProp
                 ) : (
                   <div className="space-y-4">
                     {appointmentsHistory.map((appointment) => (
-                      <div key={appointment.id} className="border rounded-lg p-4 hover:shadow-md transition-shadow bg-gray-50">
+                      <div
+                        key={appointment.id}
+                        className="border rounded-lg p-4 hover:shadow-md transition-shadow bg-gray-50"
+                      >
                         <div className="flex items-start justify-between">
                           <div className="flex-1">
                             <div className="flex items-center space-x-4 mb-2">
                               <div className="flex items-center space-x-2">
                                 <Calendar className="w-4 h-4 text-purple-600" />
                                 <span className="font-medium">
-                                  {new Date(appointment.appointment_date).toLocaleDateString('pt-BR')}
+                                  {new Date(
+                                    appointment.appointment_date
+                                  ).toLocaleDateString("pt-BR")}
                                 </span>
                               </div>
                               <div className="flex items-center space-x-2">
                                 <Clock className="w-4 h-4 text-purple-600" />
-                                <span className="font-medium">{appointment.appointment_time.substring(0, 5)}</span>
+                                <span className="font-medium">
+                                  {appointment.appointment_time.substring(0, 5)}
+                                </span>
                               </div>
                               <div className="flex items-center space-x-2">
                                 <User className="w-4 h-4 text-gray-600" />
                                 <span className="font-medium">
-                                  {appointment.patient?.name || appointment.patient?.user?.name || 'Paciente'}
+                                  {appointment.patient?.name ||
+                                    appointment.patient?.user?.name ||
+                                    "Paciente"}
                                 </span>
                               </div>
-                              <Badge className={getStatusColor(appointment.status)}>
+                              <Badge
+                                className={getStatusColor(appointment.status)}
+                              >
                                 {getStatusLabel(appointment.status)}
                               </Badge>
                             </div>
@@ -1175,17 +1485,27 @@ export function DoctorArea({ onSectionChange: _onSectionChange }: DoctorAreaProp
                             <div className="flex flex-wrap items-center gap-2 md:gap-4 text-sm text-gray-600 mb-2">
                               <div className="flex items-center space-x-1">
                                 <Phone className="w-4 h-4" />
-                                <span>{appointment.patient?.phone || appointment.patient?.user?.phone || 'N/A'}</span>
+                                <span>
+                                  {appointment.patient?.phone ||
+                                    appointment.patient?.user?.phone ||
+                                    "N/A"}
+                                </span>
                               </div>
                               <div className="flex items-center space-x-1">
                                 <Mail className="w-4 h-4" />
-                                <span>{appointment.patient?.email || appointment.patient?.user?.email || 'N/A'}</span>
+                                <span>
+                                  {appointment.patient?.email ||
+                                    appointment.patient?.user?.email ||
+                                    "N/A"}
+                                </span>
                               </div>
                             </div>
 
                             {appointment.patient_notes && (
                               <div className="mb-2">
-                                <p className="text-xs text-gray-500 mb-1">Observações do paciente:</p>
+                                <p className="text-xs text-gray-500 mb-1">
+                                  Observações do paciente:
+                                </p>
                                 <p className="text-sm text-gray-600 bg-blue-50 p-2 rounded">
                                   {appointment.patient_notes}
                                 </p>
@@ -1194,7 +1514,9 @@ export function DoctorArea({ onSectionChange: _onSectionChange }: DoctorAreaProp
 
                             {appointment.doctor_notes && (
                               <div className="mb-2">
-                                <p className="text-xs text-gray-500 mb-1">Suas anotações:</p>
+                                <p className="text-xs text-gray-500 mb-1">
+                                  Suas anotações:
+                                </p>
                                 <p className="text-sm text-gray-600 bg-gray-100 p-2 rounded">
                                   {appointment.doctor_notes}
                                 </p>
@@ -1203,7 +1525,9 @@ export function DoctorArea({ onSectionChange: _onSectionChange }: DoctorAreaProp
 
                             {appointment.cancellation_reason && (
                               <div className="mb-2">
-                                <p className="text-xs text-gray-500 mb-1">Motivo do cancelamento:</p>
+                                <p className="text-xs text-gray-500 mb-1">
+                                  Motivo do cancelamento:
+                                </p>
                                 <p className="text-sm text-red-700 bg-red-50 p-2 rounded">
                                   {appointment.cancellation_reason}
                                 </p>
@@ -1214,13 +1538,23 @@ export function DoctorArea({ onSectionChange: _onSectionChange }: DoctorAreaProp
                               {appointment.completed_at && (
                                 <div className="flex items-center space-x-1">
                                   <Check className="w-3 h-3 text-green-600" />
-                                  <span>Concluído em: {new Date(appointment.completed_at).toLocaleDateString('pt-BR')}</span>
+                                  <span>
+                                    Concluído em:{" "}
+                                    {new Date(
+                                      appointment.completed_at
+                                    ).toLocaleDateString("pt-BR")}
+                                  </span>
                                 </div>
                               )}
                               {appointment.cancelled_at && (
                                 <div className="flex items-center space-x-1">
                                   <X className="w-3 h-3 text-red-600" />
-                                  <span>Cancelado em: {new Date(appointment.cancelled_at).toLocaleDateString('pt-BR')}</span>
+                                  <span>
+                                    Cancelado em:{" "}
+                                    {new Date(
+                                      appointment.cancelled_at
+                                    ).toLocaleDateString("pt-BR")}
+                                  </span>
                                 </div>
                               )}
                             </div>
@@ -1249,7 +1583,7 @@ export function DoctorArea({ onSectionChange: _onSectionChange }: DoctorAreaProp
                     onClick={() => setEditingProfile(!editingProfile)}
                   >
                     <Edit className="w-4 h-4 mr-2" />
-                    {editingProfile ? 'Cancelar' : 'Editar'}
+                    {editingProfile ? "Cancelar" : "Editar"}
                   </Button>
                 </CardTitle>
                 <CardDescription>
@@ -1262,7 +1596,7 @@ export function DoctorArea({ onSectionChange: _onSectionChange }: DoctorAreaProp
                     <Label htmlFor="name">Nome Completo</Label>
                     <Input
                       id="name"
-                      value={profile?.user?.name || ''}
+                      value={profile?.user?.name || ""}
                       disabled
                       className="bg-gray-50"
                     />
@@ -1274,7 +1608,7 @@ export function DoctorArea({ onSectionChange: _onSectionChange }: DoctorAreaProp
                     <Label htmlFor="specialty">Especialidade</Label>
                     <Input
                       id="specialty"
-                      value={profile?.specialty?.name || ''}
+                      value={profile?.specialty?.name || ""}
                       disabled
                       className="bg-gray-50"
                     />
@@ -1286,7 +1620,7 @@ export function DoctorArea({ onSectionChange: _onSectionChange }: DoctorAreaProp
                     <Label htmlFor="crm">CRM</Label>
                     <Input
                       id="crm"
-                      value={profile?.crm || ''}
+                      value={profile?.crm || ""}
                       disabled
                       className="bg-gray-50"
                     />
@@ -1295,7 +1629,7 @@ export function DoctorArea({ onSectionChange: _onSectionChange }: DoctorAreaProp
                     <Label htmlFor="crm_state">UF</Label>
                     <Input
                       id="crm_state"
-                      value={profile?.crm_state || ''}
+                      value={profile?.crm_state || ""}
                       disabled
                       className="bg-gray-50"
                     />
@@ -1304,7 +1638,7 @@ export function DoctorArea({ onSectionChange: _onSectionChange }: DoctorAreaProp
                     <Label htmlFor="phone">Telefone</Label>
                     <Input
                       id="phone"
-                      value={profile?.user?.phone || ''}
+                      value={profile?.user?.phone || ""}
                       disabled
                       className="bg-gray-50"
                     />
@@ -1313,7 +1647,9 @@ export function DoctorArea({ onSectionChange: _onSectionChange }: DoctorAreaProp
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="consultation_price">Preço Consulta (R$)</Label>
+                    <Label htmlFor="consultation_price">
+                      Preço Consulta (R$)
+                    </Label>
                     <Input
                       id="consultation_price"
                       type="number"
@@ -1344,7 +1680,9 @@ export function DoctorArea({ onSectionChange: _onSectionChange }: DoctorAreaProp
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="years_experience">Anos de Experiência</Label>
+                    <Label htmlFor="years_experience">
+                      Anos de Experiência
+                    </Label>
                     <Input
                       id="years_experience"
                       type="number"
@@ -1406,7 +1744,9 @@ export function DoctorArea({ onSectionChange: _onSectionChange }: DoctorAreaProp
                 </div>
               </div>
               <div>
-                <h3 className="text-lg font-semibold text-black">Confirmar Exclusão</h3>
+                <h3 className="text-lg font-semibold text-black">
+                  Confirmar Exclusão
+                </h3>
                 <p className="text-sm text-gray-700 mt-1">
                   Tem certeza que deseja deletar este horário permanentemente?
                 </p>
@@ -1415,7 +1755,8 @@ export function DoctorArea({ onSectionChange: _onSectionChange }: DoctorAreaProp
 
             <div className="bg-yellow-50 border border-yellow-200 rounded-md p-3 mb-4">
               <p className="text-xs text-yellow-900">
-                <strong className="text-black">Atenção:</strong> Esta ação não pode ser desfeita. O horário será removido permanentemente.
+                <strong className="text-black">Atenção:</strong> Esta ação não
+                pode ser desfeita. O horário será removido permanentemente.
               </p>
             </div>
 
@@ -1431,7 +1772,7 @@ export function DoctorArea({ onSectionChange: _onSectionChange }: DoctorAreaProp
                 variant="default"
                 className="flex-1 !bg-red-600 hover:!bg-red-700 !text-white font-semibold"
                 onClick={confirmDeleteSchedule}
-                style={{ backgroundColor: '#dc2626', color: '#ffffff' }}
+                style={{ backgroundColor: "#dc2626", color: "#ffffff" }}
               >
                 Deletar Permanentemente
               </Button>

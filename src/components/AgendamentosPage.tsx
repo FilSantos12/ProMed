@@ -1,26 +1,65 @@
-import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
-import { Button } from './ui/button';
-import { Input } from './ui/input';
-import { Label } from './ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
-import { Textarea } from './ui/textarea';
-import { Badge } from './ui/badge';
+import React, { useState, useEffect } from "react";
 import {
-  CalendarIcon, Clock, User, FileText, AlertCircle, CheckCircle2,
-  Heart, Brain, Eye, Ear, Bone, Activity, Stethoscope,
-  Pill, Syringe, TestTube, Microscope, Thermometer,
-  Baby, Users, Hospital, Ambulance, Cross,
-  Shield, Bandage, Clipboard, HeartPulse, LogIn, UserPlus,
-  type LucideIcon
-} from 'lucide-react';
-import { useAuth } from '../hooks/useAuth';
-import { useToast } from '../contexts/ToastContext';
-import { usePendingAppointment } from '../contexts/PendingAppointmentContext';
-import { appointmentService, Specialty, Doctor, DoctorSchedule } from '../services/appointmentService';
-import { LoadingSpinner } from './ui/loading-spinner';
-import { Alert, AlertDescription } from './ui/alert';
-import { MaskedInput } from './ui/masked-input';
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "./ui/card";
+import { Button } from "./ui/button";
+import { Input } from "./ui/input";
+import { Label } from "./ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "./ui/select";
+import { Textarea } from "./ui/textarea";
+import { Badge } from "./ui/badge";
+import {
+  CalendarIcon,
+  Clock,
+  User,
+  FileText,
+  AlertCircle,
+  CheckCircle2,
+  Heart,
+  Brain,
+  Eye,
+  Ear,
+  Bone,
+  Activity,
+  Stethoscope,
+  Pill,
+  Syringe,
+  TestTube,
+  Microscope,
+  Thermometer,
+  Baby,
+  Users,
+  Hospital,
+  Ambulance,
+  Cross,
+  Shield,
+  Bandage,
+  Clipboard,
+  HeartPulse,
+  LogIn,
+  UserPlus,
+  type LucideIcon,
+} from "lucide-react";
+import { useAuth } from "../hooks/useAuth";
+import { useToast } from "../contexts/ToastContext";
+import { usePendingAppointment } from "../contexts/PendingAppointmentContext";
+import {
+  appointmentService,
+  Specialty,
+  Doctor,
+} from "../services/appointmentService";
+import { LoadingSpinner } from "./ui/loading-spinner";
+import { MaskedInput } from "./ui/masked-input";
 
 // Mapa de ícones médicos (sincronizado com IconPicker)
 const ICON_MAP: Record<string, LucideIcon> = {
@@ -52,7 +91,9 @@ interface AgendamentosPageProps {
   onSectionChange?: (section: string) => void;
 }
 
-export function AgendamentosPage({ onSectionChange }: AgendamentosPageProps = {}) {
+export function AgendamentosPage({
+  onSectionChange,
+}: AgendamentosPageProps = {}) {
   const { user } = useAuth();
   const toast = useToast();
   const { savePendingAppointment } = usePendingAppointment();
@@ -60,7 +101,6 @@ export function AgendamentosPage({ onSectionChange }: AgendamentosPageProps = {}
   // Estados para dados do backend
   const [specialties, setSpecialties] = useState<Specialty[]>([]);
   const [doctors, setDoctors] = useState<Doctor[]>([]);
-  const [doctorSchedules, setDoctorSchedules] = useState<DoctorSchedule[]>([]);
   const [availableDates, setAvailableDates] = useState<string[]>([]);
   const [availableSlots, setAvailableSlots] = useState<string[]>([]);
 
@@ -72,16 +112,16 @@ export function AgendamentosPage({ onSectionChange }: AgendamentosPageProps = {}
   const [submitting, setSubmitting] = useState(false);
 
   // Estados do formulário
-  const [selectedDate, setSelectedDate] = useState('');
-  const [selectedTime, setSelectedTime] = useState('');
-  const [selectedSpecialty, setSelectedSpecialty] = useState('');
-  const [selectedDoctor, setSelectedDoctor] = useState('');
+  const [selectedDate, setSelectedDate] = useState("");
+  const [selectedTime, setSelectedTime] = useState("");
+  const [selectedSpecialty, setSelectedSpecialty] = useState("");
+  const [selectedDoctor, setSelectedDoctor] = useState("");
   const [formData, setFormData] = useState({
-    name: '',
-    cpf: '',
-    phone: '',
-    email: '',
-    observations: ''
+    name: "",
+    cpf: "",
+    phone: "",
+    email: "",
+    observations: "",
   });
 
   // Estado de sucesso
@@ -98,12 +138,12 @@ export function AgendamentosPage({ onSectionChange }: AgendamentosPageProps = {}
   // Pré-preencher dados do usuário se estiver logado
   useEffect(() => {
     if (user) {
-      setFormData(prev => ({
+      setFormData((prev) => ({
         ...prev,
-        name: user.name || '',
-        cpf: user.cpf || '',
-        phone: user.phone || '',
-        email: user.email || '',
+        name: user.name || "",
+        cpf: user.cpf || "",
+        phone: user.phone || "",
+        email: user.email || "",
       }));
     }
   }, [user]);
@@ -114,7 +154,7 @@ export function AgendamentosPage({ onSectionChange }: AgendamentosPageProps = {}
       loadDoctors(parseInt(selectedSpecialty));
     } else {
       setDoctors([]);
-      setSelectedDoctor('');
+      setSelectedDoctor("");
     }
   }, [selectedSpecialty]);
 
@@ -124,7 +164,7 @@ export function AgendamentosPage({ onSectionChange }: AgendamentosPageProps = {}
       loadAvailableDates(parseInt(selectedDoctor));
     } else {
       setAvailableDates([]);
-      setSelectedDate('');
+      setSelectedDate("");
     }
   }, [selectedDoctor]);
 
@@ -134,7 +174,7 @@ export function AgendamentosPage({ onSectionChange }: AgendamentosPageProps = {}
       loadAvailableSlots();
     } else {
       setAvailableSlots([]);
-      setSelectedTime('');
+      setSelectedTime("");
     }
   }, [selectedDoctor, selectedDate]);
 
@@ -144,8 +184,8 @@ export function AgendamentosPage({ onSectionChange }: AgendamentosPageProps = {}
       const data = await appointmentService.getSpecialties();
       setSpecialties(data);
     } catch (err: any) {
-      console.error('Erro ao carregar especialidades:', err);
-      toast.error('Erro ao carregar especialidades');
+      console.error("Erro ao carregar especialidades:", err);
+      toast.error("Erro ao carregar especialidades");
     } finally {
       setLoading(false);
     }
@@ -154,11 +194,13 @@ export function AgendamentosPage({ onSectionChange }: AgendamentosPageProps = {}
   const loadDoctors = async (specialtyId: number) => {
     try {
       setLoadingDoctors(true);
-      const data = await appointmentService.getDoctors({ specialty_id: specialtyId });
+      const data = await appointmentService.getDoctors({
+        specialty_id: specialtyId,
+      });
       setDoctors(data);
     } catch (err: any) {
-      console.error('Erro ao carregar médicos:', err);
-      toast.error('Erro ao carregar médicos');
+      console.error("Erro ao carregar médicos:", err);
+      toast.error("Erro ao carregar médicos");
     } finally {
       setLoadingDoctors(false);
     }
@@ -170,24 +212,26 @@ export function AgendamentosPage({ onSectionChange }: AgendamentosPageProps = {}
 
       // Buscar todos os schedules disponíveis do médico
       const schedules = await appointmentService.getDoctorSchedules(doctorId, {
-        available: 1, // Enviar como 1 ao invés de true para compatibilidade com backend
+        available: true, // Usar booleano conforme esperado pelo tipo
       });
 
       // Extrair datas únicas e filtrar apenas datas futuras
       const today = new Date();
       today.setHours(0, 0, 0, 0);
 
-      const schedulesWithDate = schedules.filter(schedule => schedule.schedule_date);
+      const schedulesWithDate = schedules.filter(
+        (schedule) => schedule.schedule_date
+      );
 
       // Extrair apenas a parte da data (YYYY-MM-DD) do formato ISO
-      const allDates = schedulesWithDate.map(schedule => {
+      const allDates = schedulesWithDate.map((schedule) => {
         const dateStr = schedule.schedule_date!;
         // Se vier no formato ISO (2026-01-02T00:00:00.000000Z), pegar só YYYY-MM-DD
-        return dateStr.split('T')[0];
+        return dateStr.split("T")[0];
       });
 
-      const futureDates = allDates.filter(dateStr => {
-        const scheduleDate = new Date(dateStr + 'T00:00:00');
+      const futureDates = allDates.filter((dateStr) => {
+        const scheduleDate = new Date(dateStr + "T00:00:00");
         return scheduleDate >= today;
       });
 
@@ -196,11 +240,11 @@ export function AgendamentosPage({ onSectionChange }: AgendamentosPageProps = {}
       setAvailableDates(uniqueDates);
 
       if (uniqueDates.length === 0) {
-        toast.error('Este médico não possui datas disponíveis no momento');
+        toast.error("Este médico não possui datas disponíveis no momento");
       }
     } catch (err: any) {
-      console.error('Erro ao carregar datas disponíveis:', err);
-      toast.error('Erro ao carregar datas disponíveis');
+      console.error("Erro ao carregar datas disponíveis:", err);
+      toast.error("Erro ao carregar datas disponíveis");
       setAvailableDates([]);
     } finally {
       setLoadingDates(false);
@@ -221,21 +265,24 @@ export function AgendamentosPage({ onSectionChange }: AgendamentosPageProps = {}
 
       if (schedules.length === 0) {
         setAvailableSlots([]);
-        toast.error('Nenhum horário disponível para esta data');
+        toast.error("Nenhum horário disponível para esta data");
         return;
       }
 
       // Pegar o primeiro horário disponível e buscar os slots
       const schedule = schedules[0];
-      const slotsData = await appointmentService.getAvailableSlots(schedule.id, dateStr);
+      const slotsData = await appointmentService.getAvailableSlots(
+        schedule.id,
+        dateStr
+      );
       setAvailableSlots(slotsData.available_slots);
 
       if (slotsData.available_slots.length === 0) {
-        toast.error('Todos os horários estão ocupados para esta data');
+        toast.error("Todos os horários estão ocupados para esta data");
       }
     } catch (err: any) {
-      console.error('Erro ao carregar horários disponíveis:', err);
-      toast.error('Erro ao carregar horários disponíveis');
+      console.error("Erro ao carregar horários disponíveis:", err);
+      toast.error("Erro ao carregar horários disponíveis");
       setAvailableSlots([]);
     } finally {
       setLoadingSlots(false);
@@ -243,26 +290,28 @@ export function AgendamentosPage({ onSectionChange }: AgendamentosPageProps = {}
   };
 
   const handleInputChange = (field: string, value: string) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
+    setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (!isFormValid) {
-      toast.error('Preencha todos os campos obrigatórios');
+      toast.error("Preencha todos os campos obrigatórios");
       return;
     }
 
     const selectedDoctorInfo = getSelectedDoctorInfo();
     if (!selectedDoctorInfo) {
-      toast.error('Médico não encontrado');
+      toast.error("Médico não encontrado");
       return;
     }
 
     // Se usuário não está logado, salvar agendamento pendente e mostrar prompt de autenticação
     if (!user) {
-      const selectedSpecialtyInfo = specialties.find(s => s.id.toString() === selectedSpecialty);
+      const selectedSpecialtyInfo = specialties.find(
+        (s) => s.id.toString() === selectedSpecialty
+      );
 
       savePendingAppointment({
         specialty_id: parseInt(selectedSpecialty),
@@ -297,7 +346,7 @@ export function AgendamentosPage({ onSectionChange }: AgendamentosPageProps = {}
 
       await appointmentService.createAppointment(appointmentData);
 
-      toast.success('Agendamento realizado com sucesso!');
+      toast.success("Agendamento realizado com sucesso!");
       setAppointmentCreated(true);
 
       // Reset form após 3 segundos
@@ -305,13 +354,13 @@ export function AgendamentosPage({ onSectionChange }: AgendamentosPageProps = {}
         resetForm();
         setAppointmentCreated(false);
       }, 3000);
-
     } catch (err: any) {
-      const errorMessage = err.response?.data?.message || 'Erro ao criar agendamento';
+      const errorMessage =
+        err.response?.data?.message || "Erro ao criar agendamento";
       const validationErrors = err.response?.data?.errors;
 
       if (validationErrors) {
-        const errorDetails = Object.values(validationErrors).flat().join(', ');
+        const errorDetails = Object.values(validationErrors).flat().join(", ");
         toast.error(`${errorMessage}: ${errorDetails}`);
       } else {
         toast.error(errorMessage);
@@ -322,32 +371,39 @@ export function AgendamentosPage({ onSectionChange }: AgendamentosPageProps = {}
   };
 
   const resetForm = () => {
-    setSelectedDate('');
-    setSelectedTime('');
-    setSelectedSpecialty('');
-    setSelectedDoctor('');
+    setSelectedDate("");
+    setSelectedTime("");
+    setSelectedSpecialty("");
+    setSelectedDoctor("");
     setFormData({
-      name: user?.name || '',
-      cpf: user?.cpf || '',
-      phone: user?.phone || '',
-      email: user?.email || '',
-      observations: ''
+      name: user?.name || "",
+      cpf: user?.cpf || "",
+      phone: user?.phone || "",
+      email: user?.email || "",
+      observations: "",
     });
     setAvailableDates([]);
     setAvailableSlots([]);
   };
 
-  const isFormValid = selectedDate && selectedTime && selectedSpecialty && selectedDoctor &&
-    formData.name && formData.cpf && formData.phone && formData.email;
+  const isFormValid =
+    selectedDate &&
+    selectedTime &&
+    selectedSpecialty &&
+    selectedDoctor &&
+    formData.name &&
+    formData.cpf &&
+    formData.phone &&
+    formData.email;
 
   const formatDateDisplay = (dateStr: string) => {
-    if (!dateStr) return '';
-    const [year, month, day] = dateStr.split('-');
+    if (!dateStr) return "";
+    const [year, month, day] = dateStr.split("-");
     return `${day}/${month}/${year}`;
   };
 
   const getSelectedDoctorInfo = () => {
-    return doctors.find(d => d.id.toString() === selectedDoctor);
+    return doctors.find((d) => d.id.toString() === selectedDoctor);
   };
 
   // Renderizar ícone da especialidade
@@ -380,7 +436,8 @@ export function AgendamentosPage({ onSectionChange }: AgendamentosPageProps = {}
               Agendamento Confirmado!
             </h2>
             <p className="text-gray-600 mb-4">
-              Você receberá uma confirmação por email e SMS com todos os detalhes da consulta.
+              Você receberá uma confirmação por email e SMS com todos os
+              detalhes da consulta.
             </p>
             <Button onClick={resetForm} className="mt-4">
               Fazer Novo Agendamento
@@ -404,18 +461,32 @@ export function AgendamentosPage({ onSectionChange }: AgendamentosPageProps = {}
                 Faça login ou cadastre-se para continuar
               </h2>
               <p className="text-gray-600">
-                Para confirmar seu agendamento, você precisa ter uma conta em nosso sistema.
+                Para confirmar seu agendamento, você precisa ter uma conta em
+                nosso sistema.
               </p>
             </div>
 
             <div className="bg-blue-50 p-4 rounded-lg mb-6">
-              <h4 className="font-semibold text-gray-900 mb-2">Seu agendamento:</h4>
+              <h4 className="font-semibold text-gray-900 mb-2">
+                Seu agendamento:
+              </h4>
               <div className="space-y-2 text-sm text-gray-700">
                 {selectedSpecialty && (
                   <div className="flex items-center space-x-2">
-                    <Badge variant="secondary" className="flex items-center gap-1.5">
-                      {getSpecialtyIcon(specialties.find(s => s.id.toString() === selectedSpecialty)?.icon)}
-                      {specialties.find(s => s.id.toString() === selectedSpecialty)?.name}
+                    <Badge
+                      variant="secondary"
+                      className="flex items-center gap-1.5"
+                    >
+                      {getSpecialtyIcon(
+                        specialties.find(
+                          (s) => s.id.toString() === selectedSpecialty
+                        )?.icon
+                      )}
+                      {
+                        specialties.find(
+                          (s) => s.id.toString() === selectedSpecialty
+                        )?.name
+                      }
                     </Badge>
                   </div>
                 )}
@@ -442,7 +513,7 @@ export function AgendamentosPage({ onSectionChange }: AgendamentosPageProps = {}
 
             <div className="space-y-3">
               <Button
-                onClick={() => onSectionChange?.('login')}
+                onClick={() => onSectionChange?.("login")}
                 className="w-full"
                 size="lg"
               >
@@ -451,7 +522,7 @@ export function AgendamentosPage({ onSectionChange }: AgendamentosPageProps = {}
               </Button>
 
               <Button
-                onClick={() => onSectionChange?.('cadastro-paciente')}
+                onClick={() => onSectionChange?.("cadastro-paciente")}
                 variant="outline"
                 className="w-full"
                 size="lg"
@@ -483,7 +554,8 @@ export function AgendamentosPage({ onSectionChange }: AgendamentosPageProps = {}
             Agendamento de Consultas
           </h1>
           <p className="text-lg text-gray-600">
-            Agende sua consulta de forma rápida e fácil. Escolha o especialista, data e horário que melhor se adequam à sua necessidade.
+            Agende sua consulta de forma rápida e fácil. Escolha o especialista,
+            data e horário que melhor se adequam à sua necessidade.
           </p>
         </div>
 
@@ -505,7 +577,10 @@ export function AgendamentosPage({ onSectionChange }: AgendamentosPageProps = {}
               <div className="grid md:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="specialty">Especialidade *</Label>
-                  <Select value={selectedSpecialty} onValueChange={setSelectedSpecialty}>
+                  <Select
+                    value={selectedSpecialty}
+                    onValueChange={setSelectedSpecialty}
+                  >
                     <SelectTrigger>
                       <SelectValue placeholder="Selecione a especialidade" />
                     </SelectTrigger>
@@ -530,12 +605,17 @@ export function AgendamentosPage({ onSectionChange }: AgendamentosPageProps = {}
                     disabled={!selectedSpecialty || loadingDoctors}
                   >
                     <SelectTrigger>
-                      <SelectValue placeholder={
-                        loadingDoctors ? "Carregando..." :
-                          !selectedSpecialty ? "Selecione uma especialidade primeiro" :
-                            doctors.length === 0 ? "Nenhum médico disponível" :
-                              "Selecione o médico"
-                      } />
+                      <SelectValue
+                        placeholder={
+                          loadingDoctors
+                            ? "Carregando..."
+                            : !selectedSpecialty
+                              ? "Selecione uma especialidade primeiro"
+                              : doctors.length === 0
+                                ? "Nenhum médico disponível"
+                                : "Selecione o médico"
+                        }
+                      />
                     </SelectTrigger>
                     <SelectContent>
                       {doctors.map((doc) => (
@@ -547,7 +627,10 @@ export function AgendamentosPage({ onSectionChange }: AgendamentosPageProps = {}
                   </Select>
                   {selectedDoctor && getSelectedDoctorInfo() && (
                     <p className="text-sm text-gray-600">
-                      Valor da consulta: R$ {(Number(getSelectedDoctorInfo()?.consultation_price) || 0).toFixed(2)}
+                      Valor da consulta: R${" "}
+                      {(
+                        Number(getSelectedDoctorInfo()?.consultation_price) || 0
+                      ).toFixed(2)}
                     </p>
                   )}
                 </div>
@@ -563,12 +646,17 @@ export function AgendamentosPage({ onSectionChange }: AgendamentosPageProps = {}
                     disabled={!selectedDoctor || loadingDates}
                   >
                     <SelectTrigger>
-                      <SelectValue placeholder={
-                        loadingDates ? "Carregando datas..." :
-                          !selectedDoctor ? "Selecione um médico primeiro" :
-                            availableDates.length === 0 ? "Nenhuma data disponível" :
-                              "Selecione a data"
-                      } />
+                      <SelectValue
+                        placeholder={
+                          loadingDates
+                            ? "Carregando datas..."
+                            : !selectedDoctor
+                              ? "Selecione um médico primeiro"
+                              : availableDates.length === 0
+                                ? "Nenhuma data disponível"
+                                : "Selecione a data"
+                        }
+                      />
                     </SelectTrigger>
                     <SelectContent>
                       {availableDates.map((date) => (
@@ -597,12 +685,17 @@ export function AgendamentosPage({ onSectionChange }: AgendamentosPageProps = {}
                     disabled={!selectedDate || loadingSlots}
                   >
                     <SelectTrigger>
-                      <SelectValue placeholder={
-                        loadingSlots ? "Carregando horários..." :
-                          !selectedDate ? "Selecione uma data primeiro" :
-                            availableSlots.length === 0 ? "Nenhum horário disponível" :
-                              "Selecione o horário"
-                      } />
+                      <SelectValue
+                        placeholder={
+                          loadingSlots
+                            ? "Carregando horários..."
+                            : !selectedDate
+                              ? "Selecione uma data primeiro"
+                              : availableSlots.length === 0
+                                ? "Nenhum horário disponível"
+                                : "Selecione o horário"
+                        }
+                      />
                     </SelectTrigger>
                     <SelectContent>
                       {availableSlots.map((time) => (
@@ -637,7 +730,9 @@ export function AgendamentosPage({ onSectionChange }: AgendamentosPageProps = {}
                     <Input
                       id="name"
                       value={formData.name}
-                      onChange={(e) => handleInputChange('name', e.target.value)}
+                      onChange={(e) =>
+                        handleInputChange("name", e.target.value)
+                      }
                       placeholder="Digite seu nome completo"
                       required
                     />
@@ -648,7 +743,7 @@ export function AgendamentosPage({ onSectionChange }: AgendamentosPageProps = {}
                     <MaskedInput
                       mask="000.000.000-00"
                       value={formData.cpf}
-                      onChange={(value) => handleInputChange('cpf', value)}
+                      onChange={(value) => handleInputChange("cpf", value)}
                       id="cpf"
                       placeholder="000.000.000-00"
                       required
@@ -662,7 +757,7 @@ export function AgendamentosPage({ onSectionChange }: AgendamentosPageProps = {}
                     <MaskedInput
                       mask="(00) 00000-0000"
                       value={formData.phone}
-                      onChange={(value) => handleInputChange('phone', value)}
+                      onChange={(value) => handleInputChange("phone", value)}
                       id="phone"
                       placeholder="(11) 99999-9999"
                       required
@@ -675,7 +770,9 @@ export function AgendamentosPage({ onSectionChange }: AgendamentosPageProps = {}
                       id="email"
                       type="email"
                       value={formData.email}
-                      onChange={(e) => handleInputChange('email', e.target.value)}
+                      onChange={(e) =>
+                        handleInputChange("email", e.target.value)
+                      }
                       placeholder="seu@email.com"
                       required
                     />
@@ -687,7 +784,9 @@ export function AgendamentosPage({ onSectionChange }: AgendamentosPageProps = {}
                   <Textarea
                     id="observations"
                     value={formData.observations}
-                    onChange={(e) => handleInputChange('observations', e.target.value)}
+                    onChange={(e) =>
+                      handleInputChange("observations", e.target.value)
+                    }
                     placeholder="Descreva sintomas, medicamentos em uso ou outras informações relevantes..."
                     rows={3}
                   />
@@ -695,15 +794,31 @@ export function AgendamentosPage({ onSectionChange }: AgendamentosPageProps = {}
               </div>
 
               {/* Resumo do Agendamento */}
-              {(selectedDate || selectedTime || selectedSpecialty || selectedDoctor) && (
+              {(selectedDate ||
+                selectedTime ||
+                selectedSpecialty ||
+                selectedDoctor) && (
                 <div className="bg-blue-50 p-4 rounded-lg">
-                  <h4 className="font-semibold text-gray-900 mb-3">Resumo do Agendamento:</h4>
+                  <h4 className="font-semibold text-gray-900 mb-3">
+                    Resumo do Agendamento:
+                  </h4>
                   <div className="space-y-2 text-sm">
                     {selectedSpecialty && (
                       <div className="flex items-center space-x-2">
-                        <Badge variant="secondary" className="flex items-center gap-1.5">
-                          {getSpecialtyIcon(specialties.find(s => s.id.toString() === selectedSpecialty)?.icon)}
-                          {specialties.find(s => s.id.toString() === selectedSpecialty)?.name}
+                        <Badge
+                          variant="secondary"
+                          className="flex items-center gap-1.5"
+                        >
+                          {getSpecialtyIcon(
+                            specialties.find(
+                              (s) => s.id.toString() === selectedSpecialty
+                            )?.icon
+                          )}
+                          {
+                            specialties.find(
+                              (s) => s.id.toString() === selectedSpecialty
+                            )?.name
+                          }
                         </Badge>
                       </div>
                     )}
@@ -737,7 +852,7 @@ export function AgendamentosPage({ onSectionChange }: AgendamentosPageProps = {}
               >
                 {submitting ? (
                   <>
-                    <LoadingSpinner size="sm" className="mr-2" />
+                    <LoadingSpinner size="sm" />
                     Agendando...
                   </>
                 ) : (
@@ -762,7 +877,9 @@ export function AgendamentosPage({ onSectionChange }: AgendamentosPageProps = {}
           <CardContent className="space-y-4">
             <div className="grid md:grid-cols-2 gap-6">
               <div>
-                <h4 className="font-semibold text-gray-900 mb-2">Documentos Necessários:</h4>
+                <h4 className="font-semibold text-gray-900 mb-2">
+                  Documentos Necessários:
+                </h4>
                 <ul className="text-sm text-gray-600 space-y-1">
                   <li>• RG ou CNH</li>
                   <li>• CPF</li>
@@ -771,7 +888,9 @@ export function AgendamentosPage({ onSectionChange }: AgendamentosPageProps = {}
                 </ul>
               </div>
               <div>
-                <h4 className="font-semibold text-gray-900 mb-2">Política de Cancelamento:</h4>
+                <h4 className="font-semibold text-gray-900 mb-2">
+                  Política de Cancelamento:
+                </h4>
                 <ul className="text-sm text-gray-600 space-y-1">
                   <li>• Cancelamento até 24h antes: sem cobrança</li>
                   <li>• Cancelamento com menos de 24h: taxa aplicável</li>
@@ -782,8 +901,9 @@ export function AgendamentosPage({ onSectionChange }: AgendamentosPageProps = {}
 
             <div className="bg-yellow-50 p-4 rounded-lg">
               <p className="text-sm text-yellow-800">
-                <strong>Importante:</strong> Chegue com 15 minutos de antecedência.
-                Você receberá uma confirmação por email e SMS com todos os detalhes da consulta.
+                <strong>Importante:</strong> Chegue com 15 minutos de
+                antecedência. Você receberá uma confirmação por email e SMS com
+                todos os detalhes da consulta.
               </p>
             </div>
           </CardContent>
