@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { Input } from './ui/input';
 import { Users, Edit, Eye, Power, Search, Calendar } from 'lucide-react';
 import { useToast } from '../contexts/ToastContext';
+import { Pagination } from './Pagination';
 
 interface User {
   id: number;
@@ -42,6 +43,12 @@ const Patients: React.FC = () => {
   const [filterStatus, setFilterStatus] = useState('all');
   const [searchTerm, setSearchTerm] = useState('');
   const [searchInput, setSearchInput] = useState(''); // Input separado para debounce
+
+  // Estados de paginação
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalItems, setTotalItems] = useState(0);
+  const [itemsPerPage, setItemsPerPage] = useState(15);
 
   // Estados para modais
   const [showViewModal, setShowViewModal] = useState(false);
@@ -82,16 +89,22 @@ const Patients: React.FC = () => {
     return () => clearTimeout(timer);
   }, [searchInput]);
 
+  // Resetar para página 1 quando filtros mudarem
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [filterStatus, searchTerm]);
+
+  // Buscar pacientes quando página ou filtros mudarem
   useEffect(() => {
     fetchPatients();
-  }, [filterStatus, searchTerm]);
+  }, [currentPage, filterStatus, searchTerm]);
 
   const fetchPatients = async () => {
     try {
       setLoading(true);
       const token = localStorage.getItem('token');
-      
-      let url = `${API_URL}/patients?`;
+
+      let url = `${API_URL}/patients?page=${currentPage}&`;
       if (filterStatus !== 'all') {
         url += `status=${filterStatus}&`;
       }
@@ -102,8 +115,17 @@ const Patients: React.FC = () => {
       const response = await axios.get(url, {
         headers: { Authorization: `Bearer ${token}` }
       });
-      
-      setPatients(response.data.data || response.data);
+
+      // Extrair dados paginados do Laravel
+      if (response.data.data) {
+        setPatients(response.data.data);
+        setCurrentPage(response.data.current_page);
+        setTotalPages(response.data.last_page);
+        setTotalItems(response.data.total);
+        setItemsPerPage(response.data.per_page);
+      } else {
+        setPatients(response.data);
+      }
       setError(null);
     } catch (err: any) {
       setError('Erro ao carregar pacientes');
@@ -426,6 +448,15 @@ const Patients: React.FC = () => {
             )}
           </TableBody>
           </Table>
+
+          {/* Paginação */}
+          <Pagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            onPageChange={setCurrentPage}
+            totalItems={totalItems}
+            itemsPerPage={itemsPerPage}
+          />
         </div>
       </CardContent>
 

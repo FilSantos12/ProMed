@@ -18,6 +18,7 @@ import {
 } from 'lucide-react';
 import { useToast } from '../contexts/ToastContext';
 import doctorApplicationService from '../services/doctorApplicationService';
+import { Pagination } from './Pagination';
 
 // Mapa de ícones disponíveis (mesmo padrão do Specialties.tsx)
 const ICON_MAP: Record<string, LucideIcon> = {
@@ -79,6 +80,12 @@ const Doctors: React.FC<DoctorsProps> = ({ initialFilterStatus }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [searchInput, setSearchInput] = useState('');
 
+  // Estados de paginação
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalItems, setTotalItems] = useState(0);
+  const [itemsPerPage, setItemsPerPage] = useState(15);
+
   const [showViewModal, setShowViewModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showAppointmentsModal, setShowAppointmentsModal] = useState(false);
@@ -124,10 +131,18 @@ const Doctors: React.FC<DoctorsProps> = ({ initialFilterStatus }) => {
     return () => clearTimeout(timer);
   }, [searchInput]);
 
+  // Resetar para página 1 quando filtros mudarem
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [filterStatus, filterSpecialty, searchTerm]);
+
+  // Buscar médicos quando página ou filtros mudarem
   useEffect(() => {
     fetchDoctors();
-    fetchSpecialties();
-  }, [filterStatus, filterSpecialty, searchTerm]);
+    if (currentPage === 1) {
+      fetchSpecialties();
+    }
+  }, [currentPage, filterStatus, filterSpecialty, searchTerm]);
 
   const fetchSpecialties = async () => {
     try {
@@ -142,7 +157,7 @@ const Doctors: React.FC<DoctorsProps> = ({ initialFilterStatus }) => {
     try {
       setLoading(true);
       const token = localStorage.getItem('token');
-      let url = `${API_URL}/doctors?`;
+      let url = `${API_URL}/doctors?page=${currentPage}&`;
       if (filterStatus !== 'all') url += `status=${filterStatus}&`;
       if (filterSpecialty !== 'all') url += `specialty_id=${filterSpecialty}&`;
       if (searchTerm) url += `search=${searchTerm}`;
@@ -151,7 +166,16 @@ const Doctors: React.FC<DoctorsProps> = ({ initialFilterStatus }) => {
         headers: { Authorization: `Bearer ${token}` }
       });
 
-      setDoctors(response.data.data || response.data);
+      // Extrair dados paginados do Laravel
+      if (response.data.data) {
+        setDoctors(response.data.data);
+        setCurrentPage(response.data.current_page);
+        setTotalPages(response.data.last_page);
+        setTotalItems(response.data.total);
+        setItemsPerPage(response.data.per_page);
+      } else {
+        setDoctors(response.data);
+      }
       setError(null);
     } catch (err: any) {
       setError('Erro ao carregar médicos');
@@ -701,6 +725,15 @@ const getDocumentIcon = (type: string) => {
             )}
           </TableBody>
         </Table>
+
+        {/* Paginação */}
+        <Pagination
+          currentPage={currentPage}
+          totalPages={totalPages}
+          onPageChange={setCurrentPage}
+          totalItems={totalItems}
+          itemsPerPage={itemsPerPage}
+        />
       </CardContent>
 
       {/* Modal de Visualização */}

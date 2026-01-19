@@ -108,11 +108,11 @@ class DoctorService {
     date?: string;
     startDate?: string;
     endDate?: string;
-  }): Promise<DoctorAppointment[]> {
+    page?: number;
+  }): Promise<any> {
     const response = await api.get('/appointments', { params: filters });
-    // A resposta pode vir como array direto ou dentro de data
-    const data = response.data;
-    return Array.isArray(data) ? data : (data.data || []);
+    // Retornar resposta completa para ter acesso aos dados de paginação
+    return response.data;
   }
 
   // Buscar consultas de hoje

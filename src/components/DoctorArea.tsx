@@ -39,6 +39,7 @@ import {
 } from "../services/doctorService";
 import { LoadingSpinner } from "./ui/loading-spinner";
 import { Alert, AlertDescription } from "./ui/alert";
+import { Pagination } from "./Pagination";
 
 interface DoctorAreaProps {
   onSectionChange?: (section: string) => void;
@@ -66,6 +67,18 @@ export function DoctorArea({
   const [loadingHistory, setLoadingHistory] = useState(false);
   const [loadingSchedules, setLoadingSchedules] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Estados de paginação para Histórico
+  const [historyPage, setHistoryPage] = useState(1);
+  const [historyTotalPages, setHistoryTotalPages] = useState(1);
+  const [historyTotalItems, setHistoryTotalItems] = useState(0);
+  const [historyItemsPerPage, setHistoryItemsPerPage] = useState(10);
+
+  // Estados de paginação para Controle de Agenda
+  const [schedulesPage, setSchedulesPage] = useState(1);
+  const [schedulesTotalPages, setSchedulesTotalPages] = useState(1);
+  const [schedulesTotalItems, setSchedulesTotalItems] = useState(0);
+  const [schedulesItemsPerPage, setSchedulesItemsPerPage] = useState(10);
 
   // Estados para formulários
   const [profilePhoto, setProfilePhoto] = useState<string>("");
@@ -174,12 +187,22 @@ export function DoctorArea({
     try {
       setLoadingHistory(true);
       // Buscar consultas concluídas, canceladas e no_show
-      const historyData = await doctorService.getAppointments({
+      const response = await doctorService.getAppointments({
         status: "completed,cancelled,no_show",
+        page: historyPage,
       });
-      console.log("Histórico carregado:", historyData);
-      console.log("Total de consultas no histórico:", historyData.length);
-      setAppointmentsHistory(historyData);
+
+      console.log("Histórico carregado:", response);
+
+      // Extrair dados paginados
+      if (response.data) {
+        setAppointmentsHistory(response.data);
+        setHistoryTotalPages(response.last_page || 1);
+        setHistoryTotalItems(response.total || 0);
+        setHistoryItemsPerPage(response.per_page || 10);
+      } else {
+        setAppointmentsHistory(response);
+      }
     } catch (err: any) {
       console.error("Erro ao carregar histórico:", err);
       console.error("Detalhes do erro:", err.response?.data);
@@ -195,7 +218,7 @@ export function DoctorArea({
     } else if (activeTab === "historico") {
       loadHistory();
     }
-  }, [activeTab]);
+  }, [activeTab, historyPage, schedulesPage]);
 
   // Funções de manipulação de consultas
   const handleConfirmAppointment = async (appointmentId: number) => {
@@ -1564,6 +1587,14 @@ export function DoctorArea({
                     ))}
                   </div>
                 )}
+                {/* Paginação */}
+                <Pagination
+                  currentPage={historyPage}
+                  totalPages={historyTotalPages}
+                  onPageChange={setHistoryPage}
+                  totalItems={historyTotalItems}
+                  itemsPerPage={historyItemsPerPage}
+                />
               </CardContent>
             </Card>
           </TabsContent>

@@ -217,16 +217,19 @@ public function toggleStatus($id)
     /**
      * Listar agendamentos do médico
      */
-    public function appointments($id)
+    public function appointments(Request $request, $id)
 {
     try {
         $doctor = Doctor::findOrFail($id);
 
-        $appointments = $doctor->appointments()
+        $query = $doctor->appointments()
             ->with(['patient', 'specialty'])
             ->orderBy('appointment_date', 'desc')
-            ->orderBy('appointment_time', 'desc')
-            ->get();
+            ->orderBy('appointment_time', 'desc');
+
+        // Paginação
+        $perPage = $request->input('per_page', 10);
+        $appointments = $query->paginate($perPage);
 
         return response()->json([
             'doctor' => $doctor->load(['user', 'specialty']),

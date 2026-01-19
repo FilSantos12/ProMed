@@ -23,6 +23,7 @@ import { LoadingSpinner } from './ui/loading-spinner';
 import { Alert, AlertDescription } from './ui/alert';
 import doctorApplicationService, { DoctorApplicationStatus as DoctorAppStatus } from '../services/doctorApplicationService';
 import { DoctorApplicationStatus } from './DoctorApplicationStatus';
+import { Pagination } from './Pagination';
 
 // Mapa de ícones disponíveis (mesmo padrão do Specialties.tsx)
 const ICON_MAP: Record<string, LucideIcon> = {
@@ -54,6 +55,12 @@ export function PatientArea({ onSectionChange }: PatientAreaProps) {
   const [loading, setLoading] = useState(true);
   const [loadingAppointments, setLoadingAppointments] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Estados de paginação para Consultas
+  const [appointmentsPage, setAppointmentsPage] = useState(1);
+  const [appointmentsTotalPages, setAppointmentsTotalPages] = useState(1);
+  const [appointmentsTotalItems, setAppointmentsTotalItems] = useState(0);
+  const [appointmentsItemsPerPage, setAppointmentsItemsPerPage] = useState(10);
 
   // Estados para formulários
   const [profilePhoto, setProfilePhoto] = useState<string>('');
@@ -95,20 +102,47 @@ export function PatientArea({ onSectionChange }: PatientAreaProps) {
     loadDoctorApplicationStatus();
   }, []);
 
+  // Carregar consultas quando página mudar
+  useEffect(() => {
+    if (!loading) {
+      loadAppointments();
+    }
+  }, [appointmentsPage]);
+
+  const loadAppointments = async () => {
+    try {
+      setLoadingAppointments(true);
+      const response = await patientService.getAppointments({ page: appointmentsPage });
+
+      // Extrair dados paginados
+      if (response.data) {
+        setAppointments(response.data);
+        setAppointmentsTotalPages(response.last_page || 1);
+        setAppointmentsTotalItems(response.total || 0);
+        setAppointmentsItemsPerPage(response.per_page || 10);
+      } else {
+        setAppointments(response);
+      }
+    } catch (err: any) {
+      console.error('Erro ao carregar consultas:', err);
+      toast.error('Erro ao carregar consultas');
+    } finally {
+      setLoadingAppointments(false);
+    }
+  };
+
   const loadInitialData = async () => {
     try {
       setLoading(true);
       setError(null);
 
-      const [profileData, statsData, appointmentsData] = await Promise.all([
+      const [profileData, statsData] = await Promise.all([
         patientService.getProfile(),
         patientService.getStats(),
-        patientService.getAppointments(),
       ]);
 
       setProfile(profileData);
       setStats(statsData);
-      setAppointments(appointmentsData);
 
       // Atualizar estados do formulário
       if (profileData) {
@@ -553,6 +587,15 @@ export function PatientArea({ onSectionChange }: PatientAreaProps) {
                       })}
                     </TableBody>
                     </Table>
+
+                    {/* Paginação */}
+                    <Pagination
+                      currentPage={appointmentsPage}
+                      totalPages={appointmentsTotalPages}
+                      onPageChange={setAppointmentsPage}
+                      totalItems={appointmentsTotalItems}
+                      itemsPerPage={appointmentsItemsPerPage}
+                    />
                   </div>
                 )}
               </CardContent>

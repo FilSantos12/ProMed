@@ -15,6 +15,7 @@ import {
   Radar, Target, LucideIcon
 } from 'lucide-react';
 import { useToast } from '../contexts/ToastContext';
+import { Pagination } from './Pagination';
 
 // Mapa de ícones disponíveis (mesmo padrão do Specialties.tsx)
 const ICON_MAP: Record<string, LucideIcon> = {
@@ -80,7 +81,13 @@ const Appointments: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [filterStatus, setFilterStatus] = useState('todos');
   const [filterDate, setFilterDate] = useState('hoje');
-  
+
+  // Estados de paginação
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalItems, setTotalItems] = useState(0);
+  const [itemsPerPage, setItemsPerPage] = useState(15);
+
   // Estados para modais
   const [showViewModal, setShowViewModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
@@ -100,23 +107,35 @@ const Appointments: React.FC = () => {
 
   const API_URL = 'http://localhost:8000/api/v1/admin';
 
+  // Resetar para página 1 quando filtros mudarem
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [filterStatus, filterDate]);
+
+  // Buscar agendamentos quando página ou filtros mudarem
   useEffect(() => {
     fetchAppointments();
-  }, []);
+  }, [currentPage, filterStatus, filterDate]);
 
   const fetchAppointments = async () => {
     try {
       setLoading(true);
       const token = localStorage.getItem('token');
-      //console.log('Token:', token);
-      const response = await axios.get(`${API_URL}/appointments`, {
+
+      const response = await axios.get(`${API_URL}/appointments?page=${currentPage}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
-      //console.log('Appointments data:', response.data);
-      // Laravel retorna paginação, os dados estão em data.data
-      const appointmentsData = response.data.data || [];
-      //console.log('Appointments array:', appointmentsData);
-      setAppointments(appointmentsData);
+
+      // Extrair dados paginados do Laravel
+      if (response.data.data) {
+        setAppointments(response.data.data);
+        setCurrentPage(response.data.current_page);
+        setTotalPages(response.data.last_page);
+        setTotalItems(response.data.total);
+        setItemsPerPage(response.data.per_page);
+      } else {
+        setAppointments(response.data);
+      }
       setError(null);
     } catch (err: any) {
       setError('Erro ao carregar consultas');
@@ -452,6 +471,15 @@ const Appointments: React.FC = () => {
               )}
             </TableBody>
           </Table>
+
+          {/* Paginação */}
+          <Pagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            onPageChange={setCurrentPage}
+            totalItems={totalItems}
+            itemsPerPage={itemsPerPage}
+          />
         </div>
       </CardContent>
 

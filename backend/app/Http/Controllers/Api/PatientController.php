@@ -179,7 +179,7 @@ class PatientController extends Controller
     /**
      * Buscar histórico de consultas do paciente
      */
-    public function appointments($id)
+    public function appointments(Request $request, $id)
     {
         try {
             $patient = Patient::findOrFail($id);
@@ -187,15 +187,18 @@ class PatientController extends Controller
             // Carregar appointments com relacionamentos corretos
             // doctor = User do médico
             // doctorProfile = Dados profissionais da tabela doctors (com specialty)
-            $appointments = $patient->appointments()
+            $query = $patient->appointments()
                 ->with([
                     'doctor',                      // User do médico
                     'doctorProfile.specialty',     // Dados profissionais e especialidade
                     'specialty'                    // Especialidade do agendamento
                 ])
                 ->orderBy('appointment_date', 'desc')
-                ->orderBy('appointment_time', 'desc')
-                ->get();
+                ->orderBy('appointment_time', 'desc');
+
+            // Paginação
+            $perPage = $request->input('per_page', 10);
+            $appointments = $query->paginate($perPage);
 
             return response()->json([
                 'patient' => $patient->load('user'),

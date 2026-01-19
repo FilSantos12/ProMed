@@ -157,10 +157,11 @@ class PatientService {
   async getAppointments(filters?: {
     status?: string;
     date?: string;
-  }): Promise<PatientAppointment[]> {
+    page?: number;
+  }): Promise<any> {
     const response = await api.get('/patient/appointments', { params: filters });
-    const data = response.data;
-    return Array.isArray(data) ? data : (data.data || []);
+    // Retornar resposta completa para ter acesso aos dados de paginação
+    return response.data;
   }
 
   // Buscar consultas futuras
