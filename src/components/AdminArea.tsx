@@ -1,14 +1,12 @@
-import { useState, useEffect } from 'react';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
-import {
-  Shield, Users, Calendar, BarChart3, Stethoscope
-} from 'lucide-react';
-import { useAuth } from '../hooks/useAuth';
-import Appointments from './Appointments';
-import Patients from './Patients';
-import Doctors from './Doctors';
-import Dashboard from './Dashboard';
-import Specialties from './Specialties';
+import { useState, useEffect } from "react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
+import { Shield, Users, Calendar, BarChart3, Stethoscope } from "lucide-react";
+import { useAuth } from "../hooks/useAuth";
+import Appointments from "./Appointments";
+import Patients from "./Patients";
+import Doctors from "./Doctors";
+import Dashboard from "./Dashboard";
+import Specialties from "./Specialties";
 
 interface AdminAreaProps {
   onSectionChange?: (section: string) => void;
@@ -16,83 +14,65 @@ interface AdminAreaProps {
 
 export function AdminArea({ onSectionChange }: AdminAreaProps) {
   const { user } = useAuth();
-  const [activeTab, setActiveTab] = useState('dashboard');
-  const [searchTerm, setSearchTerm] = useState('');
-  const [doctorsFilter, setDoctorsFilter] = useState<string>('all');
+  const [activeTab, setActiveTab] = useState("dashboard");
+  const [doctorsFilter, setDoctorsFilter] = useState<string>("all");
 
   // ✅ FUNÇÃO PARA VER MÉDICOS PENDENTES (LUGAR CORRETO)
   const handleViewPendingDoctors = () => {
-    setDoctorsFilter('pending');
-    setActiveTab('medicos');
+    setDoctorsFilter("pending");
+    setActiveTab("medicos");
   };
 
   // ✅ USEEFFECT PARA RESETAR FILTRO AO TROCAR DE ABA
   useEffect(() => {
-    if (activeTab !== 'medicos') {
-      setDoctorsFilter('all');
+    if (activeTab !== "medicos") {
+      setDoctorsFilter("all");
     }
   }, [activeTab]);
 
   // ⚠️ PROTEÇÃO DE ACESSO - Apenas administradores podem acessar
   useEffect(() => {
-    console.log('Verificando acesso - Usuário:', user);
+    console.log("Verificando acesso - Usuário:", user);
 
     if (!user) {
-      console.log('❌ Usuário não autenticado - Redirecionando para login');
-      onSectionChange?.('login');
+      console.log("❌ Usuário não autenticado - Redirecionando para login");
+      onSectionChange?.("login");
       return;
     }
 
-    console.log('Role do usuário:', user.role);
+    console.log("Role do usuário:", user.role);
 
-    if (user.role !== 'admin') {
-      console.log('❌ Usuário não é admin - Redirecionando baseado no role');
+    if (user.role !== "admin") {
+      console.log("❌ Usuário não é admin - Redirecionando baseado no role");
       // Redirecionar baseado no role
-      if (user.role === 'doctor') {
-        onSectionChange?.('doctor-area');
-      } else if (user.role === 'patient') {
-        onSectionChange?.('patient-area');
+      if (user.role === "doctor") {
+        onSectionChange?.("doctor-area");
+      } else if (user.role === "patient") {
+        onSectionChange?.("patient-area");
       } else {
-        onSectionChange?.('home');
+        onSectionChange?.("home");
       }
     } else {
-      console.log('✅ Acesso permitido - Usuário é admin');
+      console.log("✅ Acesso permitido - Usuário é admin");
     }
   }, [user, onSectionChange]);
 
   // Se não for admin, não renderiza nada (evita flash de conteúdo)
-  if (!user || user.role !== 'admin') {
+  if (!user || user.role !== "admin") {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
           <Shield className="w-16 h-16 text-red-500 mx-auto mb-4" />
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">Acesso Negado</h2>
-          <p className="text-gray-600">Você não tem permissão para acessar esta área.</p>
+          <h2 className="text-2xl font-bold text-gray-900 mb-2">
+            Acesso Negado
+          </h2>
+          <p className="text-gray-600">
+            Você não tem permissão para acessar esta área.
+          </p>
         </div>
       </div>
     );
   }
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'ativo': case 'confirmado': case 'em_andamento': return 'bg-green-100 text-green-800';
-      case 'inativo': case 'cancelado': return 'bg-red-100 text-red-800';
-      case 'agendado': case 'pendente': return 'bg-yellow-100 text-yellow-800';
-      default: return 'bg-gray-100 text-gray-800';
-    }
-  };
-
-  const getStatusLabel = (status: string) => {
-    switch (status) {
-      case 'ativo': return 'Ativo';
-      case 'inativo': return 'Inativo';
-      case 'confirmado': return 'Confirmado';
-      case 'em_andamento': return 'Em Andamento';
-      case 'agendado': return 'Agendado';
-      case 'cancelado': return 'Cancelado';
-      default: return status;
-    }
-  };
 
   return (
     <div className="min-h-screen bg-gray-50 py-8">
@@ -103,7 +83,7 @@ export function AdminArea({ onSectionChange }: AdminAreaProps) {
             Painel Administrativo
           </h1>
           <p className="text-gray-600">
-            Bem-vindo, {user?.name ?? 'Usuário'} - Gerencie o sistema ProMed
+            Bem-vindo, {user?.name ?? "Usuário"} - Gerencie o sistema ProMed
           </p>
         </div>
 
@@ -111,31 +91,46 @@ export function AdminArea({ onSectionChange }: AdminAreaProps) {
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           <div className="overflow-x-auto mb-6">
             <TabsList className="inline-flex w-full min-w-max md:grid md:grid-cols-3 lg:grid-cols-5 gap-2">
-            <TabsTrigger value="dashboard" className="flex items-center space-x-2">
-              <BarChart3 className="w-4 h-4" />
-              <span>Dashboard</span>
-            </TabsTrigger>
-            <TabsTrigger value="medicos" className="flex items-center space-x-2">
-              <Stethoscope className="w-4 h-4" />
-              <span>Médicos</span>
-            </TabsTrigger>
-            <TabsTrigger value="pacientes" className="flex items-center space-x-2">
-              <Users className="w-4 h-4" />
-              <span>Pacientes</span>
-            </TabsTrigger>
-            <TabsTrigger value="especialidades" className="flex items-center space-x-2">
-              <Stethoscope className="w-4 h-4" />
-              <span>Especialidades</span>
-            </TabsTrigger>
-            <TabsTrigger value="agendamentos" className="flex items-center space-x-2">
-              <Calendar className="w-4 h-4" />
-              <span>Agendamentos</span>
-            </TabsTrigger>
-            {/*<TabsTrigger value="configuracoes" className="flex items-center space-x-2">
+              <TabsTrigger
+                value="dashboard"
+                className="flex items-center space-x-2"
+              >
+                <BarChart3 className="w-4 h-4" />
+                <span>Dashboard</span>
+              </TabsTrigger>
+              <TabsTrigger
+                value="medicos"
+                className="flex items-center space-x-2"
+              >
+                <Stethoscope className="w-4 h-4" />
+                <span>Médicos</span>
+              </TabsTrigger>
+              <TabsTrigger
+                value="pacientes"
+                className="flex items-center space-x-2"
+              >
+                <Users className="w-4 h-4" />
+                <span>Pacientes</span>
+              </TabsTrigger>
+              <TabsTrigger
+                value="especialidades"
+                className="flex items-center space-x-2"
+              >
+                <Stethoscope className="w-4 h-4" />
+                <span>Especialidades</span>
+              </TabsTrigger>
+              <TabsTrigger
+                value="agendamentos"
+                className="flex items-center space-x-2"
+              >
+                <Calendar className="w-4 h-4" />
+                <span>Agendamentos</span>
+              </TabsTrigger>
+              {/*<TabsTrigger value="configuracoes" className="flex items-center space-x-2">
               <Settings className="w-4 h-4" />
               <span>Configurações</span>
             </TabsTrigger>*/}
-          </TabsList>
+            </TabsList>
           </div>
 
           {/* Dashboard Tab */}
@@ -144,7 +139,7 @@ export function AdminArea({ onSectionChange }: AdminAreaProps) {
           </TabsContent>
 
           {/* Médicos Tab */}
-          {activeTab === 'medicos' && (
+          {activeTab === "medicos" && (
             <Doctors initialFilterStatus={doctorsFilter} />
           )}
 
