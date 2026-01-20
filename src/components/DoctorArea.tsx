@@ -102,7 +102,9 @@ export function DoctorArea({
 
   // Estados para modal de cancelamento de consulta
   const [showCancelModal, setShowCancelModal] = useState(false);
-  const [appointmentToCancel, setAppointmentToCancel] = useState<number | null>(null);
+  const [appointmentToCancel, setAppointmentToCancel] = useState<number | null>(
+    null,
+  );
   const [cancellationReason, setCancellationReason] = useState("");
 
   // Estados para edição de horários
@@ -269,13 +271,13 @@ export function DoctorArea({
     try {
       await doctorService.cancelAppointment(
         appointmentToCancel,
-        cancellationReason || undefined
+        cancellationReason || undefined,
       );
       toast.success("Consulta cancelada com sucesso!", 3000);
 
       // Remover da lista de próximas consultas (vai para o histórico)
       setAppointments((prev) =>
-        prev.filter((appt) => appt.id !== appointmentToCancel)
+        prev.filter((appt) => appt.id !== appointmentToCancel),
       );
 
       // Se estiver na aba de histórico, recarregar
@@ -1867,7 +1869,10 @@ export function DoctorArea({
             </div>
 
             <div className="mb-4">
-              <Label htmlFor="cancellation-reason" className="text-gray-700 mb-2">
+              <Label
+                htmlFor="cancellation-reason"
+                className="text-gray-700 mb-2"
+              >
                 Motivo do Cancelamento
               </Label>
               <Textarea
@@ -1897,7 +1902,7 @@ export function DoctorArea({
               </Button>
               <Button
                 variant="default"
-                className="flex-1 bg-orange-600 hover:bg-orange-700 text-white"
+                className="flex-1"
                 onClick={confirmCancelAppointment}
               >
                 Confirmar Cancelamento

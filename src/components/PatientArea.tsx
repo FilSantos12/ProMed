@@ -87,6 +87,10 @@ export function PatientArea({ onSectionChange }: PatientAreaProps) {
   const [appointmentToCancel, setAppointmentToCancel] = useState<number | null>(null);
   const [cancellationReason, setCancellationReason] = useState('');
 
+  // Estados para detalhes de consulta
+  const [showDetailsModal, setShowDetailsModal] = useState(false);
+  const [selectedAppointment, setSelectedAppointment] = useState<PatientAppointment | null>(null);
+
   // Estados para prontuários médicos
   const [showMedicalRecordsModal, setShowMedicalRecordsModal] = useState(false);
   const [medicalRecords, setMedicalRecords] = useState<MedicalRecord[]>([]);
@@ -254,6 +258,11 @@ export function PatientArea({ onSectionChange }: PatientAreaProps) {
       console.error('Erro ao cancelar consulta:', err);
       toast.error(err.response?.data?.message || 'Erro ao cancelar consulta');
     }
+  };
+
+  const handleViewDetails = (appointment: PatientAppointment) => {
+    setSelectedAppointment(appointment);
+    setShowDetailsModal(true);
   };
 
   const handleViewMedicalRecords = async () => {
@@ -579,7 +588,11 @@ export function PatientArea({ onSectionChange }: PatientAreaProps) {
                                 Cancelar
                               </Button>
                             ) : (
-                              <Button size="sm" variant="outline">
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => handleViewDetails(appointment)}
+                              >
                                 <Eye className="w-4 h-4 mr-1" />
                                 Detalhes
                               </Button>
@@ -840,6 +853,152 @@ export function PatientArea({ onSectionChange }: PatientAreaProps) {
               </Button>
               <Button onClick={() => setShowCancelModal(false)} variant="outline" className="flex-1">
                 Voltar
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de Detalhes da Consulta */}
+      {showDetailsModal && selectedAppointment && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 animate-fade-in">
+          <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setShowDetailsModal(false)} />
+          <div className="relative bg-white rounded-lg shadow-2xl max-w-2xl w-full mx-4 p-6 animate-zoom-in max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center space-x-3">
+                <div className="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center">
+                  <Eye className="w-6 h-6 text-blue-600" />
+                </div>
+                <div>
+                  <h3 className="text-xl font-semibold text-gray-900">Detalhes da Consulta</h3>
+                  <p className="text-sm text-gray-600">Informações completas</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setShowDetailsModal(false)}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="space-y-6">
+              {/* Status */}
+              <div>
+                <Label className="text-sm font-semibold text-gray-700 mb-2 block">Status</Label>
+                <Badge className={getStatusColor(selectedAppointment.status)}>
+                  {getStatusLabel(selectedAppointment.status)}
+                </Badge>
+              </div>
+
+              {/* Informações da Consulta */}
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label className="text-sm font-semibold text-gray-700 mb-1 block flex items-center space-x-1">
+                    <Calendar className="w-4 h-4" />
+                    <span>Data</span>
+                  </Label>
+                  <p className="text-gray-900">{formatDate(selectedAppointment.appointment_date)}</p>
+                </div>
+                <div>
+                  <Label className="text-sm font-semibold text-gray-700 mb-1 block flex items-center space-x-1">
+                    <Clock className="w-4 h-4" />
+                    <span>Horário</span>
+                  </Label>
+                  <p className="text-gray-900">{selectedAppointment.appointment_time}</p>
+                </div>
+              </div>
+
+              {/* Médico e Especialidade */}
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label className="text-sm font-semibold text-gray-700 mb-1 block flex items-center space-x-1">
+                    <User className="w-4 h-4" />
+                    <span>Médico</span>
+                  </Label>
+                  <p className="text-gray-900">{selectedAppointment.doctor?.name || 'N/A'}</p>
+                </div>
+                <div>
+                  <Label className="text-sm font-semibold text-gray-700 mb-1 block flex items-center space-x-1">
+                    <Stethoscope className="w-4 h-4" />
+                    <span>Especialidade</span>
+                  </Label>
+                  <p className="text-gray-900">
+                    {selectedAppointment.doctor?.doctor?.specialty?.name || selectedAppointment.specialty?.name || 'N/A'}
+                  </p>
+                </div>
+              </div>
+
+              {/* Notas do Paciente */}
+              {selectedAppointment.patient_notes && (
+                <div>
+                  <Label className="text-sm font-semibold text-gray-700 mb-2 block flex items-center space-x-1">
+                    <FileText className="w-4 h-4" />
+                    <span>Suas Observações</span>
+                  </Label>
+                  <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                    <p className="text-gray-900 whitespace-pre-wrap">{selectedAppointment.patient_notes}</p>
+                  </div>
+                </div>
+              )}
+
+              {/* Notas do Médico */}
+              {selectedAppointment.doctor_notes && (
+                <div>
+                  <Label className="text-sm font-semibold text-gray-700 mb-2 block flex items-center space-x-1">
+                    <Stethoscope className="w-4 h-4" />
+                    <span>Observações do Médico</span>
+                  </Label>
+                  <div className="p-3 bg-green-50 border border-green-200 rounded-lg">
+                    <p className="text-gray-900 whitespace-pre-wrap">{selectedAppointment.doctor_notes}</p>
+                  </div>
+                </div>
+              )}
+
+              {/* Motivo do Cancelamento */}
+              {selectedAppointment.status === 'cancelled' && selectedAppointment.cancellation_reason && (
+                <div>
+                  <Label className="text-sm font-semibold text-gray-700 mb-2 block flex items-center space-x-1">
+                    <AlertCircle className="w-4 h-4" />
+                    <span>Motivo do Cancelamento</span>
+                  </Label>
+                  <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
+                    <p className="text-gray-900 whitespace-pre-wrap">{selectedAppointment.cancellation_reason}</p>
+                  </div>
+                </div>
+              )}
+
+              {/* Informações de Data */}
+              <div className="pt-4 border-t border-gray-200">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs text-gray-600">
+                  {selectedAppointment.confirmed_at && (
+                    <div>
+                      <span className="font-semibold">Confirmada em:</span>
+                      <br />
+                      {new Date(selectedAppointment.confirmed_at).toLocaleString('pt-BR')}
+                    </div>
+                  )}
+                  {selectedAppointment.cancelled_at && (
+                    <div>
+                      <span className="font-semibold">Cancelada em:</span>
+                      <br />
+                      {new Date(selectedAppointment.cancelled_at).toLocaleString('pt-BR')}
+                    </div>
+                  )}
+                  {selectedAppointment.completed_at && (
+                    <div>
+                      <span className="font-semibold">Concluída em:</span>
+                      <br />
+                      {new Date(selectedAppointment.completed_at).toLocaleString('pt-BR')}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            <div className="flex justify-end mt-6 pt-4 border-t border-gray-200">
+              <Button onClick={() => setShowDetailsModal(false)}>
+                Fechar
               </Button>
             </div>
           </div>
