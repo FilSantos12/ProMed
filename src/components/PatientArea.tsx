@@ -244,19 +244,24 @@ export function PatientArea({ onSectionChange }: PatientAreaProps) {
     if (!appointmentToCancel) return;
 
     try {
+      console.log('Cancelando consulta ID:', appointmentToCancel);
+      console.log('Motivo:', cancellationReason);
+
       await patientService.cancelAppointment(appointmentToCancel, cancellationReason);
       toast.success('Consulta cancelada com sucesso!');
 
       // Recarregar consultas
-      const updatedAppointments = await patientService.getAppointments();
-      setAppointments(updatedAppointments);
+      await loadAppointments();
 
       setShowCancelModal(false);
       setAppointmentToCancel(null);
       setCancellationReason('');
     } catch (err: any) {
       console.error('Erro ao cancelar consulta:', err);
-      toast.error(err.response?.data?.message || 'Erro ao cancelar consulta');
+      console.error('Detalhes do erro:', err.response?.data);
+
+      const errorMessage = err.response?.data?.message || err.response?.data?.error || 'Erro ao cancelar consulta';
+      toast.error(errorMessage);
     }
   };
 
