@@ -266,8 +266,8 @@ class PatientProfileController extends Controller
                 ], 404);
             }
 
-            $appointment = Appointment::where('patient_id', $user->patient->id)
-                ->findOrFail($appointmentId);
+            // Buscar consulta usando o relacionamento para garantir que pertence ao paciente
+            $appointment = $user->patient->appointments()->findOrFail($appointmentId);
 
             // Verificar se a consulta pode ser cancelada
             if (!in_array($appointment->status, ['pending', 'confirmed'])) {
