@@ -100,9 +100,14 @@ export function DoctorArea({
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [scheduleToDelete, setScheduleToDelete] = useState<number | null>(null);
 
+  // Estados para modal de cancelamento de consulta
+  const [showCancelModal, setShowCancelModal] = useState(false);
+  const [appointmentToCancel, setAppointmentToCancel] = useState<number | null>(null);
+  const [cancellationReason, setCancellationReason] = useState("");
+
   // Estados para edição de horários
   const [editingScheduleId, setEditingScheduleId] = useState<number | null>(
-    null
+    null,
   );
   const [editForm, setEditForm] = useState({
     start_time: "",
@@ -159,7 +164,7 @@ export function DoctorArea({
     } catch (err: any) {
       console.error("Erro ao carregar dados:", err);
       setError(
-        err.response?.data?.message || "Erro ao carregar dados do médico"
+        err.response?.data?.message || "Erro ao carregar dados do médico",
       );
       toast.error("Erro ao carregar dados", 6000);
     } finally {
@@ -213,7 +218,7 @@ export function DoctorArea({
         setAppointmentsHistory(response.data);
         setHistoryTotalPages(response.last_page || 1);
         setHistoryTotalItems(response.total || 0);
-        setHistoryItemsPerPage(response.per_page || 5);
+        setHistoryItemsPerPage(response.per_page || 10);
       } else {
         setAppointmentsHistory(response);
       }
@@ -243,8 +248,8 @@ export function DoctorArea({
       // Atualizar lista de consultas
       setAppointments((prev) =>
         prev.map((appt) =>
-          appt.id === appointmentId ? { ...appt, status: "confirmed" } : appt
-        )
+          appt.id === appointmentId ? { ...appt, status: "confirmed" } : appt,
+        ),
       );
     } catch (err: any) {
       console.error("Erro ao confirmar consulta:", err);
@@ -252,21 +257,36 @@ export function DoctorArea({
     }
   };
 
-  const handleCancelAppointment = async (appointmentId: number) => {
-    const reason = prompt("Motivo do cancelamento (opcional):");
+  const handleCancelAppointment = (appointmentId: number) => {
+    setAppointmentToCancel(appointmentId);
+    setCancellationReason("");
+    setShowCancelModal(true);
+  };
+
+  const confirmCancelAppointment = async () => {
+    if (!appointmentToCancel) return;
+
     try {
-      await doctorService.cancelAppointment(appointmentId, reason || undefined);
-      toast.success("Consulta cancelada", 3000);
+      await doctorService.cancelAppointment(
+        appointmentToCancel,
+        cancellationReason || undefined
+      );
+      toast.success("Consulta cancelada com sucesso!", 3000);
 
       // Remover da lista de próximas consultas (vai para o histórico)
       setAppointments((prev) =>
-        prev.filter((appt) => appt.id !== appointmentId)
+        prev.filter((appt) => appt.id !== appointmentToCancel)
       );
 
       // Se estiver na aba de histórico, recarregar
       if (activeTab === "historico") {
         loadHistory();
       }
+
+      // Fechar modal
+      setShowCancelModal(false);
+      setAppointmentToCancel(null);
+      setCancellationReason("");
     } catch (err: any) {
       console.error("Erro ao cancelar consulta:", err);
       toast.error("Erro ao cancelar consulta", 6000);
@@ -280,7 +300,7 @@ export function DoctorArea({
 
       // Remover da lista de próximas consultas
       setAppointments((prev) =>
-        prev.filter((appt) => appt.id !== appointmentId)
+        prev.filter((appt) => appt.id !== appointmentId),
       );
 
       // Se estiver na aba de histórico, recarregar
@@ -300,7 +320,7 @@ export function DoctorArea({
 
       // Remover da lista de próximas consultas
       setAppointments((prev) =>
-        prev.filter((appt) => appt.id !== appointmentId)
+        prev.filter((appt) => appt.id !== appointmentId),
       );
 
       // Se estiver na aba de histórico, recarregar
@@ -393,7 +413,7 @@ export function DoctorArea({
       if (scheduleForm.days_of_week.length === 0) {
         toast.error(
           "Nenhum dia da semana foi detectado no período selecionado",
-          6000
+          6000,
         );
         return;
       }
@@ -406,7 +426,7 @@ export function DoctorArea({
       // Gerar lista de todas as datas no intervalo
       const generateDateRange = (
         startDate: string,
-        endDate: string
+        endDate: string,
       ): string[] => {
         const dates: string[] = [];
         const start = new Date(startDate);
@@ -425,7 +445,7 @@ export function DoctorArea({
 
       const allDates = generateDateRange(
         scheduleForm.start_date,
-        scheduleForm.end_date
+        scheduleForm.end_date,
       );
 
       // Criar um horário para cada data
@@ -444,7 +464,7 @@ export function DoctorArea({
 
       toast.success(
         `${allDates.length} horários adicionados com sucesso!`,
-        3000
+        3000,
       );
 
       // Limpar formulário
@@ -475,7 +495,7 @@ export function DoctorArea({
         const firstError = Object.values(errors)[0];
         toast.error(
           Array.isArray(firstError) ? firstError[0] : errorMessage,
-          6000
+          6000,
         );
       } else {
         toast.error(errorMessage, 6000);
@@ -510,7 +530,7 @@ export function DoctorArea({
 
   const handleToggleScheduleAvailability = async (
     scheduleId: number,
-    currentStatus: boolean
+    currentStatus: boolean,
   ) => {
     try {
       await doctorService.updateSchedule(scheduleId, {
@@ -518,7 +538,7 @@ export function DoctorArea({
       });
       toast.success(
         !currentStatus ? "Horário ativado!" : "Horário desativado!",
-        3000
+        3000,
       );
       loadSchedules();
     } catch (err: any) {
@@ -776,7 +796,7 @@ export function DoctorArea({
                                 <Calendar className="w-4 h-4 text-blue-600" />
                                 <span className="font-medium">
                                   {new Date(
-                                    appointment.appointment_date
+                                    appointment.appointment_date,
                                   ).toLocaleDateString("pt-BR")}
                                 </span>
                               </div>
@@ -906,7 +926,7 @@ export function DoctorArea({
                                 variant="outline"
                                 onClick={() =>
                                   window.open(
-                                    `tel:${appointment.patient?.phone}`
+                                    `tel:${appointment.patient?.phone}`,
                                   )
                                 }
                                 title="Ligar para o paciente"
@@ -919,7 +939,7 @@ export function DoctorArea({
                                 variant="outline"
                                 onClick={() =>
                                   window.open(
-                                    `mailto:${appointment.patient?.email}`
+                                    `mailto:${appointment.patient?.email}`,
                                   )
                                 }
                                 title="Enviar email para o paciente"
@@ -1038,7 +1058,7 @@ export function DoctorArea({
                             if (e.target.value && scheduleForm.end_date) {
                               const days = extractDaysOfWeek(
                                 e.target.value,
-                                scheduleForm.end_date
+                                scheduleForm.end_date,
                               );
                               setScheduleForm((prev) => ({
                                 ...prev,
@@ -1065,7 +1085,7 @@ export function DoctorArea({
                             if (scheduleForm.start_date && e.target.value) {
                               const days = extractDaysOfWeek(
                                 scheduleForm.start_date,
-                                e.target.value
+                                e.target.value,
                               );
                               setScheduleForm((prev) => ({
                                 ...prev,
@@ -1191,7 +1211,7 @@ export function DoctorArea({
                         .reduce((groups: any[], schedule) => {
                           const dateKey = schedule.schedule_date || "sem-data";
                           const existing = groups.find(
-                            (g) => g.date === dateKey
+                            (g) => g.date === dateKey,
                           );
                           if (existing) {
                             existing.schedules.push(schedule);
@@ -1236,7 +1256,7 @@ export function DoctorArea({
                               console.error(
                                 "Erro ao formatar data:",
                                 dateString,
-                                e
+                                e,
                               );
                               return "Data inválida";
                             }
@@ -1346,12 +1366,12 @@ export function DoctorArea({
                                                 <span className="text-sm font-medium">
                                                   {schedule.start_time.substring(
                                                     0,
-                                                    5
+                                                    5,
                                                   )}{" "}
                                                   -{" "}
                                                   {schedule.end_time.substring(
                                                     0,
-                                                    5
+                                                    5,
                                                   )}
                                                 </span>
                                               </div>
@@ -1383,7 +1403,7 @@ export function DoctorArea({
                                                 variant="ghost"
                                                 onClick={() =>
                                                   handleStartEditSchedule(
-                                                    schedule
+                                                    schedule,
                                                   )
                                                 }
                                                 title="Editar horário"
@@ -1397,7 +1417,7 @@ export function DoctorArea({
                                                 onClick={() =>
                                                   handleToggleScheduleAvailability(
                                                     schedule.id,
-                                                    schedule.is_available
+                                                    schedule.is_available,
                                                   )
                                                 }
                                                 title={
@@ -1418,7 +1438,7 @@ export function DoctorArea({
                                                 variant="ghost"
                                                 onClick={() =>
                                                   handleDeleteSchedule(
-                                                    schedule.id
+                                                    schedule.id,
                                                   )
                                                 }
                                                 title="Deletar permanentemente"
@@ -1431,7 +1451,7 @@ export function DoctorArea({
                                         )}
                                       </div>
                                     </div>
-                                  )
+                                  ),
                                 )}
                               </div>
                             </div>
@@ -1494,7 +1514,7 @@ export function DoctorArea({
                                 <Calendar className="w-4 h-4 text-purple-600" />
                                 <span className="font-medium">
                                   {new Date(
-                                    appointment.appointment_date
+                                    appointment.appointment_date,
                                   ).toLocaleDateString("pt-BR")}
                                 </span>
                               </div>
@@ -1578,7 +1598,7 @@ export function DoctorArea({
                                   <span>
                                     Concluído em:{" "}
                                     {new Date(
-                                      appointment.completed_at
+                                      appointment.completed_at,
                                     ).toLocaleDateString("pt-BR")}
                                   </span>
                                 </div>
@@ -1589,7 +1609,7 @@ export function DoctorArea({
                                   <span>
                                     Cancelado em:{" "}
                                     {new Date(
-                                      appointment.cancelled_at
+                                      appointment.cancelled_at,
                                     ).toLocaleDateString("pt-BR")}
                                   </span>
                                 </div>
@@ -1820,6 +1840,67 @@ export function DoctorArea({
                 style={{ backgroundColor: "#dc2626", color: "#ffffff" }}
               >
                 Deletar Permanentemente
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de Cancelamento de Consulta */}
+      {showCancelModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+          <div className="relative bg-white rounded-lg shadow-2xl max-w-md w-full mx-4 p-6">
+            <div className="flex items-center space-x-3 mb-4">
+              <div className="flex-shrink-0">
+                <div className="w-12 h-12 rounded-full bg-orange-100 flex items-center justify-center">
+                  <X className="w-6 h-6 text-orange-600" />
+                </div>
+              </div>
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900">
+                  Cancelar Consulta
+                </h3>
+                <p className="text-sm text-gray-600 mt-1">
+                  Informe o motivo do cancelamento
+                </p>
+              </div>
+            </div>
+
+            <div className="mb-4">
+              <Label htmlFor="cancellation-reason" className="text-gray-700 mb-2">
+                Motivo do Cancelamento
+              </Label>
+              <Textarea
+                id="cancellation-reason"
+                placeholder="Descreva o motivo do cancelamento..."
+                value={cancellationReason}
+                onChange={(e) => setCancellationReason(e.target.value)}
+                rows={4}
+                className="w-full"
+              />
+              <p className="text-xs text-gray-500 mt-1">
+                Este motivo será informado ao paciente
+              </p>
+            </div>
+
+            <div className="flex space-x-3">
+              <Button
+                variant="outline"
+                className="flex-1"
+                onClick={() => {
+                  setShowCancelModal(false);
+                  setAppointmentToCancel(null);
+                  setCancellationReason("");
+                }}
+              >
+                Voltar
+              </Button>
+              <Button
+                variant="default"
+                className="flex-1 bg-orange-600 hover:bg-orange-700 text-white"
+                onClick={confirmCancelAppointment}
+              >
+                Confirmar Cancelamento
               </Button>
             </div>
           </div>
