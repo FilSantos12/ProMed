@@ -74,12 +74,6 @@ export function DoctorArea({
   const [historyTotalItems, setHistoryTotalItems] = useState(0);
   const [historyItemsPerPage, setHistoryItemsPerPage] = useState(10);
 
-  // Estados de paginação para Controle de Agenda
-  const [schedulesPage, setSchedulesPage] = useState(1);
-  const [schedulesTotalPages, setSchedulesTotalPages] = useState(1);
-  const [schedulesTotalItems, setSchedulesTotalItems] = useState(0);
-  const [schedulesItemsPerPage, setSchedulesItemsPerPage] = useState(10);
-
   // Estados para formulários
   const [profilePhoto, setProfilePhoto] = useState<string>("");
   const [editingProfile, setEditingProfile] = useState(false);
@@ -140,7 +134,7 @@ export function DoctorArea({
       // Extrair array de appointments da resposta paginada
       const appointmentsData = Array.isArray(appointmentsResponse)
         ? appointmentsResponse
-        : (appointmentsResponse.data || []);
+        : appointmentsResponse.data || [];
       setAppointments(appointmentsData);
 
       // Atualizar estados do formulário
@@ -219,7 +213,7 @@ export function DoctorArea({
         setAppointmentsHistory(response.data);
         setHistoryTotalPages(response.last_page || 1);
         setHistoryTotalItems(response.total || 0);
-        setHistoryItemsPerPage(response.per_page || 10);
+        setHistoryItemsPerPage(response.per_page || 5);
       } else {
         setAppointmentsHistory(response);
       }
@@ -238,7 +232,7 @@ export function DoctorArea({
     } else if (activeTab === "historico") {
       loadHistory();
     }
-  }, [activeTab, historyPage, schedulesPage]);
+  }, [activeTab, historyPage]);
 
   // Funções de manipulação de consultas
   const handleConfirmAppointment = async (appointmentId: number) => {
