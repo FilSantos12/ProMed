@@ -295,7 +295,7 @@ class PatientProfileController extends Controller
 
             return response()->json([
                 'message' => 'Consulta cancelada com sucesso',
-                'appointment' => $appointment->load(['doctor.user', 'doctor.specialty'])
+                'appointment' => $appointment->load(['doctor', 'doctorProfile.specialty', 'specialty'])
             ]);
 
         } catch (\Exception $e) {
