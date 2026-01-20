@@ -220,7 +220,7 @@ export function AgendamentosPage({
       today.setHours(0, 0, 0, 0);
 
       const schedulesWithDate = schedules.filter(
-        (schedule) => schedule.schedule_date
+        (schedule) => schedule.schedule_date,
       );
 
       // Extrair apenas a parte da data (YYYY-MM-DD) do formato ISO
@@ -273,7 +273,7 @@ export function AgendamentosPage({
       const schedule = schedules[0];
       const slotsData = await appointmentService.getAvailableSlots(
         schedule.id,
-        dateStr
+        dateStr,
       );
       setAvailableSlots(slotsData.available_slots);
 
@@ -310,7 +310,7 @@ export function AgendamentosPage({
     // Se usuário não está logado, salvar agendamento pendente e mostrar prompt de autenticação
     if (!user) {
       const selectedSpecialtyInfo = specialties.find(
-        (s) => s.id.toString() === selectedSpecialty
+        (s) => s.id.toString() === selectedSpecialty,
       );
 
       savePendingAppointment({
@@ -479,12 +479,12 @@ export function AgendamentosPage({
                     >
                       {getSpecialtyIcon(
                         specialties.find(
-                          (s) => s.id.toString() === selectedSpecialty
-                        )?.icon
+                          (s) => s.id.toString() === selectedSpecialty,
+                        )?.icon,
                       )}
                       {
                         specialties.find(
-                          (s) => s.id.toString() === selectedSpecialty
+                          (s) => s.id.toString() === selectedSpecialty,
                         )?.name
                       }
                     </Badge>
@@ -787,7 +787,7 @@ export function AgendamentosPage({
                     onChange={(e) =>
                       handleInputChange("observations", e.target.value)
                     }
-                    placeholder="Descreva sintomas, medicamentos em uso ou outras informações relevantes..."
+                    placeholder="(Esse campo é opcional) Descreva sintomas, medicamentos em uso ou outras informações relevantes..."
                     rows={3}
                   />
                 </div>
@@ -811,12 +811,12 @@ export function AgendamentosPage({
                         >
                           {getSpecialtyIcon(
                             specialties.find(
-                              (s) => s.id.toString() === selectedSpecialty
-                            )?.icon
+                              (s) => s.id.toString() === selectedSpecialty,
+                            )?.icon,
                           )}
                           {
                             specialties.find(
-                              (s) => s.id.toString() === selectedSpecialty
+                              (s) => s.id.toString() === selectedSpecialty,
                             )?.name
                           }
                         </Badge>
