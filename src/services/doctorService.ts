@@ -230,22 +230,35 @@ class DoctorService {
         }),
       ]);
 
-      // Garantir que são arrays
-      const todayArray = Array.isArray(todayAppts) ? todayAppts : [];
-      const weekArray = Array.isArray(weekAppts) ? weekAppts : [];
-      const monthArray = Array.isArray(monthAppts) ? monthAppts : [];
+      // Garantir que são arrays - extrair de resposta paginada se necessário
+      const todayArray = Array.isArray(todayAppts) ? todayAppts : (todayAppts?.data || []);
+      const weekArray = Array.isArray(weekAppts) ? weekAppts : (weekAppts?.data || []);
+      const monthArray = Array.isArray(monthAppts) ? monthAppts : (monthAppts?.data || []);
+
+      console.log('📊 DoctorService.getStats - Dados carregados:', {
+        today: todayArray.length,
+        week: weekArray.length,
+        month: monthArray.length,
+        todayRaw: todayAppts,
+        weekRaw: weekAppts,
+        monthRaw: monthAppts,
+      });
 
       // Contar pacientes únicos
       const uniquePatients = new Set(
         monthArray.map((appt) => appt.patient_id)
       ).size;
 
-      return {
+      const stats = {
         appointmentsToday: todayArray.length,
         appointmentsWeek: weekArray.length,
         appointmentsMonth: monthArray.length,
         activePatients: uniquePatients,
       };
+
+      console.log('📊 DoctorService.getStats - Estatísticas calculadas:', stats);
+
+      return stats;
     } catch (error) {
       console.error('Erro ao buscar estatísticas:', error);
       // Retornar estatísticas vazias em caso de erro
