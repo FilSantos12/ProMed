@@ -898,7 +898,7 @@ export function DoctorArea({
                                     Concluir
                                   </button>
                                   <button
-                                    className="inline-flex items-center justify-center h-8 px-3 text-sm font-medium text-orange-600 bg-white hover:bg-orange-50 border border-orange-200 rounded-md cursor-pointer transition-colors flex-1 min-w-[80px]"
+                                    className="inline-flex items-center justify-center h-8 px-3 text-sm font-medium text-orange-600 bg-white hover:bg-orange-50 border border-orange-200 rounded-md cursor-pointer transition-colors flex-1 min-w-[90px]"
                                     onClick={() =>
                                       handleNoShowAppointment(appointment.id)
                                     }
