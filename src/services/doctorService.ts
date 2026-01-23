@@ -218,7 +218,7 @@ class DoctorService {
       startOfWeek.setDate(today.getDate() - today.getDay());
       const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
 
-      const [todayAppts, weekAppts, monthAppts] = await Promise.all([
+      const [todayAppts, weekAppts, monthAppts, allAppts] = await Promise.all([
         this.getAppointments({ date: today.toISOString().split('T')[0] }),
         this.getAppointments({
           startDate: startOfWeek.toISOString().split('T')[0],
@@ -228,25 +228,30 @@ class DoctorService {
           startDate: startOfMonth.toISOString().split('T')[0],
           endDate: today.toISOString().split('T')[0],
         }),
+        // Buscar TODAS as consultas do médico (sem filtro de data) para contar pacientes únicos
+        this.getAppointments({}),
       ]);
 
       // Garantir que são arrays - extrair de resposta paginada se necessário
       const todayArray = Array.isArray(todayAppts) ? todayAppts : (todayAppts?.data || []);
       const weekArray = Array.isArray(weekAppts) ? weekAppts : (weekAppts?.data || []);
       const monthArray = Array.isArray(monthAppts) ? monthAppts : (monthAppts?.data || []);
+      const allArray = Array.isArray(allAppts) ? allAppts : (allAppts?.data || []);
 
       console.log('📊 DoctorService.getStats - Dados carregados:', {
         today: todayArray.length,
         week: weekArray.length,
         month: monthArray.length,
+        all: allArray.length,
         todayRaw: todayAppts,
         weekRaw: weekAppts,
         monthRaw: monthAppts,
+        allRaw: allAppts,
       });
 
-      // Contar pacientes únicos
+      // Contar pacientes únicos no histórico COMPLETO (não apenas este mês)
       const uniquePatients = new Set(
-        monthArray.map((appt) => appt.patient_id)
+        allArray.map((appt) => appt.patient_id)
       ).size;
 
       const stats = {
