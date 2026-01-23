@@ -267,7 +267,7 @@ export function SobrePage({ onSectionChange }: SobrePageProps) {
         </section>
 
         {/* Nossos Médicos */}
-        <section className="mb-15">
+        <section className="mb-20">
           <div className="text-center mb-8">
             <h2 className="text-3xl font-bold text-gray-900 mb-4">
               Nossos Médicos
@@ -403,8 +403,10 @@ export function SobrePage({ onSectionChange }: SobrePageProps) {
                       <CardTitle className="text-lg mb-2">
                         {doctor.user.name}
                       </CardTitle>
-                      <CardDescription>
-                        <div className="flex items-center justify-center gap-2 mb-2">
+                    </CardHeader>
+                    <CardContent className="space-y-3">
+                      <div className="text-center space-y-2">
+                        <div className="flex items-center justify-center gap-2">
                           <div className="w-6 h-6 bg-blue-100 rounded-md flex items-center justify-center">
                             <IconComponent className="w-4 h-4 text-blue-600" />
                           </div>
@@ -412,7 +414,7 @@ export function SobrePage({ onSectionChange }: SobrePageProps) {
                             {doctor.specialty.name}
                           </Badge>
                         </div>
-                        <div className="text-sm text-gray-500 mb-1">
+                        <div className="text-sm text-gray-500">
                           CRM {doctor.crm}-{doctor.crm_state}
                         </div>
                         {doctor.years_experience > 0 && (
@@ -422,9 +424,7 @@ export function SobrePage({ onSectionChange }: SobrePageProps) {
                             experiência
                           </div>
                         )}
-                      </CardDescription>
-                    </CardHeader>
-                    <CardContent className="space-y-3">
+                      </div>
                       {doctor.bio && (
                         <p className="text-sm text-gray-600 leading-relaxed line-clamp-3">
                           {doctor.bio}
@@ -447,7 +447,7 @@ export function SobrePage({ onSectionChange }: SobrePageProps) {
 
         {/* Facilities and Statistics */}
         {!loading && doctors.length > 0 && (
-          <section className="mb-15">
+          <section className="mb-20">
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-8">
               <div className="text-center p-6 bg-white rounded-lg shadow-md">
                 <div className="text-3xl font-bold text-blue-600 mb-2">
