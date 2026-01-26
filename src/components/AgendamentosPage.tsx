@@ -18,6 +18,7 @@ import {
 } from "./ui/select";
 import { Textarea } from "./ui/textarea";
 import { Badge } from "./ui/badge";
+import { Alert, AlertDescription } from "./ui/alert";
 import {
   CalendarIcon,
   Clock,
@@ -321,11 +322,6 @@ export function AgendamentosPage({
         patient_notes: formData.observations || undefined,
         specialty_name: selectedSpecialtyInfo?.name,
         doctor_name: selectedDoctorInfo.user.name,
-        // Salvar dados do paciente para pré-preencher cadastro
-        patient_name: formData.name,
-        patient_cpf: formData.cpf,
-        patient_phone: formData.phone,
-        patient_email: formData.email,
       });
 
       setShowAuthPrompt(true);
@@ -386,15 +382,11 @@ export function AgendamentosPage({
     setAvailableSlots([]);
   };
 
-  const isFormValid =
-    selectedDate &&
-    selectedTime &&
-    selectedSpecialty &&
-    selectedDoctor &&
-    formData.name &&
-    formData.cpf &&
-    formData.phone &&
-    formData.email;
+  const isFormValid = user
+    ? // Usuário logado: apenas dados de agendamento
+      selectedDate && selectedTime && selectedSpecialty && selectedDoctor
+    : // Usuário não logado: apenas dados de agendamento (dados pessoais removidos)
+      selectedDate && selectedTime && selectedSpecialty && selectedDoctor;
 
   const formatDateDisplay = (dateStr: string) => {
     if (!dateStr) return "";
@@ -717,70 +709,14 @@ export function AgendamentosPage({
                 </div>
               </div>
 
-              {/* Dados do Paciente */}
+              {/* Observações - sempre visível */}
               <div className="space-y-4">
                 <h3 className="text-lg font-semibold text-gray-900 flex items-center space-x-2">
-                  <User className="w-5 h-5 text-blue-600" />
-                  <span>Dados do Paciente</span>
+                  <FileText className="w-5 h-5 text-blue-600" />
+                  <span>Observações</span>
                 </h3>
-
-                <div className="grid md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="name">Nome Completo *</Label>
-                    <Input
-                      id="name"
-                      value={formData.name}
-                      onChange={(e) =>
-                        handleInputChange("name", e.target.value)
-                      }
-                      placeholder="Digite seu nome completo"
-                      required
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="cpf">CPF *</Label>
-                    <MaskedInput
-                      mask="000.000.000-00"
-                      value={formData.cpf}
-                      onChange={(value) => handleInputChange("cpf", value)}
-                      id="cpf"
-                      placeholder="000.000.000-00"
-                      required
-                    />
-                  </div>
-                </div>
-
-                <div className="grid md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="phone">Telefone *</Label>
-                    <MaskedInput
-                      mask="(00) 00000-0000"
-                      value={formData.phone}
-                      onChange={(value) => handleInputChange("phone", value)}
-                      id="phone"
-                      placeholder="(11) 99999-9999"
-                      required
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="email">Email *</Label>
-                    <Input
-                      id="email"
-                      type="email"
-                      value={formData.email}
-                      onChange={(e) =>
-                        handleInputChange("email", e.target.value)
-                      }
-                      placeholder="seu@email.com"
-                      required
-                    />
-                  </div>
-                </div>
-
                 <div className="space-y-2">
-                  <Label htmlFor="observations">Observações</Label>
+                  <Label htmlFor="observations">Descreva seus sintomas ou informações relevantes</Label>
                   <Textarea
                     id="observations"
                     value={formData.observations}
@@ -790,6 +726,9 @@ export function AgendamentosPage({
                     placeholder="(Esse campo é opcional) Descreva sintomas, medicamentos em uso ou outras informações relevantes..."
                     rows={3}
                   />
+                  <p className="text-xs text-gray-500">
+                    Estas informações ajudarão o médico a se preparar melhor para sua consulta.
+                  </p>
                 </div>
               </div>
 
@@ -844,6 +783,17 @@ export function AgendamentosPage({
                 </div>
               )}
 
+              {/* Alerta para usuários não logados */}
+              {!user && (
+                <Alert className="bg-blue-50 border-blue-200">
+                  <AlertCircle className="w-4 h-4 text-blue-600" />
+                  <AlertDescription className="text-blue-900">
+                    Ao clicar em "Agendar Consulta", você será direcionado para
+                    fazer login ou criar uma conta para finalizar seu agendamento.
+                  </AlertDescription>
+                </Alert>
+              )}
+
               {/* Submit Button */}
               <Button
                 type="submit"
@@ -858,7 +808,7 @@ export function AgendamentosPage({
                 ) : (
                   <>
                     <CalendarIcon className="w-4 h-4 mr-2" />
-                    Agendar Consulta
+                    {user ? "Agendar Consulta" : "Continuar para Login/Cadastro"}
                   </>
                 )}
               </Button>
