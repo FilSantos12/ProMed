@@ -34,6 +34,9 @@ function AppContent() {
   const handleSectionChange = (section: string) => {
     setCurrentSection(section);
 
+    // Scroll para o topo da página com transição suave
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+
     // Limpar URL quando sair da página de redefinir senha
     if (section !== 'reset-password' && window.location.pathname === '/redefinir-senha') {
       window.history.pushState({}, '', '/');
