@@ -7,7 +7,6 @@ import {
   CardTitle,
 } from "./ui/card";
 import { Button } from "./ui/button";
-import { Input } from "./ui/input";
 import { Label } from "./ui/label";
 import {
   Select,
@@ -60,7 +59,6 @@ import {
   Doctor,
 } from "../services/appointmentService";
 import { LoadingSpinner } from "./ui/loading-spinner";
-import { MaskedInput } from "./ui/masked-input";
 
 // Mapa de ícones médicos (sincronizado com IconPicker)
 const ICON_MAP: Record<string, LucideIcon> = {
@@ -716,7 +714,9 @@ export function AgendamentosPage({
                   <span>Observações</span>
                 </h3>
                 <div className="space-y-2">
-                  <Label htmlFor="observations">Descreva seus sintomas ou informações relevantes</Label>
+                  <Label htmlFor="observations">
+                    Descreva seus sintomas ou informações relevantes
+                  </Label>
                   <Textarea
                     id="observations"
                     value={formData.observations}
@@ -727,7 +727,8 @@ export function AgendamentosPage({
                     rows={3}
                   />
                   <p className="text-xs text-gray-500">
-                    Estas informações ajudarão o médico a se preparar melhor para sua consulta.
+                    Estas informações ajudarão o médico a se preparar melhor
+                    para sua consulta.
                   </p>
                 </div>
               </div>
@@ -789,7 +790,8 @@ export function AgendamentosPage({
                   <AlertCircle className="w-4 h-4 text-blue-600" />
                   <AlertDescription className="text-blue-900">
                     Ao clicar em "Agendar Consulta", você será direcionado para
-                    fazer login ou criar uma conta para finalizar seu agendamento.
+                    fazer login ou criar uma conta para finalizar seu
+                    agendamento.
                   </AlertDescription>
                 </Alert>
               )}
@@ -808,7 +810,9 @@ export function AgendamentosPage({
                 ) : (
                   <>
                     <CalendarIcon className="w-4 h-4 mr-2" />
-                    {user ? "Agendar Consulta" : "Continuar para Login/Cadastro"}
+                    {user
+                      ? "Agendar Consulta"
+                      : "Continuar para Login/Cadastro"}
                   </>
                 )}
               </Button>

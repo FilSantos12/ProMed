@@ -1,11 +1,5 @@
 import { useState, useEffect } from "react";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "./ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
 import { Badge } from "./ui/badge";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
@@ -404,7 +398,7 @@ export function SobrePage({ onSectionChange }: SobrePageProps) {
                         {doctor.user.name}
                       </CardTitle>
                     </CardHeader>
-                    <CardContent className="space-y-3">
+                    <CardContent className="space-y-3 pb-6">
                       <div className="text-center space-y-2">
                         <div className="flex items-center justify-center gap-2">
                           <div className="w-6 h-6 bg-blue-100 rounded-md flex items-center justify-center">

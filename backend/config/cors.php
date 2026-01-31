@@ -8,17 +8,28 @@ return [
     |--------------------------------------------------------------------------
     */
 
-    'paths' => ['api/*', 'sanctum/csrf-cookie'],
+    'paths' => ['api/*', 'storage/*', 'sanctum/csrf-cookie'],
 
     'allowed_methods' => ['*'],
 
-    'allowed_origins' => [
-        'http://localhost:3000',
-        'http://localhost:5173',
-        'http://localhost:5174',
-    ],
+    'allowed_origins' => env('FRONTEND_URL')
+        ? array_merge(
+            explode(',', env('FRONTEND_URL')),
+            [
+                'http://localhost:3000',
+                'http://localhost:5173',
+                'http://localhost:5174',
+            ]
+        )
+        : [
+            'http://localhost:3000',
+            'http://localhost:5173',
+            'http://localhost:5174',
+        ],
 
-    'allowed_origins_patterns' => [],
+    'allowed_origins_patterns' => [
+        '/^https:\/\/.*\.vercel\.app$/',  // Permite todos os domínios Vercel (incluindo previews)
+    ],
 
     'allowed_headers' => ['*'],
 
