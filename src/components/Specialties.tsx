@@ -62,7 +62,7 @@ const Specialties: React.FC = () => {
   });
 
   const toast = useToast();
-  const API_URL = 'http://localhost:8000/api/v1/admin';
+  const API_URL = `${import.meta.env.VITE_API_URL || 'http://localhost:8000/api/v1'}/admin`;
 
   useEffect(() => {
     const timer = setTimeout(() => setSearchTerm(searchInput), 500);

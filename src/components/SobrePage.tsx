@@ -363,7 +363,7 @@ export function SobrePage({ onSectionChange }: SobrePageProps) {
                 const avatarUrl =
                   (doctor.user as any).avatar_url ||
                   (doctor.user.avatar
-                    ? `http://localhost:8000/storage/${doctor.user.avatar}`
+                    ? `${(import.meta.env.VITE_API_URL || 'http://localhost:8000/api/v1').replace('/api/v1', '')}/storage/${doctor.user.avatar}`
                     : null);
 
                 return (

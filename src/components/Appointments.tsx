@@ -105,7 +105,7 @@ const Appointments: React.FC = () => {
   // Hook do Toast
   const toast = useToast();
 
-  const API_URL = 'http://localhost:8000/api/v1/admin';
+  const API_URL = `${import.meta.env.VITE_API_URL || 'http://localhost:8000/api/v1'}/admin`;
 
   // Resetar para página 1 quando filtros mudarem
   useEffect(() => {

@@ -78,7 +78,7 @@ const Patients: React.FC = () => {
   });
 
   const toast = useToast();
-  const API_URL = 'http://localhost:8000/api/v1/admin';
+  const API_URL = `${import.meta.env.VITE_API_URL || 'http://localhost:8000/api/v1'}/admin`;
 
   // Debounce para busca (aguarda 500ms após parar de digitar)
   useEffect(() => {
