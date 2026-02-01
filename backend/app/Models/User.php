@@ -65,12 +65,16 @@ class User extends Authenticatable
     public function getAvatarUrlAttribute()
     {
         if ($this->avatar) {
-            // Se o avatar já é uma URL completa, retornar como está
+            // Se o avatar já é uma URL completa, garantir HTTPS
             if (str_starts_with($this->avatar, 'http')) {
-                return $this->avatar;
+                return str_replace('http://', 'https://', $this->avatar);
             }
-            // Caso contrário, construir a URL do storage
-            return url('storage/' . $this->avatar);
+            // Construir a URL do storage e garantir HTTPS em produção
+            $url = url('storage/' . $this->avatar);
+            if (app()->environment('production')) {
+                $url = str_replace('http://', 'https://', $url);
+            }
+            return $url;
         }
         return null;
     }
