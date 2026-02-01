@@ -13,16 +13,16 @@ return new class extends Migration
     {
         Schema::table('specialties', function (Blueprint $table) {
             if (!Schema::hasColumn('specialties', 'name')) {
-                $table->string('name')->after('id');
+                $table->string('name');
             }
             if (!Schema::hasColumn('specialties', 'description')) {
-                $table->text('description')->nullable()->after('name');
+                $table->text('description')->nullable();
             }
             if (!Schema::hasColumn('specialties', 'icon')) {
-                $table->string('icon')->nullable()->after('description');
+                $table->string('icon')->nullable();
             }
             if (!Schema::hasColumn('specialties', 'is_active')) {
-                $table->boolean('is_active')->default(true)->after('icon');
+                $table->boolean('is_active')->default(true);
             }
         });
     }

@@ -13,14 +13,19 @@ return new class extends Migration
     {
         Schema::table('schedules', function (Blueprint $table) {
             // Adicionar campo de data específica
-            $table->date('schedule_date')->nullable()->after('day_of_week');
-
-            // Tornar day_of_week nullable para suportar ambos os modos
-            $table->string('day_of_week')->nullable()->change();
-
-            // Adicionar índice para melhor performance
-            $table->index('schedule_date');
+            if (!Schema::hasColumn('schedules', 'schedule_date')) {
+                $table->date('schedule_date')->nullable();
+            }
         });
+
+        // Adicionar índice separadamente para evitar erros
+        try {
+            Schema::table('schedules', function (Blueprint $table) {
+                $table->index('schedule_date');
+            });
+        } catch (\Exception $e) {
+            // Index já existe
+        }
     }
 
     /**
