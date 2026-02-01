@@ -21,6 +21,10 @@ php artisan view:clear
 echo "📊 Executando migrations..."
 php artisan migrate --force
 
+# Executar seeders para popular dados iniciais
+echo "🌱 Populando dados iniciais..."
+php artisan db:seed --force
+
 # Criar ou atualizar usuário admin
 echo "👤 Configurando usuário admin..."
 php artisan tinker --execute="
