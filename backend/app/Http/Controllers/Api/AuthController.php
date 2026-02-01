@@ -196,6 +196,12 @@ public function login(Request $request)
 
         ]);
 
+        // Definir roles baseado no tipo de cadastro
+        // Médicos também são pacientes (podem agendar consultas com outros médicos)
+        $roles = $request->role === 'doctor'
+            ? ['doctor', 'patient']
+            : [$request->role ?? 'patient'];
+
         // Criar usuário
         $user = User::create([
             'name' => $request->name,
@@ -207,6 +213,8 @@ public function login(Request $request)
             'birth_date' => $request->birth_date,
             'gender' => $request->gender,
             'role' => $request->role ?? 'patient',
+            'active_role' => $request->role ?? 'patient',
+            'roles' => $roles,
             'is_active' => true,
             'cep' => $request->cep,
             'address' => $request->address,
@@ -217,15 +225,13 @@ public function login(Request $request)
             'state' => $request->state,
         ]);
 
-        // Se for paciente, criar registro na tabela patients
-        if ($user->role === 'patient') {
-            Patient::create([
-                'user_id' => $user->id,
-            ]);
-        }
+        // Sempre criar registro de paciente (médicos também são pacientes)
+        Patient::create([
+            'user_id' => $user->id,
+        ]);
 
         // Se for médico, criar registro na tabela doctors
-        if ($user->role === 'doctor') {
+        if ($request->role === 'doctor') {
             // Preparar dados de formação acadêmica
             $formation = [];
             if ($request->university || $request->graduation_year) {
@@ -250,20 +256,25 @@ public function login(Request $request)
 
             // Salvar documentos
             $documentTypes = ['diploma', 'crm_document', 'rg_document', 'photo'];
-            
+
             foreach ($documentTypes as $type) {
                 if ($request->hasFile($type)) {
                     $file = $request->file($type);
-                    
+
                     // Determinar pasta baseado no tipo
                     $folder = $type === 'photo' ? 'doctors/photos' : 'doctors/documents';
-                    
+
                     // Gerar nome único
                     $fileName = time() . '_' . $type . '_' . $file->getClientOriginalName();
-                    
+
                     // Salvar arquivo
                     $filePath = $file->storeAs($folder, $fileName, 'public');
-                    
+
+                    // Se for a foto, também salvar como avatar do usuário
+                    if ($type === 'photo') {
+                        $user->update(['avatar' => $filePath]);
+                    }
+
                     // Criar registro no banco
                     DoctorDocument::create([
                         'doctor_id' => $doctor->id,
