@@ -23,6 +23,7 @@ class DatabaseSeeder extends Seeder
         $admin->name = 'Admin ProMed';
         $admin->password = bcrypt('admin123');
         $admin->is_active = true;
+        $admin->role = 'admin';
         $admin->active_role = 'admin';
         $admin->roles = ['admin'];
         $admin->save();
