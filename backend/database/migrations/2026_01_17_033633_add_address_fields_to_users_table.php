@@ -12,13 +12,27 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('users', function (Blueprint $table) {
-            $table->string('cep', 10)->nullable()->after('gender');
-            $table->string('address')->nullable()->after('cep');
-            $table->string('number', 20)->nullable()->after('address');
-            $table->string('complement')->nullable()->after('number');
-            $table->string('neighborhood')->nullable()->after('complement');
-            $table->string('city')->nullable()->after('neighborhood');
-            $table->string('state', 2)->nullable()->after('city');
+            if (!Schema::hasColumn('users', 'cep')) {
+                $table->string('cep', 10)->nullable();
+            }
+            if (!Schema::hasColumn('users', 'address')) {
+                $table->string('address')->nullable();
+            }
+            if (!Schema::hasColumn('users', 'number')) {
+                $table->string('number', 20)->nullable();
+            }
+            if (!Schema::hasColumn('users', 'complement')) {
+                $table->string('complement')->nullable();
+            }
+            if (!Schema::hasColumn('users', 'neighborhood')) {
+                $table->string('neighborhood')->nullable();
+            }
+            if (!Schema::hasColumn('users', 'city')) {
+                $table->string('city')->nullable();
+            }
+            if (!Schema::hasColumn('users', 'state')) {
+                $table->string('state', 2)->nullable();
+            }
         });
     }
 

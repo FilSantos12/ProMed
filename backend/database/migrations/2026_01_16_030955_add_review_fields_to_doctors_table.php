@@ -13,14 +13,26 @@ return new class extends Migration
     {
         Schema::table('doctors', function (Blueprint $table) {
             // Quem aprovou/rejeitou a solicitação (admin)
-            $table->unsignedBigInteger('reviewed_by')->nullable()->after('rejection_notes');
+            if (!Schema::hasColumn('doctors', 'reviewed_by')) {
+                $table->unsignedBigInteger('reviewed_by')->nullable();
+            }
 
             // Quando foi aprovado/rejeitado
-            $table->timestamp('reviewed_at')->nullable()->after('reviewed_by');
-
-            // Foreign key para o admin que revisou
-            $table->foreign('reviewed_by')->references('id')->on('users')->onDelete('set null');
+            if (!Schema::hasColumn('doctors', 'reviewed_at')) {
+                $table->timestamp('reviewed_at')->nullable();
+            }
         });
+
+        // Adicionar foreign key separadamente
+        if (Schema::hasColumn('doctors', 'reviewed_by')) {
+            try {
+                Schema::table('doctors', function (Blueprint $table) {
+                    $table->foreign('reviewed_by')->references('id')->on('users')->onDelete('set null');
+                });
+            } catch (\Exception $e) {
+                // Foreign key já existe
+            }
+        }
     }
 
     /**
@@ -29,8 +41,15 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('doctors', function (Blueprint $table) {
-            $table->dropForeign(['reviewed_by']);
-            $table->dropColumn(['reviewed_by', 'reviewed_at']);
+            if (Schema::hasColumn('doctors', 'reviewed_by')) {
+                try {
+                    $table->dropForeign(['reviewed_by']);
+                } catch (\Exception $e) {}
+                $table->dropColumn('reviewed_by');
+            }
+            if (Schema::hasColumn('doctors', 'reviewed_at')) {
+                $table->dropColumn('reviewed_at');
+            }
         });
     }
 };
