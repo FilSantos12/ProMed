@@ -21,6 +21,24 @@ php artisan view:clear
 echo "📊 Executando migrations..."
 php artisan migrate --force
 
+# Criar usuário admin se não existir
+echo "👤 Verificando usuário admin..."
+php artisan tinker --execute="
+if (!App\Models\User::where('email', 'admin@promed.com')->exists()) {
+    \$user = new App\Models\User();
+    \$user->name = 'Admin ProMed';
+    \$user->email = 'admin@promed.com';
+    \$user->password = bcrypt('Admin@123');
+    \$user->is_active = true;
+    \$user->active_role = 'admin';
+    \$user->roles = ['admin'];
+    \$user->save();
+    echo 'Admin criado!';
+} else {
+    echo 'Admin já existe.';
+}
+"
+
 # Criar link simbólico do storage
 echo "🔗 Criando link do storage..."
 php artisan storage:link || true
