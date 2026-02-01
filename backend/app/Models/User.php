@@ -55,6 +55,27 @@ class User extends Authenticatable
     ];
 
     /**
+     * Atributos que devem ser adicionados ao array/JSON
+     */
+    protected $appends = ['avatar_url'];
+
+    /**
+     * Accessor para URL completa do avatar
+     */
+    public function getAvatarUrlAttribute()
+    {
+        if ($this->avatar) {
+            // Se o avatar já é uma URL completa, retornar como está
+            if (str_starts_with($this->avatar, 'http')) {
+                return $this->avatar;
+            }
+            // Caso contrário, construir a URL do storage
+            return url('storage/' . $this->avatar);
+        }
+        return null;
+    }
+
+    /**
      * Boot method para inicializar campos multi-role
      */
     protected static function boot()
