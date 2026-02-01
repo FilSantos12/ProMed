@@ -25,19 +25,6 @@ php artisan migrate --force
 echo "🌱 Populando dados iniciais..."
 php artisan db:seed --force
 
-# Criar ou atualizar usuário admin
-echo "👤 Configurando usuário admin..."
-php artisan tinker --execute="
-\$user = App\Models\User::firstOrNew(['email' => 'admin@promed.com']);
-\$user->name = 'Admin ProMed';
-\$user->password = bcrypt('admin123');
-\$user->is_active = true;
-\$user->active_role = 'admin';
-\$user->roles = ['admin'];
-\$user->save();
-echo 'Admin configurado!';
-"
-
 # Criar link simbólico do storage
 echo "🔗 Criando link do storage..."
 php artisan storage:link || true

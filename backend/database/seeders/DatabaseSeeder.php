@@ -18,11 +18,15 @@ class DatabaseSeeder extends Seeder
         // Criar especialidades
         $this->call(SpecialtySeeder::class);
 
-        // Criar usuário de teste (se não existir)
-        if (!User::where('email', 'test@example.com')->exists()) {
-            User::factory()->create([
-                'name' => 'Test User',
-                'email' => 'test@example.com',
+        // Criar usuário admin (se não existir)
+        if (!User::where('email', 'admin@promed.com')->exists()) {
+            User::create([
+                'name' => 'Admin ProMed',
+                'email' => 'admin@promed.com',
+                'password' => bcrypt('admin123'),
+                'is_active' => true,
+                'active_role' => 'admin',
+                'roles' => ['admin'],
             ]);
         }
     }
