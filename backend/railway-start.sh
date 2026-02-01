@@ -6,6 +6,10 @@ echo "🚀 Iniciando ProMed Backend..."
 echo "⏳ Aguardando banco de dados..."
 sleep 5
 
+# Regenerar autoload do Composer
+echo "📦 Regenerando autoload..."
+composer dump-autoload --optimize
+
 # Limpar caches antes de tudo
 echo "🧹 Limpando caches..."
 php artisan config:clear
