@@ -113,7 +113,12 @@ class AppointmentController extends Controller
             \Log::info('AppointmentController@store - Request data: ' . json_encode($request->all()));
             \Log::info('AppointmentController@store - Validated data: ' . json_encode($request->validated()));
 
-            $appointment = Appointment::create($request->validated());
+            // Criar agendamento já confirmado (sem necessidade de confirmação do médico)
+            $data = $request->validated();
+            $data['status'] = 'confirmed';
+            $data['confirmed_at'] = now();
+
+            $appointment = Appointment::create($data);
 
             // Aqui você pode adicionar envio de email/notificação
 

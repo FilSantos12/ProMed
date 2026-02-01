@@ -93,7 +93,8 @@ export function DoctorArea({
     days_of_week: [] as number[],
     consultation_duration: 30,
     break_time: 0,
-    lunch_break: "12:00-13:00",
+    break_start: "",
+    break_end: "",
   });
 
   // Estados para modal de confirmação
@@ -478,7 +479,8 @@ export function DoctorArea({
         days_of_week: [],
         consultation_duration: 30,
         break_time: 0,
-        lunch_break: "12:00-13:00",
+        break_start: "",
+        break_end: "",
       });
 
       // Recarregar horários
@@ -976,7 +978,7 @@ export function DoctorArea({
               </CardHeader>
               <CardContent className="space-y-4">
                 {/* Configurações Rápidas */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 p-3 bg-gray-50 rounded-lg">
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 gap-3 p-3 bg-gray-50 rounded-lg">
                   <div className="space-y-1">
                     <Label className="text-xs text-gray-600">
                       Duração da Consulta
@@ -997,7 +999,7 @@ export function DoctorArea({
                       <option value="60">60 min</option>
                     </select>
                   </div>
-                  <div className="space-y-1">
+                  {/*<div className="space-y-1">
                     <Label className="text-xs text-gray-600">Intervalo</Label>
                     <select
                       className="w-full p-2 border rounded text-sm"
@@ -1014,24 +1016,37 @@ export function DoctorArea({
                       <option value="15">15 min</option>
                       <option value="30">30 min</option>
                     </select>
-                  </div>
-                  <div className="space-y-1">
-                    <Label className="text-xs text-gray-600">Almoço</Label>
-                    <select
-                      className="w-full p-2 border rounded text-sm"
-                      aria-label="Intervalo para Almoço"
-                      value={scheduleForm.lunch_break}
-                      onChange={(e) =>
-                        setScheduleForm({
-                          ...scheduleForm,
-                          lunch_break: e.target.value,
-                        })
-                      }
-                    >
-                      <option value="12:00-13:00">12h - 13h</option>
-                      <option value="13:00-14:00">13h - 14h</option>
-                      <option value="none">Sem intervalo</option>
-                    </select>
+                  </div>*/}
+                  <div className="space-y-1 sm:col-span-2">
+                    <Label className="text-xs text-gray-600">Intervalo (opcional)</Label>
+                    <div className="flex items-center gap-2">
+                      <Input
+                        type="time"
+                        className="text-sm flex-1"
+                        placeholder="Início"
+                        value={scheduleForm.break_start}
+                        onChange={(e) =>
+                          setScheduleForm({
+                            ...scheduleForm,
+                            break_start: e.target.value,
+                          })
+                        }
+                      />
+                      <span className="text-gray-500 text-sm">até</span>
+                      <Input
+                        type="time"
+                        className="text-sm flex-1"
+                        placeholder="Fim"
+                        value={scheduleForm.break_end}
+                        onChange={(e) =>
+                          setScheduleForm({
+                            ...scheduleForm,
+                            break_end: e.target.value,
+                          })
+                        }
+                      />
+                    </div>
+                    <p className="text-xs text-gray-400">Deixe em branco se não houver intervalo</p>
                   </div>
                 </div>
 
