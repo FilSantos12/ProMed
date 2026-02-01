@@ -6,6 +6,13 @@ echo "🚀 Iniciando ProMed Backend..."
 echo "⏳ Aguardando banco de dados..."
 sleep 5
 
+# Limpar caches antes de tudo
+echo "🧹 Limpando caches..."
+php artisan config:clear
+php artisan cache:clear
+php artisan route:clear
+php artisan view:clear
+
 # Executar migrations
 echo "📊 Executando migrations..."
 php artisan migrate --force
@@ -14,9 +21,8 @@ php artisan migrate --force
 echo "🔗 Criando link do storage..."
 php artisan storage:link || true
 
-# Otimizar para produção
+# Otimizar para produção (sem config:cache para evitar problemas)
 echo "⚡ Otimizando aplicação..."
-php artisan config:cache
 php artisan route:cache
 php artisan view:cache
 
