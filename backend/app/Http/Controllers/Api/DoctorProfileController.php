@@ -12,6 +12,7 @@ use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
+use CloudinaryLabs\CloudinaryLaravel\Facades\Cloudinary;
 
 class DoctorProfileController extends Controller
 {
@@ -37,11 +38,6 @@ class DoctorProfileController extends Controller
                 },
                 'documents'
             ])->find($user->doctor->id);
-
-            // Adicionar URL completa do avatar se existir
-            if ($doctor->user && $doctor->user->avatar) {
-                $doctor->user->avatar_url = asset('storage/' . $doctor->user->avatar);
-            }
 
             return response()->json([
                 'doctor' => $doctor,
@@ -123,11 +119,6 @@ class DoctorProfileController extends Controller
             $doctor = Doctor::with(['user', 'specialty', 'schedules', 'documents'])
                 ->find($user->doctor->id);
 
-            // Adicionar URL completa do avatar se existir
-            if ($doctor->user && $doctor->user->avatar) {
-                $doctor->user->avatar_url = asset('storage/' . $doctor->user->avatar);
-            }
-
             return response()->json([
                 'message' => 'Perfil atualizado com sucesso',
                 'doctor' => $doctor
@@ -162,18 +153,36 @@ class DoctorProfileController extends Controller
 
             $user = $request->user();
 
-            // Deletar avatar antigo se existir
-            if ($user->avatar && Storage::disk('public')->exists($user->avatar)) {
-                Storage::disk('public')->delete($user->avatar);
+            // Deletar avatar antigo do Cloudinary se existir e for URL do Cloudinary
+            if ($user->avatar && str_contains($user->avatar, 'cloudinary.com')) {
+                try {
+                    // Extrair public_id da URL do Cloudinary
+                    preg_match('/upload\/(?:v\d+\/)?(.+)\.\w+$/', $user->avatar, $matches);
+                    if (!empty($matches[1])) {
+                        Cloudinary::destroy($matches[1]);
+                    }
+                } catch (\Exception $e) {
+                    Log::warning('Não foi possível deletar avatar antigo do Cloudinary: ' . $e->getMessage());
+                }
             }
 
-            // Upload novo avatar
-            $avatarPath = $request->file('avatar')->store('avatars', 'public');
-            $user->update(['avatar' => $avatarPath]);
+            // Upload novo avatar para o Cloudinary
+            $uploadedFile = Cloudinary::upload($request->file('avatar')->getRealPath(), [
+                'folder' => 'promed/avatars',
+                'transformation' => [
+                    'width' => 400,
+                    'height' => 400,
+                    'crop' => 'fill',
+                    'gravity' => 'face'
+                ]
+            ]);
+
+            $avatarUrl = $uploadedFile->getSecurePath();
+            $user->update(['avatar' => $avatarUrl]);
 
             return response()->json([
                 'message' => 'Avatar atualizado com sucesso',
-                'avatar_url' => asset('storage/' . $avatarPath)
+                'avatar_url' => $avatarUrl
             ]);
 
         } catch (\Exception $e) {

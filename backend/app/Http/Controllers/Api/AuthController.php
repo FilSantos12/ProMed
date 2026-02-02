@@ -14,6 +14,7 @@ use Illuminate\Support\Facades\Storage;
 use App\Models\DoctorDocument;
 use Laravel\Sanctum\HasApiTokens;
 use Illuminate\Database\Eloquent\Model;
+use CloudinaryLabs\CloudinaryLaravel\Facades\Cloudinary;
 
 class AuthController extends Controller
 {
@@ -261,30 +262,50 @@ public function login(Request $request)
                 if ($request->hasFile($type)) {
                     $file = $request->file($type);
 
-                    // Determinar pasta baseado no tipo
-                    $folder = $type === 'photo' ? 'doctors/photos' : 'doctors/documents';
-
-                    // Gerar nome único
-                    $fileName = time() . '_' . $type . '_' . $file->getClientOriginalName();
-
-                    // Salvar arquivo
-                    $filePath = $file->storeAs($folder, $fileName, 'public');
-
-                    // Se for a foto, também salvar como avatar do usuário
+                    // Se for a foto, fazer upload no Cloudinary
                     if ($type === 'photo') {
-                        $user->update(['avatar' => $filePath]);
-                    }
+                        try {
+                            $uploadedFile = Cloudinary::upload($file->getRealPath(), [
+                                'folder' => 'promed/avatars',
+                                'transformation' => [
+                                    'width' => 400,
+                                    'height' => 400,
+                                    'crop' => 'fill',
+                                    'gravity' => 'face'
+                                ]
+                            ]);
+                            $avatarUrl = $uploadedFile->getSecurePath();
+                            $user->update(['avatar' => $avatarUrl]);
 
-                    // Criar registro no banco
-                    DoctorDocument::create([
-                        'doctor_id' => $doctor->id,
-                        'document_type' => $type,
-                        'file_name' => $file->getClientOriginalName(),
-                        'file_path' => $filePath,
-                        'file_size' => $file->getSize(),
-                        'mime_type' => $file->getMimeType(),
-                        'status' => 'pending',
-                    ]);
+                            // Criar registro no banco com URL do Cloudinary
+                            DoctorDocument::create([
+                                'doctor_id' => $doctor->id,
+                                'document_type' => $type,
+                                'file_name' => $file->getClientOriginalName(),
+                                'file_path' => $avatarUrl,
+                                'file_size' => $file->getSize(),
+                                'mime_type' => $file->getMimeType(),
+                                'status' => 'pending',
+                            ]);
+                        } catch (\Exception $e) {
+                            \Log::error('Erro ao fazer upload da foto para Cloudinary: ' . $e->getMessage());
+                        }
+                    } else {
+                        // Para outros documentos, salvar localmente (ou pode usar Cloudinary também)
+                        $folder = 'doctors/documents';
+                        $fileName = time() . '_' . $type . '_' . $file->getClientOriginalName();
+                        $filePath = $file->storeAs($folder, $fileName, 'public');
+
+                        DoctorDocument::create([
+                            'doctor_id' => $doctor->id,
+                            'document_type' => $type,
+                            'file_name' => $file->getClientOriginalName(),
+                            'file_path' => $filePath,
+                            'file_size' => $file->getSize(),
+                            'mime_type' => $file->getMimeType(),
+                            'status' => 'pending',
+                        ]);
+                    }
                 }
             }
         }
