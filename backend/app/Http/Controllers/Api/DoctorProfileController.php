@@ -187,9 +187,12 @@ class DoctorProfileController extends Controller
 
         } catch (\Exception $e) {
             Log::error('Erro ao fazer upload do avatar: ' . $e->getMessage());
+            Log::error('Stack trace: ' . $e->getTraceAsString());
+            Log::error('CLOUDINARY_URL configurada: ' . (env('CLOUDINARY_URL') ? 'Sim' : 'Não'));
             return response()->json([
                 'message' => 'Erro ao fazer upload do avatar',
-                'error' => $e->getMessage()
+                'error' => $e->getMessage(),
+                'trace' => config('app.debug') ? $e->getTraceAsString() : null
             ], 500);
         }
     }
