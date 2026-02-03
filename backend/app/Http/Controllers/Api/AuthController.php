@@ -14,7 +14,7 @@ use Illuminate\Support\Facades\Storage;
 use App\Models\DoctorDocument;
 use Laravel\Sanctum\HasApiTokens;
 use Illuminate\Database\Eloquent\Model;
-use CloudinaryLabs\CloudinaryLaravel\Facades\Cloudinary;
+use Cloudinary\Cloudinary;
 
 class AuthController extends Controller
 {
@@ -265,7 +265,8 @@ public function login(Request $request)
                     // Se for a foto, fazer upload no Cloudinary
                     if ($type === 'photo') {
                         try {
-                            $uploadedFile = Cloudinary::upload($file->getRealPath(), [
+                            $cloudinary = new Cloudinary(env('CLOUDINARY_URL'));
+                            $uploadResult = $cloudinary->uploadApi()->upload($file->getRealPath(), [
                                 'folder' => 'promed/avatars',
                                 'transformation' => [
                                     'width' => 400,
@@ -274,7 +275,7 @@ public function login(Request $request)
                                     'gravity' => 'face'
                                 ]
                             ]);
-                            $avatarUrl = $uploadedFile->getSecurePath();
+                            $avatarUrl = $uploadResult['secure_url'];
                             $user->update(['avatar' => $avatarUrl]);
 
                             // Criar registro no banco com URL do Cloudinary

@@ -12,7 +12,7 @@ use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
-use CloudinaryLabs\CloudinaryLaravel\Facades\Cloudinary;
+use Cloudinary\Cloudinary;
 
 class DoctorProfileController extends Controller
 {
@@ -153,13 +153,16 @@ class DoctorProfileController extends Controller
 
             $user = $request->user();
 
+            // Inicializar Cloudinary com a URL do ambiente
+            $cloudinary = new Cloudinary(env('CLOUDINARY_URL'));
+
             // Deletar avatar antigo do Cloudinary se existir e for URL do Cloudinary
             if ($user->avatar && str_contains($user->avatar, 'cloudinary.com')) {
                 try {
                     // Extrair public_id da URL do Cloudinary
                     preg_match('/upload\/(?:v\d+\/)?(.+)\.\w+$/', $user->avatar, $matches);
                     if (!empty($matches[1])) {
-                        Cloudinary::destroy($matches[1]);
+                        $cloudinary->uploadApi()->destroy($matches[1]);
                     }
                 } catch (\Exception $e) {
                     Log::warning('Não foi possível deletar avatar antigo do Cloudinary: ' . $e->getMessage());
@@ -167,7 +170,7 @@ class DoctorProfileController extends Controller
             }
 
             // Upload novo avatar para o Cloudinary
-            $uploadedFile = Cloudinary::upload($request->file('avatar')->getRealPath(), [
+            $uploadResult = $cloudinary->uploadApi()->upload($request->file('avatar')->getRealPath(), [
                 'folder' => 'promed/avatars',
                 'transformation' => [
                     'width' => 400,
@@ -177,7 +180,7 @@ class DoctorProfileController extends Controller
                 ]
             ]);
 
-            $avatarUrl = $uploadedFile->getSecurePath();
+            $avatarUrl = $uploadResult['secure_url'];
             $user->update(['avatar' => $avatarUrl]);
 
             return response()->json([
