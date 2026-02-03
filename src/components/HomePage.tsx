@@ -71,7 +71,7 @@ export function HomePage({ onSectionChange }: HomePageProps) {
 
   const stats = [
     { number: '10+', label: 'Anos de Experiência' },
-    { number: '20+', label: 'Médicos Especialistas' },
+    { number: '11+', label: 'Médicos Especialistas' },
     { number: '100+', label: 'Pacientes Atendidos' },
     { number: '24/7', label: 'Atendimento' }
   ];
@@ -88,7 +88,7 @@ export function HomePage({ onSectionChange }: HomePageProps) {
                 Cuidando da sua saúde com excelência
               </h2>
               <p className="text-lg lg:text-xl text-gray-600">
-                Atendimento humanizado, infraestrutura moderna e profissionais qualificados para cuidar de você e sua família.
+                Atendimento humanizado, profissionais qualificados para cuidar de você e sua família.
               </p>
               <div className="flex flex-col sm:flex-row gap-4 pt-4">
                 <Button 
