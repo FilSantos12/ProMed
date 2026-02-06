@@ -252,7 +252,17 @@ const Patients: React.FC = () => {
       );
 
       setSelectedPatient(patient);
-      setPatientAppointments(response.data.appointments || []);
+      // appointments pode ser um objeto paginado (com .data) ou array direto
+      const appointments = response.data.appointments;
+      if (appointments?.data) {
+        // É um objeto paginado
+        setPatientAppointments(appointments.data);
+      } else if (Array.isArray(appointments)) {
+        // É um array direto
+        setPatientAppointments(appointments);
+      } else {
+        setPatientAppointments([]);
+      }
       setShowAppointmentsModal(true);
     } catch (err: any) {
       console.error('Erro ao carregar histórico:', err);

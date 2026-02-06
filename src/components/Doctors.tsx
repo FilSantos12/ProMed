@@ -325,7 +325,17 @@ const Doctors: React.FC<DoctorsProps> = ({ initialFilterStatus }) => {
         headers: { Authorization: `Bearer ${token}` }
       });
       setSelectedDoctor(doctor);
-      setDoctorAppointments(response.data.appointments || []);
+      // appointments pode ser um objeto paginado (com .data) ou array direto
+      const appointments = response.data.appointments;
+      if (appointments?.data) {
+        // É um objeto paginado
+        setDoctorAppointments(appointments.data);
+      } else if (Array.isArray(appointments)) {
+        // É um array direto
+        setDoctorAppointments(appointments);
+      } else {
+        setDoctorAppointments([]);
+      }
       setShowAppointmentsModal(true);
     } catch (err: any) {
       toast.error('❌ Erro ao carregar histórico de consultas', 6000);
