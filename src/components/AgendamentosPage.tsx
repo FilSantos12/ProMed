@@ -274,9 +274,25 @@ export function AgendamentosPage({
         schedule.id,
         dateStr,
       );
-      setAvailableSlots(slotsData.available_slots);
 
-      if (slotsData.available_slots.length === 0) {
+      // Remover slots que já passaram quando a data selecionada for hoje
+      const now = new Date();
+      const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+      const isToday = dateStr === todayStr;
+
+      const futureSlots = isToday
+        ? slotsData.available_slots.filter((time) => {
+            const [slotHour, slotMin] = time.split(':').map(Number);
+            return (
+              slotHour > now.getHours() ||
+              (slotHour === now.getHours() && slotMin > now.getMinutes())
+            );
+          })
+        : slotsData.available_slots;
+
+      setAvailableSlots(futureSlots);
+
+      if (futureSlots.length === 0) {
         toast.error("Todos os horários estão ocupados para esta data");
       }
     } catch (err: any) {
