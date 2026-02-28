@@ -25,7 +25,7 @@ public function login(Request $request)
     $request->validate([
         'email' => 'required|email',
         'password' => 'required',
-        'expected_role' => 'required|in:patient,doctor,admin',
+        'expected_role' => 'nullable|in:patient,doctor,admin',
     ]);
 
     $credentials = $request->only('email', 'password');
@@ -40,34 +40,29 @@ public function login(Request $request)
     // Pegar o usuário
     $user = \App\Models\User::where('email', $request->email)->first();
 
-    // VALIDAR SE O USUÁRIO TEM O ROLE SOLICITADO (suporte multi-role)
-    if (!$user->hasRole($request->expected_role)) {
-        Auth::logout();
-
-        $roles = [
-            'patient' => 'pacientes',
-            'doctor' => 'médicos',
-            'admin' => 'administradores',
-        ];
-
-        return response()->json([
-            'message' => "Esta área é exclusiva para {$roles[$request->expected_role]}."
-        ], 403);
-    }
-
-    // Definir o perfil ativo
-    $user->update(['active_role' => $request->expected_role]);
-
     // VALIDAR SE ESTÁ ATIVO
     if (!$user->is_active) {
         Auth::logout();
         return response()->json([
-            'message' => 'Sua conta está inativa. Entre em contato com o administrador.'
+            'message' => 'Sua conta está inativa. Entre em contato com o administrador.',
+            'status' => 'inactive'
         ], 403);
     }
 
-    // SE ESTIVER FAZENDO LOGIN COMO MÉDICO, verificar status de aprovação
-    if ($request->expected_role === 'doctor') {
+    // Auto-detectar role se não fornecido (prioridade: admin > doctor > patient)
+    $expectedRole = $request->expected_role;
+    if (!$expectedRole) {
+        if ($user->hasRole('admin')) {
+            $expectedRole = 'admin';
+        } elseif ($user->hasRole('doctor')) {
+            $expectedRole = 'doctor';
+        } else {
+            $expectedRole = 'patient';
+        }
+    }
+
+    // SE O ROLE FOR MÉDICO, verificar status de aprovação
+    if ($expectedRole === 'doctor') {
         $doctor = Doctor::where('user_id', $user->id)->first();
 
         if (!$doctor) {
@@ -78,7 +73,6 @@ public function login(Request $request)
             ], 403);
         }
 
-        // Verificar status do médico
         if ($doctor->status === 'pending') {
             Auth::logout();
             return response()->json([
@@ -95,18 +89,19 @@ public function login(Request $request)
                 'rejection_notes' => $doctor->rejection_notes ?? 'Motivo não especificado.'
             ], 403);
         }
-
-        // Se chegou aqui, o médico está aprovado (status = 'approved')
     }
+
+    // Definir o perfil ativo
+    $user->update(['active_role' => $expectedRole]);
 
     // Criar token
     $token = $user->createToken('auth_token')->plainTextToken;
 
     // Carregar relações baseado no perfil ativo
-    if ($request->expected_role === 'doctor' && $user->hasRole('doctor')) {
+    if ($expectedRole === 'doctor' && $user->hasRole('doctor')) {
         $user->load('doctor.specialty');
     }
-    if ($request->expected_role === 'patient' && $user->hasRole('patient')) {
+    if ($expectedRole === 'patient' && $user->hasRole('patient')) {
         $user->load('patient');
     }
 

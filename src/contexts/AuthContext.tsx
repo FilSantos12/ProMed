@@ -8,7 +8,7 @@ interface AuthContextData {
   token: string | null;
   signed: boolean;
   loading: boolean;
-  login(email: string, password: string, expectedRole: string): Promise<void>;
+  login(email: string, password: string): Promise<void>;
   logout(): Promise<void>;
   register: (data: RegisterData) => Promise<void>;
   refreshUser: () => Promise<void>;
@@ -39,12 +39,11 @@ export function AuthProvider({ children }: AuthProviderProps) {
     setLoading(false);
   }, []);
 
-  const login = async (email: string, password: string, expectedRole: string) => {
+  const login = async (email: string, password: string) => {
     try {
       const response = await api.post('/login', {
         email,
         password,
-        expected_role: expectedRole,
       });
 
       const { token, user } = response.data;

@@ -1073,7 +1073,7 @@ const getDocumentIcon = (type: string) => {
                         </div>
                         <div>
                           <label className="block text-sm font-medium text-gray-700">Paciente</label>
-                          <p className="text-gray-900">{appointment.patient?.user?.name || '-'}</p>
+                          <p className="text-gray-900">{appointment.patient?.name || '-'}</p>
                         </div>
                         <div>
                           <label className="block text-sm font-medium text-gray-700">Status</label>
