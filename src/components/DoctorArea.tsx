@@ -187,8 +187,9 @@ export function DoctorArea({
 
       const futureSchedules = schedulesData.filter((schedule) => {
         if (schedule.schedule_date) {
-          const scheduleDate = new Date(schedule.schedule_date);
-          scheduleDate.setHours(0, 0, 0, 0);
+          const datePart = schedule.schedule_date.split('T')[0];
+          const [y, m, d] = datePart.split('-').map(Number);
+          const scheduleDate = new Date(y, m - 1, d);
           return scheduleDate >= today;
         }
         // Manter horários recorrentes sem data específica
@@ -457,6 +458,9 @@ export function DoctorArea({
           schedule_date: date,
           start_time: scheduleForm.start_time,
           end_time: scheduleForm.end_time,
+          slot_duration: scheduleForm.consultation_duration,
+          break_start: scheduleForm.break_start || undefined,
+          break_end: scheduleForm.break_end || undefined,
           is_available: true,
         };
         console.log("Enviando dados do horário:", scheduleData);

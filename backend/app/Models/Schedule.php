@@ -16,13 +16,15 @@ class Schedule extends Model
         'start_time',
         'end_time',
         'slot_duration',
+        'break_start',
+        'break_end',
         'is_available',
     ];
 
     protected $casts = [
         'is_available' => 'boolean',
         'slot_duration' => 'integer',
-        'schedule_date' => 'date',
+        'schedule_date' => 'date:Y-m-d',
     ];
 
     /**
@@ -41,9 +43,14 @@ class Schedule extends Model
         $slots = [];
         $start = \Carbon\Carbon::parse($this->start_time);
         $end = \Carbon\Carbon::parse($this->end_time);
+        $breakStart = $this->break_start ? \Carbon\Carbon::parse($this->break_start) : null;
+        $breakEnd = $this->break_end ? \Carbon\Carbon::parse($this->break_end) : null;
 
         while ($start->lt($end)) {
-            $slots[] = $start->format('H:i');
+            // Pular slots que caem dentro do intervalo de descanso
+            if (!$breakStart || !$breakEnd || !($start->gte($breakStart) && $start->lt($breakEnd))) {
+                $slots[] = $start->format('H:i');
+            }
             $start->addMinutes($this->slot_duration);
         }
 

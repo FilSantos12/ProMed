@@ -183,6 +183,9 @@ class DoctorService {
     schedule_date: string;
     start_time: string;
     end_time: string;
+    slot_duration?: number;
+    break_start?: string;
+    break_end?: string;
     is_available?: boolean;
   }): Promise<DoctorSchedule> {
     const response = await api.post('/doctor/schedules', data);

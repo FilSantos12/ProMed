@@ -333,12 +333,10 @@ export function PatientArea({ onSectionChange }: PatientAreaProps) {
 
   const formatDate = (dateString: string) => {
     try {
-      // Se já tem 'T' (formato ISO completo), usar diretamente
-      // Senão, adicionar 'T00:00:00' para datas no formato YYYY-MM-DD
-      const date = dateString.includes('T')
-        ? new Date(dateString)
-        : new Date(dateString + 'T00:00:00');
-      return date.toLocaleDateString('pt-BR');
+      // Sempre extrair apenas a parte YYYY-MM-DD para evitar conversão de timezone
+      const datePart = dateString.split('T')[0];
+      const [year, month, day] = datePart.split('-').map(Number);
+      return new Date(year, month - 1, day).toLocaleDateString('pt-BR');
     } catch {
       return dateString;
     }

@@ -245,6 +245,8 @@ class DoctorProfileController extends Controller
                 'start_time' => 'required|date_format:H:i',
                 'end_time' => 'required|date_format:H:i|after:start_time',
                 'slot_duration' => 'sometimes|integer|min:15|max:180',
+                'break_start' => 'nullable|date_format:H:i',
+                'break_end' => 'nullable|date_format:H:i|after:break_start',
             ]);
 
             if ($validator->fails()) {
@@ -300,6 +302,8 @@ class DoctorProfileController extends Controller
                 'start_time' => $request->start_time,
                 'end_time' => $request->end_time,
                 'slot_duration' => $request->slot_duration ?? $user->doctor->consultation_duration ?? 30,
+                'break_start' => $request->break_start ?: null,
+                'break_end' => $request->break_end ?: null,
                 'is_available' => true
             ]);
 
@@ -341,6 +345,8 @@ class DoctorProfileController extends Controller
                 'start_time' => 'sometimes|date_format:H:i',
                 'end_time' => 'sometimes|date_format:H:i|after:start_time',
                 'slot_duration' => 'sometimes|integer|min:15|max:180',
+                'break_start' => 'nullable|date_format:H:i',
+                'break_end' => 'nullable|date_format:H:i|after:break_start',
                 'is_available' => 'sometimes|boolean',
             ]);
 
