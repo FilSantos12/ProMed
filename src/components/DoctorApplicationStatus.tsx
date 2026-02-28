@@ -2,7 +2,7 @@ import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Badge } from './ui/badge';
 import { Button } from './ui/button';
-import { Clock, CheckCircle, XCircle, AlertCircle, FileText, Calendar } from 'lucide-react';
+import { Clock, XCircle, AlertCircle, FileText, Sparkles, Stethoscope } from 'lucide-react';
 
 interface DoctorApplicationStatusProps {
   status: {
@@ -31,6 +31,47 @@ export function DoctorApplicationStatus({ status, onApplyAgain, onAccessDoctorAr
     return null;
   }
 
+  // Aprovado: exibir saudação apenas por 24h após a aprovação
+  if (status.status === 'approved') {
+    if (!status.reviewed_at) return null;
+    const reviewedAt = new Date(status.reviewed_at);
+    const diffHours = (Date.now() - reviewedAt.getTime()) / (1000 * 60 * 60);
+    if (diffHours >= 24) return null;
+
+    return (
+      <Card className="border-2 border-green-300 bg-gradient-to-br from-green-50 to-emerald-50 shadow-md">
+        <CardContent className="p-6">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+            <div className="flex-shrink-0 w-14 h-14 rounded-full bg-green-100 border-2 border-green-300 flex items-center justify-center">
+              <Stethoscope className="w-7 h-7 text-green-600" />
+            </div>
+            <div className="flex-1">
+              <div className="flex items-center gap-2 mb-1">
+                <Sparkles className="w-4 h-4 text-green-500" />
+                <span className="text-xs font-semibold text-green-600 uppercase tracking-wide">Solicitação Aprovada</span>
+              </div>
+              <h2 className="text-xl font-bold text-green-800 mb-1">
+                Parabéns! Você agora é um médico cadastrado.
+              </h2>
+              <p className="text-sm text-green-700">
+                Sua solicitação foi aprovada pela equipe administrativa. A partir de agora você tem acesso completo à Área do Médico para gerenciar sua agenda e consultas.
+              </p>
+            </div>
+            {onAccessDoctorArea && (
+              <Button
+                onClick={onAccessDoctorArea}
+                className="flex-shrink-0 bg-green-600 hover:bg-green-700 text-white"
+              >
+                <Stethoscope className="w-4 h-4 mr-2" />
+                Acessar Área do Médico
+              </Button>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
   const getStatusConfig = () => {
     switch (status.status) {
       case 'pending':
@@ -41,15 +82,6 @@ export function DoctorApplicationStatus({ status, onApplyAgain, onAccessDoctorAr
           borderColor: 'border-yellow-200',
           title: 'Solicitação em Análise',
           description: 'Sua solicitação para se tornar médico está sendo analisada pela equipe administrativa.',
-        };
-      case 'approved':
-        return {
-          icon: CheckCircle,
-          color: 'text-green-600',
-          bgColor: 'bg-green-50',
-          borderColor: 'border-green-200',
-          title: 'Solicitação Aprovada! 🎉',
-          description: 'Parabéns! Sua solicitação foi aprovada. Agora você tem acesso à área do médico.',
         };
       case 'rejected':
         return {
@@ -154,12 +186,6 @@ export function DoctorApplicationStatus({ status, onApplyAgain, onAccessDoctorAr
               <Clock className="w-4 h-4" />
               <span>Aguarde a análise. Você será notificado por email quando houver uma resposta.</span>
             </div>
-          )}
-
-          {status.status === 'approved' && onAccessDoctorArea && (
-            <Button onClick={onAccessDoctorArea} className="flex-1">
-              Acessar Área do Médico
-            </Button>
           )}
 
           {status.status === 'rejected' && onApplyAgain && (
