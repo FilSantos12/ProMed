@@ -106,6 +106,10 @@ export function CadastroPages({
   // Email confirmation
   const [confirmEmailTouched, setConfirmEmailTouched] = useState(false);
 
+  // CEP lookup
+  const [loadingCep, setLoadingCep] = useState(false);
+  const [cepError, setCepError] = useState<string | null>(null);
+
   // Especialidades
   const [specialties, setSpecialties] = useState<Specialty[]>([]);
   const [loadingSpecialties, setLoadingSpecialties] = useState(false);
@@ -410,6 +414,43 @@ export function CadastroPages({
   const handleFileChange = (field: string, file: File | null) => {
     setDocuments((prev) => ({ ...prev, [field]: file }));
   };
+
+  // Buscar endereço pelo CEP via ViaCEP
+  useEffect(() => {
+    const cep = formData.cep.replace(/\D/g, '');
+    if (cep.length !== 8) {
+      setCepError(null);
+      return;
+    }
+
+    const fetchCep = async () => {
+      try {
+        setLoadingCep(true);
+        setCepError(null);
+        const response = await fetch(`https://viacep.com.br/ws/${cep}/json/`);
+        const data = await response.json();
+
+        if (data.erro) {
+          setCepError('CEP não encontrado.');
+          return;
+        }
+
+        setFormData((prev) => ({
+          ...prev,
+          address: data.logradouro || prev.address,
+          neighborhood: data.bairro || prev.neighborhood,
+          city: data.localidade || prev.city,
+          state: data.uf || prev.state,
+        }));
+      } catch {
+        setCepError('Erro ao buscar CEP. Tente novamente.');
+      } finally {
+        setLoadingCep(false);
+      }
+    };
+
+    fetchCep();
+  }, [formData.cep]);
 
   // Buscar especialidades ao montar o componente
   useEffect(() => {
@@ -757,14 +798,24 @@ export function CadastroPages({
                 <div className="grid md:grid-cols-3 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="cep">CEP *</Label>
-                    <MaskedInput
-                      mask="00000-000"
-                      value={formData.cep}
-                      onChange={(value) => handleInputChange("cep", value)}
-                      id="cep"
-                      placeholder="00000-000"
-                      required
-                    />
+                    <div className="relative">
+                      <MaskedInput
+                        mask="00000-000"
+                        value={formData.cep}
+                        onChange={(value) => handleInputChange("cep", value)}
+                        id="cep"
+                        placeholder="00000-000"
+                        required
+                      />
+                      {loadingCep && (
+                        <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                          <LoadingSpinner size="sm" />
+                        </div>
+                      )}
+                    </div>
+                    {cepError && (
+                      <p className="text-xs text-red-500">{cepError}</p>
+                    )}
                   </div>
                   <div className="space-y-2 md:col-span-2">
                     <Label htmlFor="address">Endereço *</Label>
