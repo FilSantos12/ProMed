@@ -53,6 +53,7 @@ class DoctorApplicationController extends Controller
                 // Documentos
                 'diploma_document' => 'required|file|mimes:pdf,jpg,jpeg,png|max:5120',
                 'crm_document' => 'required|file|mimes:pdf,jpg,jpeg,png|max:5120',
+                'specialization' => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:5120',
                 'identity_document' => 'required|file|mimes:pdf,jpg,jpeg,png|max:5120',
                 'address_proof_document' => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:5120',
             ], [
@@ -90,6 +91,10 @@ class DoctorApplicationController extends Controller
                     'crm_document' => $request->file('crm_document'),
                     'identity' => $request->file('identity_document'),
                 ];
+
+                if ($request->hasFile('specialization')) {
+                    $documents['specialization'] = $request->file('specialization');
+                }
 
                 if ($request->hasFile('address_proof_document')) {
                     $documents['address_proof'] = $request->file('address_proof_document');

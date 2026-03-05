@@ -118,11 +118,13 @@ export function CadastroPages({
   const [documents, setDocuments] = useState<{
     diploma: File | null;
     crm_document: File | null;
+    specialization: File | null;
     rg_document: File | null;
     photo: File | null;
   }>({
     diploma: null,
     crm_document: null,
+    specialization: null,
     rg_document: null,
     photo: null,
   });
@@ -247,6 +249,9 @@ export function CadastroPages({
       if (documents.crm_document) {
         formDataToSend.append("crm_document", documents.crm_document);
       }
+      if (documents.specialization) {
+        formDataToSend.append("specialization", documents.specialization);
+      }
       if (documents.rg_document) {
         formDataToSend.append("rg_document", documents.rg_document);
       }
@@ -288,6 +293,9 @@ export function CadastroPages({
         }
         if (documents.crm_document) {
           applyFormData.append("crm_document", documents.crm_document);
+        }
+        if (documents.specialization) {
+          applyFormData.append("specialization", documents.specialization);
         }
         if (documents.rg_document) {
           applyFormData.append("identity_document", documents.rg_document);
@@ -1193,6 +1201,77 @@ export function CadastroPages({
                         </label>
                       </div>
                     </div>
+                    {/* Comprovante de Especialização (opcional) */}
+                    <div className="space-y-2">
+                      <Label
+                        htmlFor="specialization"
+                        className="flex items-center space-x-2"
+                      >
+                        <FileText className="w-4 h-4" />
+                        <span>Comprovante de Especialização (opcional)</span>
+                      </Label>
+                      <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 hover:border-blue-500 transition-colors">
+                        <input
+                          id="specialization"
+                          type="file"
+                          accept=".pdf,.jpg,.jpeg,.png"
+                          onChange={(e) =>
+                            handleFileChange(
+                              "specialization",
+                              e.target.files?.[0] || null
+                            )
+                          }
+                          className="hidden"
+                        />
+                        <label
+                          htmlFor="specialization"
+                          className="cursor-pointer block text-center"
+                        >
+                          {documents.specialization ? (
+                            <div className="space-y-2">
+                              <div className="flex items-center justify-center">
+                                <FileText className="w-8 h-8 text-green-600" />
+                              </div>
+                              <p className="text-sm font-medium text-gray-900">
+                                {documents.specialization.name}
+                              </p>
+                              <p className="text-xs text-gray-500">
+                                {(
+                                  documents.specialization.size /
+                                  1024 /
+                                  1024
+                                ).toFixed(2)}{" "}
+                                MB
+                              </p>
+                              <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  handleFileChange("specialization", null);
+                                }}
+                              >
+                                Remover
+                              </Button>
+                            </div>
+                          ) : (
+                            <div className="space-y-2">
+                              <FileText className="w-12 h-12 mx-auto text-gray-400" />
+                              <p className="text-sm text-gray-600">
+                                <span className="font-semibold text-blue-600">
+                                  Clique para enviar
+                                </span>
+                              </p>
+                              <p className="text-xs text-gray-500">
+                                PDF, JPG ou PNG (máx. 5MB)
+                              </p>
+                            </div>
+                          )}
+                        </label>
+                      </div>
+                    </div>
+
                     {/* RG/CPF (opcional) */}
                     <div className="space-y-2">
                       <Label

@@ -251,7 +251,7 @@ public function login(Request $request)
             ]);
 
             // Salvar documentos
-            $documentTypes = ['diploma', 'crm_document', 'rg_document', 'photo'];
+            $documentTypes = ['diploma', 'crm_document', 'specialization', 'rg_document', 'photo'];
 
             foreach ($documentTypes as $type) {
                 if ($request->hasFile($type)) {
