@@ -466,7 +466,9 @@ const getDocumentTypeName = (type: string) => {
   const types: { [key: string]: string } = {
     'diploma': 'Diploma',
     'crm_document': 'Documento CRM',
+    'specialization': 'Especialização',
     'rg_document': 'RG',
+    'identity': 'Identidade',
     'photo': 'Foto',
     'certificate': 'Certificado',
     'other': 'Outro'
@@ -481,11 +483,15 @@ const getDocumentIcon = (type: string) => {
       icon: <GraduationCap className="w-4 h-4 text-blue-600" />, 
       name: 'Diploma' 
     },
-    'crm_document': { 
-      icon: <Building2 className="w-4 h-4 text-green-600" />, 
-      name: 'Documento CRM' 
+    'crm_document': {
+      icon: <Building2 className="w-4 h-4 text-green-600" />,
+      name: 'Documento CRM'
     },
-    'rg_document': { 
+    'specialization': {
+      icon: <Award className="w-4 h-4 text-yellow-600" />,
+      name: 'Especialização'
+    },
+    'rg_document': {
       icon: <CreditCard className="w-4 h-4 text-purple-600" />, 
       name: 'RG' 
     },
