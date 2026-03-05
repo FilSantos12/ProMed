@@ -21,6 +21,7 @@ function AppContent() {
   const { user } = useAuth();
   const [currentSection, setCurrentSection] = useState('home');
   const [, ] = useState(false);
+  const [appointmentPreSelection, setAppointmentPreSelection] = useState<{ specialtyId: number; doctorId: number } | null>(null);
 
   // Detectar URL /redefinir-senha e mudar para reset-password
   useEffect(() => {
@@ -30,6 +31,11 @@ function AppContent() {
       setCurrentSection('reset-password');
     }
   }, []);
+
+  const handleBookDoctor = (specialtyId: number, doctorId: number) => {
+    setAppointmentPreSelection({ specialtyId, doctorId });
+    handleSectionChange('agendamentos');
+  };
 
   const handleSectionChange = (section: string) => {
     setCurrentSection(section);
@@ -70,13 +76,13 @@ function AppContent() {
       case 'home':
         return <HomePage onSectionChange={handleSectionChange} />;
       case 'especialidades':
-        return <EspecialidadesPage onSectionChange={handleSectionChange} />;
+        return <EspecialidadesPage onSectionChange={handleSectionChange} onBookDoctor={handleBookDoctor} />;
       case 'sobre':
         return <SobrePage onSectionChange={handleSectionChange} />;
       case 'contato':
         return <ContatoPage onSectionChange={handleSectionChange} />;
       case 'agendamentos':
-        return <AgendamentosPage onSectionChange={handleSectionChange} />;
+        return <AgendamentosPage onSectionChange={handleSectionChange} preSelected={appointmentPreSelection} onPreSelectedConsumed={() => setAppointmentPreSelection(null)} />;
       case 'reset-password':
         return <ResetPasswordPage onSectionChange={handleSectionChange} />;
       case 'login':

@@ -105,7 +105,7 @@ export function HomePage({ onSectionChange }: HomePageProps) {
                   className="border-blue-600 text-blue-600 hover:bg-blue-600 hover:text-white"
                   onClick={() => onSectionChange('especialidades')}
                 >
-                  Ver Especialidades
+                  Médicos e Especialidades
                 </Button>
               </div>
             </div>
@@ -197,7 +197,7 @@ export function HomePage({ onSectionChange }: HomePageProps) {
               size="lg"
               onClick={() => onSectionChange('especialidades')}
             >
-              Ver Todas as Especialidades
+              Ver Médicos e Especialidades
             </Button>
           </div>
         </div>
@@ -222,10 +222,10 @@ export function HomePage({ onSectionChange }: HomePageProps) {
                 <Calendar className="w-5 h-5 mr-2" />
                 Agendar Consulta
               </Button>
-              <Button 
-                size="lg" 
-                variant="outline" 
-                className="border-white text-white hover:bg-white hover:text-blue-600"
+              <Button
+                size="lg"
+                variant="outline"
+                className="bg-transparent border-white text-white hover:bg-white hover:text-blue-600"
                 onClick={() => onSectionChange('contato')}
               >
                 <Phone className="w-5 h-5 mr-2" />

@@ -409,18 +409,6 @@ export function PatientArea({ onSectionChange }: PatientAreaProps) {
               </div>
             </div>
 
-            {/* Botão discreto para solicitar cadastro como médico */}
-            {doctorApplicationStatus && !doctorApplicationStatus.has_application && (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleApplyAsDoctor}
-                className="flex items-center space-x-2 text-blue-600 border-blue-300 hover:bg-blue-50"
-              >
-                <Stethoscope className="w-4 h-4" />
-                <span>Solicitar Cadastro Médico</span>
-              </Button>
-            )}
           </div>
         </div>
 
@@ -1131,6 +1119,24 @@ export function PatientArea({ onSectionChange }: PatientAreaProps) {
             </div>
           </div>
         </div>
+      )}
+
+      {/* Rodapé da Área do Paciente */}
+      {doctorApplicationStatus && !doctorApplicationStatus.has_application && (
+        <footer className="mt-12 border-t border-gray-200 bg-gray-50 py-6">
+          <div className="max-w-7xl mx-auto px-4 flex flex-col items-center justify-center space-y-2 text-center">
+            <p className="text-sm text-gray-500">Você é médico e deseja oferecer seus serviços na plataforma?</p>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleApplyAsDoctor}
+              className="flex items-center space-x-2 text-blue-600 border-blue-300 hover:bg-blue-50"
+            >
+              <Stethoscope className="w-4 h-4" />
+              <span>Solicitar Cadastro Médico</span>
+            </Button>
+          </div>
+        </footer>
       )}
 
       {/* Modal de Aviso Informativo */}

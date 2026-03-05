@@ -88,7 +88,7 @@ export function Header({ currentSection, onSectionChange }: HeaderProps) {
 
   const navigationItems: MenuItem[] = [
     { id: 'home', label: 'Home' },
-    { id: 'especialidades', label: 'Especialidades' },
+    { id: 'especialidades', label: 'Médicos e Especialidades' },
     { id: 'sobre', label: 'Sobre Nós' },
     { id: 'contato', label: 'Contato' },
   ];

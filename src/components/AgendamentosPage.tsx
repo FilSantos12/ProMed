@@ -88,10 +88,14 @@ const ICON_MAP: Record<string, LucideIcon> = {
 
 interface AgendamentosPageProps {
   onSectionChange?: (section: string) => void;
+  preSelected?: { specialtyId: number; doctorId: number } | null;
+  onPreSelectedConsumed?: () => void;
 }
 
 export function AgendamentosPage({
   onSectionChange,
+  preSelected,
+  onPreSelectedConsumed,
 }: AgendamentosPageProps = {}) {
   const { user } = useAuth();
   const toast = useToast();
@@ -129,10 +133,33 @@ export function AgendamentosPage({
   // Estado para modal de login/cadastro
   const [showAuthPrompt, setShowAuthPrompt] = useState(false);
 
+  // ID de médico pendente de seleção (aguarda lista de médicos carregar)
+  const [pendingDoctorId, setPendingDoctorId] = useState<string | null>(null);
+
   // Carregar especialidades ao montar o componente
   useEffect(() => {
     loadSpecialties();
   }, []);
+
+  // Aplicar pré-seleção de especialidade e médico vinda de outro componente
+  useEffect(() => {
+    if (preSelected) {
+      setSelectedSpecialty(preSelected.specialtyId.toString());
+      setPendingDoctorId(preSelected.doctorId.toString());
+      onPreSelectedConsumed?.();
+    }
+  }, [preSelected]);
+
+  // Assim que a lista de médicos carregar, aplica o médico pendente
+  useEffect(() => {
+    if (pendingDoctorId && doctors.length > 0) {
+      const exists = doctors.find((d) => d.id.toString() === pendingDoctorId);
+      if (exists) {
+        setSelectedDoctor(pendingDoctorId);
+        setPendingDoctorId(null);
+      }
+    }
+  }, [doctors, pendingDoctorId]);
 
   // Pré-preencher dados do usuário se estiver logado
   useEffect(() => {
