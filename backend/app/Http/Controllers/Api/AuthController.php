@@ -184,6 +184,12 @@ public function login(Request $request)
             'graduation_year' => 'nullable|integer|min:1950|max:' . date('Y'),
             'years_experience' => 'nullable|integer|min:0',
 
+            // Responsável legal (obrigatório quando menor de 18)
+            'guardian_name'  => 'required_if:is_minor,true,1|nullable|string|max:255',
+            'guardian_cpf'   => 'required_if:is_minor,true,1|nullable|string|max:20',
+            'guardian_email' => 'required_if:is_minor,true,1|nullable|email|max:255',
+            'guardian_phone' => 'required_if:is_minor,true,1|nullable|string|max:20',
+
             // Documentos do médico (arquivos)
             'diploma' => 'required_if:role,doctor|nullable|file|mimes:pdf,jpg,jpeg,png|max:5120',
             'crm_document' => 'required_if:role,doctor|nullable|file|mimes:pdf,jpg,jpeg,png|max:5120',
@@ -221,9 +227,20 @@ public function login(Request $request)
             'state' => $request->state,
         ]);
 
+        // Verificar se é menor de 18 com base na data de nascimento
+        $isMinor = false;
+        if ($request->birth_date) {
+            $isMinor = \Carbon\Carbon::parse($request->birth_date)->age < 18;
+        }
+
         // Sempre criar registro de paciente (médicos também são pacientes)
         Patient::create([
-            'user_id' => $user->id,
+            'user_id'        => $user->id,
+            'is_minor'       => $isMinor,
+            'guardian_name'  => $isMinor ? $request->guardian_name  : null,
+            'guardian_cpf'   => $isMinor ? $request->guardian_cpf   : null,
+            'guardian_email' => $isMinor ? $request->guardian_email  : null,
+            'guardian_phone' => $isMinor ? $request->guardian_phone  : null,
         ]);
 
         // Se for médico, criar registro na tabela doctors

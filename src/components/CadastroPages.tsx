@@ -86,6 +86,13 @@ export function CadastroPages({
     consultationDuration: "30",
     yearsExperience: "",
 
+    // Responsável legal
+    guardianName: "",
+    guardianCpf: "",
+    guardianEmail: "",
+    guardianPhone: "",
+    guardianAcceptTerms: false,
+
     // Termos
     acceptTerms: false,
     acceptPrivacy: false,
@@ -105,6 +112,16 @@ export function CadastroPages({
 
   // Email confirmation
   const [confirmEmailTouched, setConfirmEmailTouched] = useState(false);
+
+  // Verificar se é menor de 18
+  const isMinor = (() => {
+    if (!formData.birthDate) return false;
+    const birth = new Date(formData.birthDate);
+    const today = new Date();
+    const age = today.getFullYear() - birth.getFullYear() -
+      (today < new Date(today.getFullYear(), birth.getMonth(), birth.getDate()) ? 1 : 0);
+    return age < 18;
+  })();
 
   // CEP lookup
   const [loadingCep, setLoadingCep] = useState(false);
@@ -152,6 +169,30 @@ export function CadastroPages({
       setShowErrorModal(true);
       setLoading(false);
       return;
+    }
+
+    // Médico menor de 18 não pode se cadastrar
+    if (isMinor && type === "professional") {
+      setErrorMessage("O cadastro de médico é permitido apenas para maiores de 18 anos.");
+      setShowErrorModal(true);
+      setLoading(false);
+      return;
+    }
+
+    // Validação do responsável legal (menor de 18)
+    if (isMinor) {
+      if (!formData.guardianName || !formData.guardianCpf || !formData.guardianEmail || !formData.guardianPhone) {
+        setErrorMessage("Preencha todos os dados do responsável legal.");
+        setShowErrorModal(true);
+        setLoading(false);
+        return;
+      }
+      if (!formData.guardianAcceptTerms) {
+        setErrorMessage("O responsável legal precisa aceitar o termo de responsabilidade.");
+        setShowErrorModal(true);
+        setLoading(false);
+        return;
+      }
     }
 
     // Validação dos termos
@@ -209,6 +250,15 @@ export function CadastroPages({
     formDataToSend.append("birth_date", formData.birthDate);
     formDataToSend.append("gender", formData.gender || "Outro");
     formDataToSend.append("role", type === "patient" ? "patient" : "doctor");
+
+    // Dados do responsável legal (menor de 18)
+    formDataToSend.append("is_minor", isMinor ? "true" : "false");
+    if (isMinor) {
+      formDataToSend.append("guardian_name",  formData.guardianName);
+      formDataToSend.append("guardian_cpf",   formData.guardianCpf);
+      formDataToSend.append("guardian_email", formData.guardianEmail);
+      formDataToSend.append("guardian_phone", formData.guardianPhone);
+    }
 
     // Dados de endereço (para todos os tipos de usuário)
     formDataToSend.append("cep", formData.cep || "");
@@ -622,9 +672,16 @@ export function CadastroPages({
                       className={
                         isFieldPrefilled("birthDate")
                           ? "bg-gray-100 cursor-not-allowed"
+                          : isMinor && type === "professional"
+                          ? "border-red-400"
                           : ""
                       }
                     />
+                    {isMinor && type === "professional" && (
+                      <p className="text-xs text-red-600 font-medium">
+                        O cadastro de médico é permitido apenas para maiores de 18 anos.
+                      </p>
+                    )}
                   </div>
                 </div>
 
@@ -1418,6 +1475,90 @@ export function CadastroPages({
                         </div>
                       </div>
                     )}
+                  </div>
+                </>
+              )}
+
+              {/* Responsável Legal (apenas para menores de 18) */}
+              {isMinor && type === "patient" && (
+                <>
+                  <Separator />
+                  <div className="space-y-4">
+                    <div className="flex items-center space-x-2 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+                      <Shield className="w-5 h-5 text-yellow-600 flex-shrink-0" />
+                      <p className="text-sm text-yellow-800">
+                        <strong>Cadastro de menor de idade:</strong> É obrigatório informar os dados do responsável legal e obter o seu consentimento.
+                      </p>
+                    </div>
+
+                    <h3 className="text-lg font-semibold text-gray-900 flex items-center space-x-2">
+                      <User className="w-5 h-5 text-blue-600" />
+                      <span>Responsável Legal</span>
+                    </h3>
+
+                    <div className="grid md:grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="guardianName">Nome completo do responsável *</Label>
+                        <Input
+                          id="guardianName"
+                          value={formData.guardianName}
+                          onChange={(e) => handleInputChange("guardianName", e.target.value)}
+                          placeholder="Nome do responsável"
+                          required
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="guardianCpf">CPF do responsável *</Label>
+                        <MaskedInput
+                          mask="000.000.000-00"
+                          value={formData.guardianCpf}
+                          onChange={(value) => handleInputChange("guardianCpf", value)}
+                          id="guardianCpf"
+                          placeholder="000.000.000-00"
+                          required
+                        />
+                      </div>
+                    </div>
+
+                    <div className="grid md:grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="guardianEmail">E-mail do responsável *</Label>
+                        <Input
+                          id="guardianEmail"
+                          type="email"
+                          value={formData.guardianEmail}
+                          onChange={(e) => handleInputChange("guardianEmail", e.target.value)}
+                          placeholder="email@responsavel.com"
+                          required
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="guardianPhone">Telefone do responsável *</Label>
+                        <MaskedInput
+                          mask="(00) 00000-0000"
+                          value={formData.guardianPhone}
+                          onChange={(value) => handleInputChange("guardianPhone", value)}
+                          id="guardianPhone"
+                          placeholder="(11) 99999-9999"
+                          required
+                        />
+                      </div>
+                    </div>
+
+                    <div className="flex items-start space-x-2 p-4 bg-gray-50 border border-gray-200 rounded-lg">
+                      <Checkbox
+                        id="guardianTerms"
+                        checked={formData.guardianAcceptTerms}
+                        onCheckedChange={(checked: boolean | "indeterminate") =>
+                          handleInputChange("guardianAcceptTerms", checked === true)
+                        }
+                        required
+                      />
+                      <Label htmlFor="guardianTerms" className="text-sm leading-relaxed">
+                        Declaro ser responsável legal pelo menor e autorizo o cadastro e uso da plataforma ProMed,
+                        responsabilizando-me pelas informações fornecidas e pelo acompanhamento das consultas agendadas.
+                      </Label>
+                    </div>
                   </div>
                 </>
               )}

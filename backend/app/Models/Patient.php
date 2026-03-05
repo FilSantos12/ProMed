@@ -20,6 +20,11 @@ class Patient extends Model
         'medications',
         'health_insurance',
         'insurance_number',
+        'is_minor',
+        'guardian_name',
+        'guardian_cpf',
+        'guardian_email',
+        'guardian_phone',
     ];
 
     /**
@@ -30,6 +35,9 @@ class Patient extends Model
         'insurance_number',
         'emergency_contact',
         'emergency_phone',
+        'guardian_cpf',
+        'guardian_email',
+        'guardian_phone',
     ];
 
     public function user()
