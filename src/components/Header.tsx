@@ -103,7 +103,7 @@ export function Header({ currentSection, onSectionChange }: HeaderProps) {
     ]
     : [
       { id: 'login', label: 'Login' },
-      { id: 'cadastro-profissional', label: 'Cadastro Médico' },
+      { id: 'seja-parceiro', label: 'Seja nosso Parceiro' },
       { id: 'cadastro-paciente', label: 'Cadastro Paciente' },
     ];
 

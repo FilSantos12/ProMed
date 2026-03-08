@@ -192,13 +192,13 @@ export function EspecialidadesPage({ onSectionChange, onBookDoctor }: Especialid
         </div>
 
         {/* Tabs */}
-        <Tabs defaultValue="especialidades" className="mb-12">
+        <Tabs defaultValue="medicos" className="mb-12">
           <TabsList className="mb-8">
-            <TabsTrigger value="especialidades">
-              Especialidades ({filteredEspecialidades.length})
-            </TabsTrigger>
             <TabsTrigger value="medicos">
               Médicos ({filteredDoctors.length})
+            </TabsTrigger>
+            <TabsTrigger value="especialidades">
+              Especialidades ({filteredEspecialidades.length})
             </TabsTrigger>
           </TabsList>
 

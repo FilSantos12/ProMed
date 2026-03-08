@@ -59,6 +59,7 @@ import {
   Doctor,
 } from "../services/appointmentService";
 import { LoadingSpinner } from "./ui/loading-spinner";
+import { ErrorModal } from "./ui/error-modal";
 
 // Mapa de ícones médicos (sincronizado com IconPicker)
 const ICON_MAP: Record<string, LucideIcon> = {
@@ -104,13 +105,11 @@ export function AgendamentosPage({
   // Estados para dados do backend
   const [specialties, setSpecialties] = useState<Specialty[]>([]);
   const [doctors, setDoctors] = useState<Doctor[]>([]);
-  const [availableDates, setAvailableDates] = useState<string[]>([]);
   const [availableSlots, setAvailableSlots] = useState<string[]>([]);
 
   // Estados de loading
   const [loading, setLoading] = useState(true);
   const [loadingDoctors, setLoadingDoctors] = useState(false);
-  const [loadingDates, setLoadingDates] = useState(false);
   const [loadingSlots, setLoadingSlots] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
@@ -132,6 +131,9 @@ export function AgendamentosPage({
 
   // Estado para modal de login/cadastro
   const [showAuthPrompt, setShowAuthPrompt] = useState(false);
+
+  // Estado para modal de sem disponibilidade
+  const [noSlotsModal, setNoSlotsModal] = useState({ open: false, title: '', message: '' });
 
   // ID de médico pendente de seleção (aguarda lista de médicos carregar)
   const [pendingDoctorId, setPendingDoctorId] = useState<string | null>(null);
@@ -181,18 +183,11 @@ export function AgendamentosPage({
     } else {
       setDoctors([]);
       setSelectedDoctor("");
+      setSelectedDate("");
+      setSelectedTime("");
+      setAvailableSlots([]);
     }
   }, [selectedSpecialty]);
-
-  // Carregar datas disponíveis quando médico for selecionado
-  useEffect(() => {
-    if (selectedDoctor) {
-      loadAvailableDates(parseInt(selectedDoctor));
-    } else {
-      setAvailableDates([]);
-      setSelectedDate("");
-    }
-  }, [selectedDoctor]);
 
   // Carregar horários quando médico e data forem selecionados
   useEffect(() => {
@@ -232,51 +227,6 @@ export function AgendamentosPage({
     }
   };
 
-  const loadAvailableDates = async (doctorId: number) => {
-    try {
-      setLoadingDates(true);
-
-      // Buscar todos os schedules disponíveis do médico
-      const schedules = await appointmentService.getDoctorSchedules(doctorId, {
-        available: true, // Usar booleano conforme esperado pelo tipo
-      });
-
-      // Extrair datas únicas e filtrar apenas datas futuras
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-
-      const schedulesWithDate = schedules.filter(
-        (schedule) => schedule.schedule_date,
-      );
-
-      // Extrair apenas a parte da data (YYYY-MM-DD) do formato ISO
-      const allDates = schedulesWithDate.map((schedule) => {
-        const dateStr = schedule.schedule_date!;
-        // Se vier no formato ISO (2026-01-02T00:00:00.000000Z), pegar só YYYY-MM-DD
-        return dateStr.split("T")[0];
-      });
-
-      const futureDates = allDates.filter((dateStr) => {
-        const scheduleDate = new Date(dateStr + "T00:00:00");
-        return scheduleDate >= today;
-      });
-
-      const uniqueDates = Array.from(new Set(futureDates)).sort();
-
-      setAvailableDates(uniqueDates);
-
-      if (uniqueDates.length === 0) {
-        toast.error("Este médico não possui datas disponíveis no momento");
-      }
-    } catch (err: any) {
-      console.error("Erro ao carregar datas disponíveis:", err);
-      toast.error("Erro ao carregar datas disponíveis");
-      setAvailableDates([]);
-    } finally {
-      setLoadingDates(false);
-    }
-  };
-
   const loadAvailableSlots = async () => {
     try {
       setLoadingSlots(true);
@@ -291,7 +241,11 @@ export function AgendamentosPage({
 
       if (schedules.length === 0) {
         setAvailableSlots([]);
-        toast.error("Nenhum horário disponível para esta data");
+        setNoSlotsModal({
+          open: true,
+          title: 'Médico sem agenda nesta data',
+          message: `O médico selecionado não possui agenda cadastrada para ${formatDateDisplay(dateStr)}.\n\nPor favor, escolha outra data ou outro médico.`,
+        });
         return;
       }
 
@@ -320,7 +274,11 @@ export function AgendamentosPage({
       setAvailableSlots(futureSlots);
 
       if (futureSlots.length === 0) {
-        toast.error("Todos os horários estão ocupados para esta data");
+        setNoSlotsModal({
+          open: true,
+          title: 'Horários esgotados',
+          message: `Todos os horários do dia ${formatDateDisplay(dateStr)} já estão ocupados para este médico.\n\nPor favor, escolha outra data ou outro médico.`,
+        });
       }
     } catch (err: any) {
       console.error("Erro ao carregar horários disponíveis:", err);
@@ -419,7 +377,6 @@ export function AgendamentosPage({
       email: user?.email || "",
       observations: "",
     });
-    setAvailableDates([]);
     setAvailableSlots([]);
   };
 
@@ -580,6 +537,13 @@ export function AgendamentosPage({
 
   return (
     <div className="min-h-screen bg-gray-50 py-12">
+      <ErrorModal
+        isOpen={noSlotsModal.open}
+        title={noSlotsModal.title}
+        message={noSlotsModal.message}
+        onClose={() => setNoSlotsModal({ open: false, title: '', message: '' })}
+      />
+
       <div className="container mx-auto px-4 max-w-4xl">
         {/* Header */}
         <div className="text-center mb-12">
@@ -606,7 +570,7 @@ export function AgendamentosPage({
 
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-6">
-              {/* Especialidade e Médico */}
+              {/* Especialidade e Data */}
               <div className="grid md:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="specialty">Especialidade *</Label>
@@ -630,6 +594,25 @@ export function AgendamentosPage({
                   </Select>
                 </div>
 
+                <div className="space-y-2">
+                  <Label htmlFor="date">Data da Consulta *</Label>
+                  <input
+                    id="date"
+                    type="date"
+                    value={selectedDate}
+                    onChange={(e) => setSelectedDate(e.target.value)}
+                    min={new Date().toISOString().split("T")[0]}
+                    disabled={!selectedSpecialty}
+                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                  />
+                  {!selectedSpecialty && (
+                    <p className="text-xs text-gray-500">Selecione uma especialidade primeiro</p>
+                  )}
+                </div>
+              </div>
+
+              {/* Médico e Horário */}
+              <div className="grid md:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="doctor">Médico *</Label>
                   <Select
@@ -667,63 +650,21 @@ export function AgendamentosPage({
                     </p>
                   )}
                 </div>
-              </div>
-
-              {/* Data e Horário */}
-              <div className="grid md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="date">Data da Consulta *</Label>
-                  <Select
-                    value={selectedDate}
-                    onValueChange={setSelectedDate}
-                    disabled={!selectedDoctor || loadingDates}
-                  >
-                    <SelectTrigger>
-                      <SelectValue
-                        placeholder={
-                          loadingDates
-                            ? "Carregando datas..."
-                            : !selectedDoctor
-                              ? "Selecione um médico primeiro"
-                              : availableDates.length === 0
-                                ? "Nenhuma data disponível"
-                                : "Selecione a data"
-                        }
-                      />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {availableDates.map((date) => (
-                        <SelectItem key={date} value={date}>
-                          <div className="flex items-center space-x-2">
-                            <CalendarIcon className="w-4 h-4" />
-                            <span>{formatDateDisplay(date)}</span>
-                          </div>
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  {loadingDates && (
-                    <div className="flex items-center space-x-2 text-sm text-gray-500">
-                      <LoadingSpinner size="sm" />
-                      <span>Buscando datas disponíveis...</span>
-                    </div>
-                  )}
-                </div>
 
                 <div className="space-y-2">
                   <Label htmlFor="time">Horário *</Label>
                   <Select
                     value={selectedTime}
                     onValueChange={setSelectedTime}
-                    disabled={!selectedDate || loadingSlots}
+                    disabled={!selectedDoctor || !selectedDate || loadingSlots}
                   >
                     <SelectTrigger>
                       <SelectValue
                         placeholder={
                           loadingSlots
                             ? "Carregando horários..."
-                            : !selectedDate
-                              ? "Selecione uma data primeiro"
+                            : !selectedDoctor || !selectedDate
+                              ? "Selecione médico e data primeiro"
                               : availableSlots.length === 0
                                 ? "Nenhum horário disponível"
                                 : "Selecione o horário"
