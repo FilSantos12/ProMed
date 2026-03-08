@@ -300,8 +300,7 @@ export function PatientArea({ onSectionChange }: PatientAreaProps) {
 
   const handleProceedToApplication = () => {
     setShowDoctorApplicationInfo(false);
-    // Redirecionar para a página de cadastro profissional existente
-    onSectionChange('cadastro-profissional');
+    onSectionChange('seja-parceiro');
   };
 
 
@@ -1133,7 +1132,7 @@ export function PatientArea({ onSectionChange }: PatientAreaProps) {
               className="flex items-center space-x-2 text-blue-600 border-blue-300 hover:bg-blue-50"
             >
               <Stethoscope className="w-4 h-4" />
-              <span>Solicitar Cadastro Médico</span>
+              <span>Seja um Parceiro</span>
             </Button>
           </div>
         </footer>
@@ -1149,7 +1148,10 @@ export function PatientArea({ onSectionChange }: PatientAreaProps) {
                 <div className="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center">
                   <Stethoscope className="w-6 h-6 text-blue-600" />
                 </div>
-                <h3 className="text-xl font-semibold text-gray-900">Cadastro de Médicos</h3>
+                <div>
+                  <h3 className="text-xl font-semibold text-gray-900">Seja um Parceiro ProMed</h3>
+                  <p className="text-sm text-gray-500">Cadastro para profissionais de saúde</p>
+                </div>
               </div>
               <button
                 onClick={() => setShowDoctorApplicationInfo(false)}
@@ -1161,37 +1163,42 @@ export function PatientArea({ onSectionChange }: PatientAreaProps) {
 
             <div className="space-y-4 mb-6">
               <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
-                <p className="text-sm text-blue-800 font-medium mb-2">
-                  ℹ️ Este formulário é destinado exclusivamente para médicos
+                <p className="text-sm text-blue-800 font-medium mb-1">
+                  Expanda sua atuação profissional
                 </p>
                 <p className="text-sm text-blue-700">
-                  Se você é um médico e deseja oferecer seus serviços na plataforma ProMed,
-                  você está no lugar certo!
+                  Junte-se à rede ProMed, gerencie sua agenda online e conecte-se a novos pacientes
+                  de forma simples e segura.
                 </p>
               </div>
 
               <div className="space-y-3">
-                <h4 className="font-semibold text-gray-900">Documentos necessários:</h4>
+                <h4 className="font-semibold text-gray-900">Documentos necessários para adesão:</h4>
                 <ul className="space-y-2 text-sm text-gray-700">
                   <li className="flex items-start space-x-2">
                     <CheckCircle className="w-5 h-5 text-green-600 mt-0.5 flex-shrink-0" />
-                    <span>Diploma de Medicina (PDF, JPG ou PNG)</span>
+                    <span>CRM ativo — documento frente e verso (PDF, JPG ou PNG)</span>
                   </li>
                   <li className="flex items-start space-x-2">
                     <CheckCircle className="w-5 h-5 text-green-600 mt-0.5 flex-shrink-0" />
-                    <span>Documento do CRM - frente e verso (PDF, JPG ou PNG)</span>
+                    <span>Diploma de graduação em Medicina (PDF, JPG ou PNG)</span>
                   </li>
                   <li className="flex items-start space-x-2">
                     <CheckCircle className="w-5 h-5 text-green-600 mt-0.5 flex-shrink-0" />
-                    <span>Documento de Identidade - RG ou CNH (PDF, JPG ou PNG)</span>
+                    <span>Documento de identidade válido — RG ou CNH (PDF, JPG ou PNG)</span>
+                  </li>
+                  <li className="flex items-start space-x-2">
+                    <CheckCircle className="w-5 h-5 text-green-600 mt-0.5 flex-shrink-0" />
+                    <span>Comprovante de especialização, quando aplicável</span>
                   </li>
                 </ul>
               </div>
 
               <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
                 <p className="text-sm text-yellow-800">
-                  <strong>Atenção:</strong> Sua solicitação será analisada pela equipe administrativa.
-                  Você receberá uma notificação por email quando houver uma resposta.
+                  <strong>Prazo de aprovação:</strong> Nossa equipe analisa cada solicitação
+                  em até <strong>1 a 3 dias úteis</strong>. Você será notificado por e-mail
+                  em cada etapa do processo.
                 </p>
               </div>
             </div>
@@ -1201,7 +1208,7 @@ export function PatientArea({ onSectionChange }: PatientAreaProps) {
                 onClick={handleProceedToApplication}
                 className="flex-1"
               >
-                Continuar com o Cadastro
+                Ver mais e criar cadastro
               </Button>
               <Button
                 onClick={() => setShowDoctorApplicationInfo(false)}
