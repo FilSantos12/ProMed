@@ -1,9 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Button } from './ui/button';
 import { Sheet, SheetContent, SheetTrigger, SheetTitle, SheetDescription } from './ui/sheet';
-import { Menu, LogOut, Stethoscope, User, Calendar, Shield, RefreshCw } from 'lucide-react';
+import { Menu, LogOut, Stethoscope, User, Calendar, Shield, RefreshCw, ChevronDown } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
-// import { ConfirmModal } from './ui/confirm-modal'; // ← COMENTADO
 import { useToast } from '../contexts/ToastContext';
 import userProfileService, { UserProfile } from '../services/userProfileService';
 import {
@@ -142,68 +141,92 @@ export function Header({ currentSection, onSectionChange }: HeaderProps) {
           </nav>
 
           {/* Desktop User Menu */}
-          <div className="hidden md:flex items-center space-x-4">
+          <div className="hidden md:flex items-center space-x-3">
             {isAuthenticated ? (
-              <div className="flex items-center space-x-4">
-                <span className="text-sm text-gray-700">Olá, {user?.name}</span>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" size="sm" className="flex items-center gap-2 px-4 w-auto" disabled={loadingProfiles}>
+                    {loadingProfiles ? (
+                      <RefreshCw className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <>
+                        <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center shrink-0">
+                          {(user?.active_role || user?.role) === 'admin' && <Shield className="w-4 h-4 text-blue-600" />}
+                          {(user?.active_role || user?.role) === 'doctor' && <Stethoscope className="w-4 h-4 text-blue-600" />}
+                          {(user?.active_role || user?.role) === 'patient' && <User className="w-4 h-4 text-blue-600" />}
+                        </div>
+                        <span className="text-sm font-medium">{user?.name}</span>
+                        <ChevronDown className="w-4 h-4 text-gray-400 shrink-0" />
+                      </>
+                    )}
+                  </Button>
+                </DropdownMenuTrigger>
 
-                {/* Profile Switcher - Only show if user has multiple profiles */}
-                {availableProfiles.length > 1 && (
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="outline" size="sm" className="flex items-center space-x-2" disabled={loadingProfiles}>
-                        {loadingProfiles ? (
-                          <RefreshCw className="w-4 h-4 animate-spin" />
-                        ) : (
-                          <>
-                            {(user?.active_role || user?.role) === 'admin' && <Shield className="w-4 h-4" />}
-                            {(user?.active_role || user?.role) === 'doctor' && <Stethoscope className="w-4 h-4" />}
-                            {(user?.active_role || user?.role) === 'patient' && <User className="w-4 h-4" />}
-                            <span className="text-xs">
-                              {(user?.active_role || user?.role) === 'admin' ? 'Admin' : (user?.active_role || user?.role) === 'doctor' ? 'Médico' : 'Paciente'}
-                            </span>
-                          </>
-                        )}
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuLabel>Trocar Perfil</DropdownMenuLabel>
+                <DropdownMenuContent align="end" className="w-56">
+                  {/* User info */}
+                  <div className="px-3 py-2 border-b">
+                    <p className="text-sm font-medium text-gray-900 truncate">{user?.name}</p>
+                    <p className="text-xs text-gray-500 capitalize">
+                      {(user?.active_role || user?.role) === 'admin' ? 'Administrador' : (user?.active_role || user?.role) === 'doctor' ? 'Médico' : 'Paciente'}
+                    </p>
+                  </div>
+
+                  {/* Areas */}
+                  <div className="py-1">
+                    {(user?.roles?.includes('admin') || user?.role === 'admin') && (
+                      <DropdownMenuItem onClick={() => handleNavClick('admin-area')} className={currentSection === 'admin-area' ? 'bg-blue-50' : ''}>
+                        <Shield className="w-4 h-4 mr-2 text-gray-500" />
+                        Administração
+                      </DropdownMenuItem>
+                    )}
+                    {(user?.roles?.includes('doctor') || user?.role === 'doctor') && (
+                      <DropdownMenuItem onClick={() => handleNavClick('doctor-area')} className={currentSection === 'doctor-area' ? 'bg-blue-50' : ''}>
+                        <Stethoscope className="w-4 h-4 mr-2 text-gray-500" />
+                        Área do Médico
+                      </DropdownMenuItem>
+                    )}
+                    {(user?.roles?.includes('patient') || user?.role === 'patient') && (
+                      <DropdownMenuItem onClick={() => handleNavClick('patient-area')} className={currentSection === 'patient-area' ? 'bg-blue-50' : ''}>
+                        <User className="w-4 h-4 mr-2 text-gray-500" />
+                        Área do Paciente
+                      </DropdownMenuItem>
+                    )}
+                    <DropdownMenuItem onClick={() => handleNavClick('agendamentos')} className={currentSection === 'agendamentos' ? 'bg-blue-50' : ''}>
+                      <Calendar className="w-4 h-4 mr-2 text-gray-500" />
+                      Agendamentos
+                    </DropdownMenuItem>
+                  </div>
+
+                  {/* Profile switcher */}
+                  {availableProfiles.length > 1 && (
+                    <>
                       <DropdownMenuSeparator />
+                      <DropdownMenuLabel className="text-xs text-gray-400 font-normal">Trocar perfil</DropdownMenuLabel>
                       {availableProfiles.map((profile) => (
                         <DropdownMenuItem
                           key={profile.role}
                           onClick={() => handleSwitchProfile(profile.role)}
-                          className={profile.is_active ? 'bg-blue-50' : ''}
+                          disabled={profile.is_active}
+                          className={profile.is_active ? 'opacity-50 cursor-default' : ''}
                         >
-                          <div className="flex items-center space-x-2">
-                            {profile.role === 'admin' && <Shield className="w-4 h-4" />}
-                            {profile.role === 'doctor' && <Stethoscope className="w-4 h-4" />}
-                            {profile.role === 'patient' && <User className="w-4 h-4" />}
-                            <span>{profile.name}</span>
-                            {profile.is_active && <span className="text-xs text-blue-600">(Ativo)</span>}
-                          </div>
+                          {profile.role === 'admin' && <Shield className="w-4 h-4 mr-2 text-gray-400" />}
+                          {profile.role === 'doctor' && <Stethoscope className="w-4 h-4 mr-2 text-gray-400" />}
+                          {profile.role === 'patient' && <User className="w-4 h-4 mr-2 text-gray-400" />}
+                          <span>{profile.name}</span>
+                          {profile.is_active && <span className="ml-auto text-xs text-blue-600">Ativo</span>}
                         </DropdownMenuItem>
                       ))}
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                )}
+                    </>
+                  )}
 
-                {userMenuItems.map((item) => {
-                  const Icon = item.icon;
-                  return (
-                    <Button
-                      key={item.id}
-                      variant={currentSection === item.id ? 'default' : 'ghost'}
-                      size="sm"
-                      onClick={() => handleNavClick(item.id)}
-                      className="flex items-center space-x-2"
-                    >
-                      {Icon && <Icon className="w-4 h-4" />}
-                      <span>{item.label}</span>
-                    </Button>
-                  );
-                })}
-              </div>
+                  {/* Logout */}
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={handleLogout} className="text-red-600 focus:text-red-600">
+                    <LogOut className="w-4 h-4 mr-2" />
+                    Sair
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             ) : (
               <div className="flex items-center space-x-2">
                 {userMenuItems.map((item) => (
