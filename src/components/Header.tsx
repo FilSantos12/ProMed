@@ -104,7 +104,7 @@ export function Header({ currentSection, onSectionChange }: HeaderProps) {
     : [
       { id: 'login', label: 'Login' },
       { id: 'seja-parceiro', label: 'Seja nosso Parceiro' },
-      { id: 'cadastro-paciente', label: 'Cadastro Paciente' },
+      { id: 'seja-paciente', label: 'Seja nosso Paciente' },
     ];
 
   const handleNavClick = (sectionId: string) => {

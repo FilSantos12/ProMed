@@ -16,6 +16,7 @@ import { AdminArea } from './components/AdminArea';
 import { CadastroPages } from './components/CadastroPages';
 import { ResetPasswordPage } from './components/ResetPasswordPage';
 import { SejaParceiro } from './components/SejaParceiro';
+import { SejaPaciente } from './components/SejaPaciente';
 import './utils/axiosConfig';
 
 function AppContent() {
@@ -112,6 +113,8 @@ function AppContent() {
             } : undefined}
           />
         );
+      case 'seja-paciente':
+        return <SejaPaciente onSectionChange={handleSectionChange} />;
       case 'cadastro-paciente':
         return <CadastroPages type="patient" onSectionChange={handleSectionChange} />;
       default:
