@@ -157,9 +157,12 @@ public function login(Request $request)
             'name' => 'required|string|max:255',
             'email' => 'required|string|email|max:255|unique:users',
             'password' => 'required|string|min:8|confirmed',
-            'cpf' => 'required|string|unique:users',
+            'is_foreigner' => 'nullable|boolean',
+            'cpf' => 'required_unless:is_foreigner,1|nullable|string|unique:users,cpf',
             'rg' => 'nullable|string|max:20',
-            'phone' => 'required|string',
+            'phone' => 'required_unless:is_foreigner,1|nullable|string',
+            'passport_number' => 'required_if:is_foreigner,1|nullable|string|max:50',
+            'passport_country' => 'required_if:is_foreigner,1|nullable|string|max:100',
             'birth_date' => 'required|date',
             'gender' => 'nullable|in:M,F,Masculino,Feminino,Outro',
             'role' => 'required|in:patient,doctor,admin',
@@ -205,13 +208,18 @@ public function login(Request $request)
             : [$request->role ?? 'patient'];
 
         // Criar usuário
+        $isForeigner = in_array($request->is_foreigner, ['1', 'true', true, 1], true) || $request->boolean('is_foreigner');
+
         $user = User::create([
             'name' => $request->name,
             'email' => $request->email,
             'password' => Hash::make($request->password),
-            'cpf' => $request->cpf,
-            'rg' => $request->rg,
-            'phone' => $request->phone,
+            'is_foreigner' => $isForeigner,
+            'cpf' => $isForeigner ? null : ($request->cpf ?: null),
+            'rg' => $isForeigner ? null : ($request->rg ?: null),
+            'phone' => $isForeigner ? ($request->phone ?: null) : $request->phone,
+            'passport_number' => $isForeigner ? $request->passport_number : null,
+            'passport_country' => $isForeigner ? $request->passport_country : null,
             'birth_date' => $request->birth_date,
             'gender' => $request->gender,
             'role' => $request->role ?? 'patient',

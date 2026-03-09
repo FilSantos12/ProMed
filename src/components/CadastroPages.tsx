@@ -96,7 +96,14 @@ export function CadastroPages({
     // Termos
     acceptTerms: false,
     acceptPrivacy: false,
+
+    // Estrangeiro
+    passportNumber: "",
+    passportCountry: "",
   });
+
+  // Estrangeiro
+  const [isForeigner, setIsForeigner] = useState(false);
 
   // Estados de controle
   const [loading, setLoading] = useState(false);
@@ -195,6 +202,22 @@ export function CadastroPages({
       }
     }
 
+    // Validação de estrangeiro
+    if (isForeigner) {
+      if (!formData.passportNumber.trim()) {
+        setErrorMessage("O número do passaporte é obrigatório.");
+        setShowErrorModal(true);
+        setLoading(false);
+        return;
+      }
+      if (!formData.passportCountry.trim()) {
+        setErrorMessage("O país de origem é obrigatório.");
+        setShowErrorModal(true);
+        setLoading(false);
+        return;
+      }
+    }
+
     // Validação dos termos
     if (!formData.acceptTerms || !formData.acceptPrivacy) {
       setErrorMessage(
@@ -220,7 +243,7 @@ export function CadastroPages({
         return;
       }
       if (!documents.rg_document) {
-        setErrorMessage("O documento de identidade (RG/CPF) é obrigatório.");
+        setErrorMessage(isForeigner ? "O passaporte é obrigatório." : "O documento de identidade (RG/CPF) é obrigatório.");
         setShowErrorModal(true);
         setLoading(false);
         return;
@@ -244,8 +267,14 @@ export function CadastroPages({
     formDataToSend.append("email", formData.email);
     formDataToSend.append("password", formData.password);
     formDataToSend.append("password_confirmation", formData.confirmPassword);
-    formDataToSend.append("cpf", formData.cpf);
-    formDataToSend.append("rg", formData.rg || "");
+    formDataToSend.append("is_foreigner", isForeigner ? "1" : "0");
+    if (isForeigner) {
+      formDataToSend.append("passport_number", formData.passportNumber);
+      formDataToSend.append("passport_country", formData.passportCountry);
+    } else {
+      formDataToSend.append("cpf", formData.cpf);
+      formDataToSend.append("rg", formData.rg || "");
+    }
     formDataToSend.append("phone", formData.phone);
     formDataToSend.append("birth_date", formData.birthDate);
     formDataToSend.append("gender", formData.gender || "Outro");
@@ -379,38 +408,81 @@ export function CadastroPages({
 
       let errorMsg = "Ocorreu um erro ao realizar o cadastro. Tente novamente.";
 
-      // Tratar erros específicos do backend
-      if (err.response?.data?.message) {
-        errorMsg = err.response.data.message;
-      }
-
       // Mostrar erros de validação do backend
       if (err.response?.data?.errors) {
         const errors = err.response.data.errors;
-        // Mapeamento manual (BACKUP)
+
+        // Estrangeiro: ignorar erros de CPF, RG e telefone obrigatórios vindos do backend
+        if (isForeigner) {
+          delete errors.cpf;
+          delete errors.rg;
+          delete errors.phone;
+        }
+
+        // Mapeamento de erros do backend para português
         const errorTranslations: { [key: string]: string } = {
-          "The cpf has already been taken.":
-            "Este CPF já está cadastrado no sistema.",
-          "The email has already been taken.":
-            "Este email já está cadastrado no sistema.",
-          "The rg has already been taken.":
-            "Este RG já está cadastrado no sistema.",
-          "The phone has already been taken.":
-            "Este telefone já está cadastrado no sistema.",
-          "The crm has already been taken.":
-            "Este CRM já está cadastrado no sistema.",
-          "The password confirmation does not match.":
-            "A confirmação de senha não confere.",
-          "The cpf field is required.": "O campo CPF é obrigatório.",
-          "The email field is required.": "O campo email é obrigatório.",
-          "The password field is required.": "O campo senha é obrigatório.",
-          "The crm state field is required when role is professional.":
-            "O campo estado do CRM é obrigatório para profissionais.",
-          "The crm document field is required when role is professional.":
-            "O comprovante de CRM é obrigatório.",
-          "The photo field is required when role is professional.":
-            "A foto 3x4 é obrigatória.",
+          // Unicidade
+          "The cpf has already been taken.": "Este CPF já está cadastrado no sistema.",
+          "The email has already been taken.": "Este e-mail já está cadastrado no sistema.",
+          "The rg has already been taken.": "Este RG já está cadastrado no sistema.",
+          "The phone has already been taken.": "Este telefone já está cadastrado no sistema.",
+          "The crm has already been taken.": "Este CRM já está cadastrado no sistema.",
+          "The passport number has already been taken.": "Este número de passaporte já está cadastrado no sistema.",
+          // Obrigatórios
+          "The name field is required.": "O nome completo é obrigatório.",
+          "The email field is required.": "O e-mail é obrigatório.",
+          "The password field is required.": "A senha é obrigatória.",
+          "The phone field is required.": "O telefone é obrigatório.",
+          "The cpf field is required.": "O CPF é obrigatório.",
+          "The rg field is required.": "O RG é obrigatório.",
+          "The birth date field is required.": "A data de nascimento é obrigatória.",
+          "The birth_date field is required.": "A data de nascimento é obrigatória.",
+          "The gender field is required.": "O gênero é obrigatório.",
+          "The crm field is required.": "O CRM é obrigatório.",
+          "The crm state field is required.": "O estado do CRM é obrigatório.",
+          "The specialty field is required.": "A especialidade é obrigatória.",
+          "The passport number field is required.": "O número do passaporte é obrigatório.",
+          "The passport country field is required.": "O país de origem é obrigatório.",
+          "The role field is required.": "O tipo de cadastro é obrigatório.",
+          // Condicionais profissional
+          "The crm state field is required when role is professional.": "O estado do CRM é obrigatório para profissionais.",
+          "The crm document field is required when role is professional.": "O comprovante de CRM é obrigatório.",
+          "The photo field is required when role is professional.": "A foto 3x4 é obrigatória.",
+          // Formato / tamanho
+          "The email field must be a valid email address.": "Informe um e-mail válido.",
+          "The password field must be at least 8 characters.": "A senha deve ter no mínimo 8 caracteres.",
+          "The password must be at least 8 characters.": "A senha deve ter no mínimo 8 caracteres.",
+          "The password confirmation does not match.": "A confirmação de senha não confere.",
+          "The password field confirmation does not match.": "A confirmação de senha não confere.",
+          "The cpf field must be 11 digits.": "O CPF deve ter 11 dígitos.",
+          "The cpf field format is invalid.": "Formato de CPF inválido.",
+          "The phone field must be a valid phone number.": "Número de telefone inválido.",
+          "The birth date field must be a valid date.": "Data de nascimento inválida.",
+          "The birth_date field must be a valid date.": "Data de nascimento inválida.",
+          "The graduation year field must be a number.": "O ano de formação deve ser um número.",
+          "The graduation_year field must be a number.": "O ano de formação deve ser um número.",
+          "The consultation price field must be a number.": "O valor da consulta deve ser numérico.",
+          "The consultation_price field must be a number.": "O valor da consulta deve ser numérico.",
+          "The name field must not be greater than 255 characters.": "O nome não pode ter mais de 255 caracteres.",
+          "The bio field must not be greater than 1000 characters.": "A biografia não pode ter mais de 1000 caracteres.",
+          // Arquivo
+          "The rg document field is required.": "O documento de identidade é obrigatório.",
+          "The rg_document field is required.": "O documento de identidade é obrigatório.",
+          "The diploma field is required.": "O diploma é obrigatório.",
+          "The crm document field is required.": "O comprovante de CRM é obrigatório.",
+          "The crm_document field is required.": "O comprovante de CRM é obrigatório.",
+          "The photo must be an image.": "A foto deve ser uma imagem (JPG, PNG).",
+          "The file size must not exceed 5MB.": "O arquivo não pode ultrapassar 5MB.",
         };
+
+        if (Object.keys(errors).length === 0) {
+          // Todos os erros eram de campos ignorados (ex: CPF/RG/telefone para estrangeiros)
+          // Cadastro pode ter falhado por outro motivo — mostrar mensagem genérica
+          setErrorMessage("Ocorreu um erro ao realizar o cadastro. Verifique os dados e tente novamente.");
+          setShowErrorModal(true);
+          setLoading(false);
+          return;
+        }
 
         const firstErrorKey = Object.keys(errors)[0];
         const firstErrorArray = errors[firstErrorKey];
@@ -418,8 +490,22 @@ export function CadastroPages({
           ? firstErrorArray[0]
           : firstErrorArray;
 
-        // Tentar traduzir, se não encontrar usa a mensagem original
-        errorMsg = errorTranslations[firstErrorMessage] || firstErrorMessage;
+        // Tentar traduzir pelo mapeamento exato; se não encontrar, usar tradução genérica por padrão
+        if (errorTranslations[firstErrorMessage]) {
+          errorMsg = errorTranslations[firstErrorMessage];
+        } else if (firstErrorMessage.includes("has already been taken")) {
+          errorMsg = "Este valor já está em uso. Por favor, utilize outro.";
+        } else if (firstErrorMessage.includes("field is required")) {
+          errorMsg = "Há campos obrigatórios não preenchidos. Verifique o formulário.";
+        } else if (firstErrorMessage.includes("must be at least")) {
+          errorMsg = "Um ou mais campos não atendem ao tamanho mínimo exigido.";
+        } else if (firstErrorMessage.includes("must be a valid email")) {
+          errorMsg = "Informe um e-mail válido.";
+        } else if (firstErrorMessage.includes("does not match")) {
+          errorMsg = "A confirmação de senha não confere.";
+        } else {
+          errorMsg = firstErrorMessage;
+        }
       }
 
       setErrorMessage(errorMsg);
@@ -601,6 +687,24 @@ export function CadastroPages({
                   <span>Dados Pessoais</span>
                 </h3>
 
+                {/* Checkbox Estrangeiro */}
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="isForeigner"
+                    checked={isForeigner}
+                    onCheckedChange={(checked) => {
+                      setIsForeigner(!!checked);
+                      handleInputChange("cpf", "");
+                      handleInputChange("rg", "");
+                      handleInputChange("passportNumber", "");
+                      handleInputChange("passportCountry", "");
+                    }}
+                  />
+                  <Label htmlFor="isForeigner" className="cursor-pointer font-normal text-gray-700">
+                    Sou estrangeiro (não possuo CPF brasileiro)
+                  </Label>
+                </div>
+
                 <div className="grid md:grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="name">Nome Completo *</Label>
@@ -620,43 +724,70 @@ export function CadastroPages({
                       }
                     />
                   </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="cpf">CPF *</Label>
-                    <MaskedInput
-                      mask="000.000.000-00"
-                      value={formData.cpf}
-                      onChange={(value) => handleInputChange("cpf", value)}
-                      id="cpf"
-                      placeholder="000.000.000-00"
-                      required
-                      disabled={isFieldPrefilled("cpf")}
-                      className={
-                        isFieldPrefilled("cpf")
-                          ? "bg-gray-100 cursor-not-allowed"
-                          : ""
-                      }
-                    />
-                  </div>
+                  {!isForeigner ? (
+                    <div className="space-y-2">
+                      <Label htmlFor="cpf">CPF *</Label>
+                      <MaskedInput
+                        mask="000.000.000-00"
+                        value={formData.cpf}
+                        onChange={(value) => handleInputChange("cpf", value)}
+                        id="cpf"
+                        placeholder="000.000.000-00"
+                        required
+                        disabled={isFieldPrefilled("cpf")}
+                        className={
+                          isFieldPrefilled("cpf")
+                            ? "bg-gray-100 cursor-not-allowed"
+                            : ""
+                        }
+                      />
+                    </div>
+                  ) : (
+                    <div className="space-y-2">
+                      <Label htmlFor="passportNumber">Número do Passaporte *</Label>
+                      <Input
+                        id="passportNumber"
+                        value={formData.passportNumber}
+                        onChange={(e) => handleInputChange("passportNumber", e.target.value)}
+                        placeholder="Ex: AB123456"
+                        required
+                        maxLength={20}
+                      />
+                    </div>
+                  )}
                 </div>
 
                 <div className="grid md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="rg">RG *</Label>
-                    <MaskedInput
-                      mask="00.000.000-0"
-                      value={formData.rg}
-                      onChange={(value) => handleInputChange("rg", value)}
-                      id="rg"
-                      placeholder="00.000.000-0"
-                      required
-                      disabled={isFieldPrefilled("rg")}
-                      className={
-                        isFieldPrefilled("rg")
-                          ? "bg-gray-100 cursor-not-allowed"
-                          : ""
-                      }
-                    />
-                  </div>
+                  {!isForeigner ? (
+                    <div className="space-y-2">
+                      <Label htmlFor="rg">RG *</Label>
+                      <MaskedInput
+                        mask="00.000.000-0"
+                        value={formData.rg}
+                        onChange={(value) => handleInputChange("rg", value)}
+                        id="rg"
+                        placeholder="00.000.000-0"
+                        required
+                        disabled={isFieldPrefilled("rg")}
+                        className={
+                          isFieldPrefilled("rg")
+                            ? "bg-gray-100 cursor-not-allowed"
+                            : ""
+                        }
+                      />
+                    </div>
+                  ) : (
+                    <div className="space-y-2">
+                      <Label htmlFor="passportCountry">País de Origem *</Label>
+                      <Input
+                        id="passportCountry"
+                        value={formData.passportCountry}
+                        onChange={(e) => handleInputChange("passportCountry", e.target.value)}
+                        placeholder="Ex: Estados Unidos"
+                        required
+                      />
+                    </div>
+                  )}
 
                   <div className="space-y-2">
                     <Label htmlFor="birthDate">Data de Nascimento *</Label>
@@ -687,21 +818,31 @@ export function CadastroPages({
 
                 <div className="grid md:grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="phone">Telefone *</Label>
-                    <MaskedInput
-                      mask="(00) 00000-0000"
-                      value={formData.phone}
-                      onChange={(value) => handleInputChange("phone", value)}
-                      id="phone"
-                      placeholder="(11) 99999-9999"
-                      required
-                      disabled={isFieldPrefilled("phone")}
-                      className={
-                        isFieldPrefilled("phone")
-                          ? "bg-gray-100 cursor-not-allowed"
-                          : ""
-                      }
-                    />
+                    <Label htmlFor="phone">
+                      Telefone {!isForeigner && "*"}
+                      {isForeigner && <span className="text-sm font-normal text-gray-400 ml-1">(opcional)</span>}
+                    </Label>
+                    {isForeigner ? (
+                      <Input
+                        id="phone"
+                        value={formData.phone}
+                        onChange={(e) => handleInputChange("phone", e.target.value)}
+                        placeholder="+1 (555) 000-0000"
+                        disabled={isFieldPrefilled("phone")}
+                        className={isFieldPrefilled("phone") ? "bg-gray-100 cursor-not-allowed" : ""}
+                      />
+                    ) : (
+                      <MaskedInput
+                        mask="(00) 00000-0000"
+                        value={formData.phone}
+                        onChange={(value) => handleInputChange("phone", value)}
+                        id="phone"
+                        placeholder="(11) 99999-9999"
+                        required
+                        disabled={isFieldPrefilled("phone")}
+                        className={isFieldPrefilled("phone") ? "bg-gray-100 cursor-not-allowed" : ""}
+                      />
+                    )}
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="gender">Gênero *</Label>
@@ -857,12 +998,12 @@ export function CadastroPages({
               <div className="space-y-4">
                 <h3 className="text-lg font-semibold text-gray-900 flex items-center space-x-2">
                   <Mail className="w-5 h-5 text-blue-600" />
-                  <span>Endereço</span>
+                  <span>Endereço <span className="text-sm font-normal text-gray-400">(opcional)</span></span>
                 </h3>
 
                 <div className="grid md:grid-cols-3 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="cep">CEP *</Label>
+                    <Label htmlFor="cep">CEP</Label>
                     <div className="relative">
                       <MaskedInput
                         mask="00000-000"
@@ -870,7 +1011,6 @@ export function CadastroPages({
                         onChange={(value) => handleInputChange("cep", value)}
                         id="cep"
                         placeholder="00000-000"
-                        required
                       />
                       {loadingCep && (
                         <div className="absolute right-3 top-1/2 -translate-y-1/2">
@@ -883,7 +1023,7 @@ export function CadastroPages({
                     )}
                   </div>
                   <div className="space-y-2 md:col-span-2">
-                    <Label htmlFor="address">Endereço *</Label>
+                    <Label htmlFor="address">Endereço</Label>
                     <Input
                       id="address"
                       value={formData.address}
@@ -891,14 +1031,13 @@ export function CadastroPages({
                         handleInputChange("address", e.target.value)
                       }
                       placeholder="Rua, Avenida, etc."
-                      required
                     />
                   </div>
                 </div>
 
                 <div className="grid md:grid-cols-4 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="number">Número *</Label>
+                    <Label htmlFor="number">Número</Label>
                     <Input
                       id="number"
                       value={formData.number}
@@ -906,7 +1045,6 @@ export function CadastroPages({
                         handleInputChange("number", e.target.value)
                       }
                       placeholder="123"
-                      required
                     />
                   </div>
                   <div className="space-y-2">
@@ -921,7 +1059,7 @@ export function CadastroPages({
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="neighborhood">Bairro *</Label>
+                    <Label htmlFor="neighborhood">Bairro</Label>
                     <Input
                       id="neighborhood"
                       value={formData.neighborhood}
@@ -929,11 +1067,10 @@ export function CadastroPages({
                         handleInputChange("neighborhood", e.target.value)
                       }
                       placeholder="Nome do bairro"
-                      required
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="state">Estado *</Label>
+                    <Label htmlFor="state">Estado</Label>
                     <Select
                       value={formData.state}
                       onValueChange={(value: string) =>
@@ -955,13 +1092,12 @@ export function CadastroPages({
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="city">Cidade *</Label>
+                  <Label htmlFor="city">Cidade</Label>
                   <Input
                     id="city"
                     value={formData.city}
                     onChange={(e) => handleInputChange("city", e.target.value)}
                     placeholder="Nome da cidade"
-                    required
                   />
                 </div>
               </div>
@@ -1336,7 +1472,7 @@ export function CadastroPages({
                         className="flex items-center space-x-2"
                       >
                         <FileText className="w-4 h-4" />
-                        <span>RG ou CPF (opcional)</span>
+                        <span>{isForeigner ? "Passaporte (opcional)" : "RG ou CPF (opcional)"}</span>
                       </Label>
                       <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 hover:border-blue-500 transition-colors">
                         <input

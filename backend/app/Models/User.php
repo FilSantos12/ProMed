@@ -25,6 +25,9 @@ class User extends Authenticatable
         'cpf',
         'rg',
         'phone',
+        'is_foreigner',
+        'passport_number',
+        'passport_country',
         'birth_date',
         'gender',
         'cep',
@@ -50,6 +53,7 @@ class User extends Authenticatable
         'email_verified_at' => 'datetime',
         'birth_date' => 'date',
         'is_active' => 'boolean',
+        'is_foreigner' => 'boolean',
         'password' => 'hashed',
         'roles' => 'array',
     ];
