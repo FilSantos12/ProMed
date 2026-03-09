@@ -105,6 +105,14 @@ class AppointmentService {
     return response.data;
   }
 
+  // Buscar todos os schedules de uma data (sem filtro por médico)
+  async getSchedulesByDate(date: string): Promise<DoctorSchedule[]> {
+    const response = await api.get('/schedules', {
+      params: { schedule_date: date, available: true },
+    });
+    return response.data;
+  }
+
   // Buscar slots disponíveis para um horário específico
   async getAvailableSlots(scheduleId: number, date: string): Promise<AvailableSlots> {
     const response = await api.get(`/schedules/${scheduleId}/slots`, {

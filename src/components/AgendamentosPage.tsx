@@ -60,6 +60,7 @@ import {
 } from "../services/appointmentService";
 import { LoadingSpinner } from "./ui/loading-spinner";
 import { ErrorModal } from "./ui/error-modal";
+import { Calendar } from "./ui/calendar";
 
 // Mapa de ícones médicos (sincronizado com IconPicker)
 const ICON_MAP: Record<string, LucideIcon> = {
@@ -104,12 +105,15 @@ export function AgendamentosPage({
 
   // Estados para dados do backend
   const [specialties, setSpecialties] = useState<Specialty[]>([]);
-  const [doctors, setDoctors] = useState<Doctor[]>([]);
+  const [allDoctors, setAllDoctors] = useState<Doctor[]>([]);  // lista completa da especialidade
+  const [doctors, setDoctors] = useState<Doctor[]>([]);         // lista filtrada (exibida)
+  const [availableDates, setAvailableDates] = useState<string[]>([]);
   const [availableSlots, setAvailableSlots] = useState<string[]>([]);
 
   // Estados de loading
   const [loading, setLoading] = useState(true);
   const [loadingDoctors, setLoadingDoctors] = useState(false);
+  const [loadingDates, setLoadingDates] = useState(false);
   const [loadingSlots, setLoadingSlots] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
@@ -176,20 +180,44 @@ export function AgendamentosPage({
     }
   }, [user]);
 
-  // Carregar médicos quando especialidade for selecionada
+  // Especialidade → carrega médicos, reseta tudo
   useEffect(() => {
     if (selectedSpecialty) {
       loadDoctors(parseInt(selectedSpecialty));
     } else {
+      setAllDoctors([]);
       setDoctors([]);
       setSelectedDoctor("");
       setSelectedDate("");
       setSelectedTime("");
+      setAvailableDates([]);
       setAvailableSlots([]);
     }
   }, [selectedSpecialty]);
 
-  // Carregar horários quando médico e data forem selecionados
+  // Médico selecionado → carrega datas disponíveis, reseta data/hora/slots
+  useEffect(() => {
+    setSelectedDate("");
+    setSelectedTime("");
+    setAvailableDates([]);
+    setAvailableSlots([]);
+    if (selectedDoctor) {
+      loadAvailableDates(parseInt(selectedDoctor));
+    }
+  }, [selectedDoctor]);
+
+  // Data selecionada sem médico → filtra médicos disponíveis naquela data
+  useEffect(() => {
+    if (!selectedDoctor) {
+      if (selectedDate && selectedSpecialty) {
+        filterDoctorsByDate(selectedDate);
+      } else {
+        setDoctors(allDoctors);
+      }
+    }
+  }, [selectedDate]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Médico + Data → carrega slots
   useEffect(() => {
     if (selectedDoctor && selectedDate) {
       loadAvailableSlots();
@@ -215,13 +243,56 @@ export function AgendamentosPage({
   const loadDoctors = async (specialtyId: number) => {
     try {
       setLoadingDoctors(true);
-      const data = await appointmentService.getDoctors({
-        specialty_id: specialtyId,
-      });
+      const data = await appointmentService.getDoctors({ specialty_id: specialtyId });
+      setAllDoctors(data);
       setDoctors(data);
+      if (data.length === 0) {
+        setNoSlotsModal({
+          open: true,
+          title: 'Nenhum médico disponível',
+          message: 'Não há médicos disponíveis para esta especialidade no momento.\n\nTente outra especialidade ou entre em contato conosco.',
+        });
+      }
     } catch (err: any) {
       console.error("Erro ao carregar médicos:", err);
       toast.error("Erro ao carregar médicos");
+    } finally {
+      setLoadingDoctors(false);
+    }
+  };
+
+  const loadAvailableDates = async (doctorId: number) => {
+    try {
+      setLoadingDates(true);
+      const schedules = await appointmentService.getDoctorSchedules(doctorId, { available: true });
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const dates = Array.from(
+        new Set(
+          schedules
+            .filter((s) => s.schedule_date)
+            .map((s) => s.schedule_date!.split("T")[0])
+            .filter((d) => new Date(d + "T00:00:00") >= today)
+        )
+      ).sort();
+      setAvailableDates(dates);
+    } catch (err: any) {
+      console.error("Erro ao carregar datas disponíveis:", err);
+      setAvailableDates([]);
+    } finally {
+      setLoadingDates(false);
+    }
+  };
+
+  const filterDoctorsByDate = async (date: string) => {
+    try {
+      setLoadingDoctors(true);
+      const schedules = await appointmentService.getSchedulesByDate(date);
+      const availableIds = new Set(schedules.map((s) => s.doctor_id));
+      setDoctors(allDoctors.filter((d) => availableIds.has(d.id)));
+    } catch (err: any) {
+      console.error("Erro ao filtrar médicos por data:", err);
+      setDoctors(allDoctors);
     } finally {
       setLoadingDoctors(false);
     }
@@ -377,6 +448,7 @@ export function AgendamentosPage({
       email: user?.email || "",
       observations: "",
     });
+    setAvailableDates([]);
     setAvailableSlots([]);
   };
 
@@ -570,124 +642,158 @@ export function AgendamentosPage({
 
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-6">
-              {/* Especialidade e Data */}
-              <div className="grid md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="specialty">Especialidade *</Label>
-                  <Select
-                    value={selectedSpecialty}
-                    onValueChange={setSelectedSpecialty}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Selecione a especialidade" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {specialties.map((spec) => (
-                        <SelectItem key={spec.id} value={spec.id.toString()}>
-                          <div className="flex items-center gap-2">
-                            {getSpecialtyIcon(spec.icon)}
-                            <span>{spec.name}</span>
-                          </div>
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="date">Data da Consulta *</Label>
-                  <input
-                    id="date"
-                    type="date"
-                    value={selectedDate}
-                    onChange={(e) => setSelectedDate(e.target.value)}
-                    min={new Date().toISOString().split("T")[0]}
-                    disabled={!selectedSpecialty}
-                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                  />
-                  {!selectedSpecialty && (
-                    <p className="text-xs text-gray-500">Selecione uma especialidade primeiro</p>
-                  )}
-                </div>
+              {/* Especialidade */}
+              <div className="space-y-2">
+                <Label htmlFor="specialty">Especialidade *</Label>
+                <Select
+                  value={selectedSpecialty}
+                  onValueChange={setSelectedSpecialty}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione a especialidade" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {specialties.map((spec) => (
+                      <SelectItem key={spec.id} value={spec.id.toString()}>
+                        <div className="flex items-center gap-2">
+                          {getSpecialtyIcon(spec.icon)}
+                          <span>{spec.name}</span>
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
 
-              {/* Médico e Horário */}
-              <div className="grid md:grid-cols-2 gap-4">
+              {/* Calendário + Médico/Horário */}
+              <div className="grid md:grid-cols-2 gap-6 items-start">
+                {/* Calendário */}
                 <div className="space-y-2">
-                  <Label htmlFor="doctor">Médico *</Label>
-                  <Select
-                    value={selectedDoctor}
-                    onValueChange={setSelectedDoctor}
-                    disabled={!selectedSpecialty || loadingDoctors}
-                  >
-                    <SelectTrigger>
-                      <SelectValue
-                        placeholder={
-                          loadingDoctors
-                            ? "Carregando..."
-                            : !selectedSpecialty
-                              ? "Selecione uma especialidade primeiro"
-                              : doctors.length === 0
-                                ? "Nenhum médico disponível"
-                                : "Selecione o médico"
+                  <Label>Data da Consulta *</Label>
+                  {!selectedSpecialty ? (
+                    <div className="flex items-center justify-center h-48 border rounded-md bg-gray-50">
+                      <p className="text-sm text-gray-400">Selecione uma especialidade primeiro</p>
+                    </div>
+                  ) : loadingDates ? (
+                    <div className="flex items-center justify-center h-48 border rounded-md bg-gray-50 space-x-2">
+                      <LoadingSpinner size="sm" />
+                      <span className="text-sm text-gray-500">Buscando datas disponíveis...</span>
+                    </div>
+                  ) : (
+                    <Calendar
+                      mode="single"
+                      selected={selectedDate ? new Date(selectedDate + 'T12:00:00') : undefined}
+                      onSelect={(date) => {
+                        if (date) {
+                          const y = date.getFullYear();
+                          const m = String(date.getMonth() + 1).padStart(2, '0');
+                          const d = String(date.getDate()).padStart(2, '0');
+                          setSelectedDate(`${y}-${m}-${d}`);
+                        } else {
+                          setSelectedDate('');
                         }
-                      />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {doctors.map((doc) => (
-                        <SelectItem key={doc.id} value={doc.id.toString()}>
-                          {doc.user.name} - CRM {doc.crm}/{doc.crm_state}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  {selectedDoctor && getSelectedDoctorInfo() && (
-                    <p className="text-sm text-gray-600">
-                      Valor da consulta: R${" "}
-                      {(
-                        Number(getSelectedDoctorInfo()?.consultation_price) || 0
-                      ).toFixed(2)}
+                      }}
+                      disabled={(date) => {
+                        const today = new Date();
+                        today.setHours(0, 0, 0, 0);
+                        if (date < today) return true;
+                        if (selectedDoctor && availableDates.length > 0) {
+                          const str = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+                          return !availableDates.includes(str);
+                        }
+                        return false;
+                      }}
+                      className="rounded-md border w-full"
+                    />
+                  )}
+                  {selectedDate && !selectedDoctor && !loadingDoctors && (
+                    <p className="text-xs text-blue-600">
+                      {doctors.length} médico{doctors.length !== 1 ? "s" : ""} disponível{doctors.length !== 1 ? "is" : ""} nesta data
                     </p>
+                  )}
+                  {selectedDoctor && availableDates.length === 0 && !loadingDates && selectedSpecialty && (
+                    <p className="text-xs text-amber-600">Nenhuma data disponível para este médico</p>
                   )}
                 </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="time">Horário *</Label>
-                  <Select
-                    value={selectedTime}
-                    onValueChange={setSelectedTime}
-                    disabled={!selectedDoctor || !selectedDate || loadingSlots}
-                  >
-                    <SelectTrigger>
-                      <SelectValue
-                        placeholder={
-                          loadingSlots
-                            ? "Carregando horários..."
-                            : !selectedDoctor || !selectedDate
-                              ? "Selecione médico e data primeiro"
-                              : availableSlots.length === 0
-                                ? "Nenhum horário disponível"
-                                : "Selecione o horário"
-                        }
-                      />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {availableSlots.map((time) => (
-                        <SelectItem key={time} value={time}>
-                          <div className="flex items-center space-x-2">
-                            <Clock className="w-4 h-4" />
-                            <span>{time}</span>
-                          </div>
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  {loadingSlots && (
-                    <div className="flex items-center space-x-2 text-sm text-gray-500">
-                      <LoadingSpinner size="sm" />
-                      <span>Buscando horários disponíveis...</span>
-                    </div>
-                  )}
+                {/* Médico e Horário */}
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="doctor">Médico *</Label>
+                    <Select
+                      value={selectedDoctor}
+                      onValueChange={setSelectedDoctor}
+                      disabled={!selectedSpecialty || loadingDoctors}
+                    >
+                      <SelectTrigger>
+                        <SelectValue
+                          placeholder={
+                            loadingDoctors
+                              ? "Carregando..."
+                              : !selectedSpecialty
+                                ? "Selecione uma especialidade primeiro"
+                                : doctors.length === 0
+                                  ? "Nenhum médico disponível"
+                                  : "Selecione o médico"
+                          }
+                        />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {doctors.map((doc) => (
+                          <SelectItem key={doc.id} value={doc.id.toString()}>
+                            {doc.user.name} - CRM {doc.crm}/{doc.crm_state}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    {selectedDoctor && getSelectedDoctorInfo() && (
+                      <p className="text-sm text-gray-600">
+                        Valor da consulta: R${" "}
+                        {(
+                          Number(getSelectedDoctorInfo()?.consultation_price) || 0
+                        ).toFixed(2)}
+                      </p>
+                    )}
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="time">Horário *</Label>
+                    <Select
+                      value={selectedTime}
+                      onValueChange={setSelectedTime}
+                      disabled={!selectedDoctor || !selectedDate || loadingSlots}
+                    >
+                      <SelectTrigger>
+                        <SelectValue
+                          placeholder={
+                            loadingSlots
+                              ? "Carregando horários..."
+                              : !selectedDoctor || !selectedDate
+                                ? "Selecione médico e data primeiro"
+                                : availableSlots.length === 0
+                                  ? "Nenhum horário disponível"
+                                  : "Selecione o horário"
+                          }
+                        />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {availableSlots.map((time) => (
+                          <SelectItem key={time} value={time}>
+                            <div className="flex items-center space-x-2">
+                              <Clock className="w-4 h-4" />
+                              <span>{time}</span>
+                            </div>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    {loadingSlots && (
+                      <div className="flex items-center space-x-2 text-sm text-gray-500">
+                        <LoadingSpinner size="sm" />
+                        <span>Buscando horários disponíveis...</span>
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
 
