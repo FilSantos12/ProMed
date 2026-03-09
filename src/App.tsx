@@ -51,6 +51,16 @@ function AppContent() {
     }
   };
 
+  const PROTECTED_SECTIONS = ['patient-area', 'doctor-area', 'admin-area'];
+
+  const handleProtectedSectionChange = (section: string) => {
+    if (PROTECTED_SECTIONS.includes(section) && !user) {
+      handleSectionChange('login');
+    } else {
+      handleSectionChange(section);
+    }
+  };
+
   // Função auxiliar para formatar a data do backend para o formato do input (yyyy-MM-dd)
   const formatDateForInput = (dateString: string | undefined) => {
     if (!dateString) return '';
@@ -161,15 +171,16 @@ function AppContent() {
               <div>
                 <h4 className="font-semibold mb-4">Pacientes</h4>
                 <ul className="space-y-2 text-sm text-gray-400">
-                  <li><button onClick={() => handleSectionChange('cadastro-paciente')} className="hover:text-white">Cadastro</button></li>
-                  <li><button onClick={() => handleSectionChange('login')} className="hover:text-white">Área do Paciente</button></li>
+                  <li><button onClick={() => handleSectionChange('seja-paciente')} className="hover:text-white">Cadastro</button></li>
+                  <li><button onClick={() => handleProtectedSectionChange('patient-area')} className="hover:text-white">Área do Paciente</button></li>
                 </ul>
               </div>
 
               <div>
-                <h4 className="font-semibold mb-4">Contato</h4>
+                <h4 className="font-semibold mb-4">Médicos</h4>
                 <ul className="space-y-2 text-sm text-gray-400">
-                  <li>contato@promed.com</li>
+                  <li><button onClick={() => handleSectionChange('seja-parceiro')} className="hover:text-white">Cadastro</button></li>
+                  <li><button onClick={() => handleProtectedSectionChange('doctor-area')} className="hover:text-white">Área do Médico</button></li>
                 </ul>
               </div>
             </div>

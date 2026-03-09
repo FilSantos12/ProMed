@@ -207,8 +207,22 @@ export function EspecialidadesPage({ onSectionChange, onBookDoctor }: Especialid
             {filteredEspecialidades.length === 0 ? (
               <div className="text-center py-16">
                 <Stethoscope className="w-16 h-16 mx-auto mb-4 text-gray-300" />
-                <h3 className="text-xl font-semibold text-gray-900 mb-2">Nenhuma especialidade encontrada</h3>
-                <Button onClick={clearFilters} className="mt-4">Limpar Filtros</Button>
+                {searchTerm || selectedSpecialty ? (
+                  <>
+                    <h3 className="text-xl font-semibold text-gray-900 mb-2">Nenhuma especialidade encontrada</h3>
+                    <p className="text-gray-500 mb-4">Tente ajustar os filtros da busca.</p>
+                    <Button onClick={clearFilters}>Limpar Filtros</Button>
+                  </>
+                ) : (
+                  <>
+                    <h3 className="text-xl font-semibold text-gray-900 mb-2">Nenhuma especialidade disponível no momento</h3>
+                    <p className="text-gray-500 mb-4">
+                      No momento não há especialidades com horários disponíveis.<br />
+                      Entre em contato ou tente novamente mais tarde.
+                    </p>
+                    <Button onClick={() => onSectionChange('contato')}>Entrar em Contato</Button>
+                  </>
+                )}
               </div>
             ) : (
               <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
