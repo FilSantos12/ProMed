@@ -12,6 +12,7 @@ use App\Http\Controllers\Api\DashboardController;
 use App\Http\Controllers\Api\DoctorProfileController;
 use App\Http\Controllers\Api\PatientProfileController;
 use App\Http\Controllers\Api\AdvertisementController;
+use App\Http\Controllers\Api\CarouselSlideController;
 
 /*
 |--------------------------------------------------------------------------
@@ -46,7 +47,9 @@ Route::prefix('v1')->group(function () {
     Route::get('/doctors', [DoctorController::class, 'index']);
     Route::get('/doctors/{id}', [DoctorController::class, 'show']);
 
-    // Anúncios - para médicos autenticados (rota protegida abaixo)
+    // Carrossel - PÚBLICO (usado na HomePage)
+    Route::get('/carousel-slides', [CarouselSlideController::class, 'index']);
+
     // Horários - PÚBLICO (para visualização em agendamentos)
     Route::get('/schedules', [ScheduleController::class, 'index']);
     Route::get('/schedules/{id}', [ScheduleController::class, 'show']);
@@ -154,6 +157,15 @@ Route::middleware('auth:sanctum')->prefix('v1')->group(function () {
         Route::get('/specialties/{id}', [SpecialtyController::class, 'show']); // Ver detalhes
         Route::put('/specialties/{id}', [SpecialtyController::class, 'update']); // Editar
         Route::delete('/specialties/{id}', [SpecialtyController::class, 'destroy']); // Deletar
+
+        // ========================================
+        // CAROUSEL SLIDES (Admin)
+        // ========================================
+        Route::get('/carousel-slides', [CarouselSlideController::class, 'adminIndex']);
+        Route::post('/carousel-slides', [CarouselSlideController::class, 'store']);
+        Route::put('/carousel-slides/{id}', [CarouselSlideController::class, 'update']);
+        Route::delete('/carousel-slides/{id}', [CarouselSlideController::class, 'destroy']);
+        Route::patch('/carousel-slides/{id}/toggle-status', [CarouselSlideController::class, 'toggleStatus']);
 
         // ========================================
         // ADVERTISEMENTS (Admin)

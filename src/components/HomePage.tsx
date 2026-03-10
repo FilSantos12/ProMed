@@ -4,6 +4,31 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious, type CarouselApi } from './ui/carousel';
 import { ImageWithFallback } from './figma/ImageWithFallback';
 import { Calendar, Clock, MapPin, Phone, Shield, Users, Award, Heart } from 'lucide-react';
+import carouselService, { CarouselSlide } from '../services/carouselService';
+
+const FALLBACK_SLIDES: CarouselSlide[] = [
+  {
+    id: 0, order: 0, is_active: true, link_url: null, created_at: '', updated_at: '',
+    url: 'https://images.unsplash.com/photo-1631217868264-e5b90bb7e133?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxkb2N0b3IlMjBwYXRpZW50JTIwY29uc3VsdGF0aW9ufGVufDF8fHx8MTc2MDY0Njc2Nnww&ixlib=rb-4.1.0&q=80&w=1080',
+    image_url: 'https://images.unsplash.com/photo-1631217868264-e5b90bb7e133?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxkb2N0b3IlMjBwYXRpZW50JTIwY29uc3VsdGF0aW9ufGVufDF8fHx8MTc2MDY0Njc2Nnww&ixlib=rb-4.1.0&q=80&w=1080',
+    title: 'Atendimento Humanizado',
+    description: 'Cuidado dedicado para cada paciente',
+  },
+  {
+    id: 0, order: 1, is_active: true, link_url: null, created_at: '', updated_at: '',
+    url: 'https://images.unsplash.com/photo-1758206523830-a5b8afb372a6?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxtZWRpY2FsJTIwdGVjaG5vbG9neSUyMGVxdWlwbWVudHxlbnwxfHx8fDE3NjA2NjYwMDV8MA&ixlib=rb-4.1.0&q=80&w=1080',
+    image_url: 'https://images.unsplash.com/photo-1758206523830-a5b8afb372a6?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxtZWRpY2FsJTIwdGVjaG5vbG9neSUyMGVxdWlwbWVudHxlbnwxfHx8fDE3NjA2NjYwMDV8MA&ixlib=rb-4.1.0&q=80&w=1080',
+    title: 'Tecnologia Avançada',
+    description: 'Equipamentos de última geração',
+  },
+  {
+    id: 0, order: 2, is_active: true, link_url: null, created_at: '', updated_at: '',
+    url: 'https://images.unsplash.com/photo-1758206523745-1f334f702660?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxoZWFsdGhjYXJlJTIwdGVhbSUyMHByb2Zlc3Npb25hbHN8ZW58MXx8fHwxNzYwNjY2MDA1fDA&ixlib=rb-4.1.0&q=80&w=1080',
+    image_url: 'https://images.unsplash.com/photo-1758206523745-1f334f702660?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxoZWFsdGhjYXJlJTIwdGVhbSUyMHByb2Zlc3Npb25hbHN8ZW58MXx8fHwxNzYwNjY2MDA1fDA&ixlib=rb-4.1.0&q=80&w=1080',
+    title: 'Equipe Especializada',
+    description: 'Profissionais altamente qualificados',
+  },
+];
 
 interface HomePageProps {
   onSectionChange: (section: string) => void;
@@ -11,29 +36,14 @@ interface HomePageProps {
 
 export function HomePage({ onSectionChange }: HomePageProps) {
   const [carouselApi, setCarouselApi] = useState<CarouselApi>();
+  const [slides, setSlides] = useState<CarouselSlide[]>(FALLBACK_SLIDES);
 
-  const carouselImages = [
-    {
-      url: 'https://images.unsplash.com/photo-1631217868264-e5b90bb7e133?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxkb2N0b3IlMjBwYXRpZW50JTIwY29uc3VsdGF0aW9ufGVufDF8fHx8MTc2MDY0Njc2Nnww&ixlib=rb-4.1.0&q=80&w=1080',
-      title: 'Atendimento Humanizado',
-      description: 'Cuidado dedicado para cada paciente'
-    },
-    {
-      url: '/img/banner1.png',
-      title: 'Home',
-      description: 'publicidade'
-    },
-    {
-      url: 'https://images.unsplash.com/photo-1758206523830-a5b8afb372a6?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxtZWRpY2FsJTIwdGVjaG5vbG9neSUyMGVxdWlwbWVudHxlbnwxfHx8fDE3NjA2NjYwMDV8MA&ixlib=rb-4.1.0&q=80&w=1080',
-      title: 'Tecnologia Avançada',
-      description: 'Equipamentos de última geração'
-    },
-    {
-      url: 'https://images.unsplash.com/photo-1758206523745-1f334f702660?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxoZWFsdGhjYXJlJTIwdGVhbSUyMHByb2Zlc3Npb25hbHN8ZW58MXx8fHwxNzYwNjY2MDA1fDA&ixlib=rb-4.1.0&q=80&w=1080',
-      title: 'Equipe Especializada',
-      description: 'Profissionais altamente qualificados'
-    }
-  ];
+  // Busca slides do backend; mantém fallback se vazio ou erro
+  useEffect(() => {
+    carouselService.getActive()
+      .then((data) => { if (data.length > 0) setSlides(data); })
+      .catch(() => { /* mantém fallback */ });
+  }, []);
 
   // Autoplay effect
   useEffect(() => {
@@ -120,14 +130,20 @@ export function HomePage({ onSectionChange }: HomePageProps) {
                 }}
               >
                 <CarouselContent>
-                  {carouselImages.map((image, index) => (
-                    <CarouselItem key={index}>
+                  {slides.map((slide, index) => (
+                    <CarouselItem key={slide.id || index}>
                       <div className="relative h-[280px] lg:h-[350px] rounded-2xl overflow-hidden shadow-xl">
                         <ImageWithFallback
-                          src={image.url}
-                          alt={image.title}
+                          src={slide.image_url}
+                          alt={slide.title}
                           className="w-full h-full object-cover"
                         />
+                        {(slide.title || slide.description) && (
+                          <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 to-transparent px-5 py-4 rounded-b-2xl">
+                            {slide.title && <p className="text-white font-semibold text-sm">{slide.title}</p>}
+                            {slide.description && <p className="text-white/80 text-xs">{slide.description}</p>}
+                          </div>
+                        )}
                       </div>
                     </CarouselItem>
                   ))}
