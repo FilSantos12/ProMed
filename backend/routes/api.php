@@ -11,6 +11,7 @@ use App\Http\Controllers\Api\PatientController;
 use App\Http\Controllers\Api\DashboardController;
 use App\Http\Controllers\Api\DoctorProfileController;
 use App\Http\Controllers\Api\PatientProfileController;
+use App\Http\Controllers\Api\AdvertisementController;
 
 /*
 |--------------------------------------------------------------------------
@@ -45,6 +46,7 @@ Route::prefix('v1')->group(function () {
     Route::get('/doctors', [DoctorController::class, 'index']);
     Route::get('/doctors/{id}', [DoctorController::class, 'show']);
 
+    // Anúncios - para médicos autenticados (rota protegida abaixo)
     // Horários - PÚBLICO (para visualização em agendamentos)
     Route::get('/schedules', [ScheduleController::class, 'index']);
     Route::get('/schedules/{id}', [ScheduleController::class, 'show']);
@@ -66,6 +68,9 @@ Route::middleware('auth:sanctum')->prefix('v1')->group(function () {
     // AUTH (autenticado)
     // ========================================
     Route::post('/logout', [AuthController::class, 'logout']);
+
+    // Anúncios - disponíveis para todos autenticados (médicos veem na home)
+    Route::get('/advertisements', [AdvertisementController::class, 'index']);
     Route::get('/me', [AuthController::class, 'me']);
     Route::get('/user', [AuthController::class, 'user']);
 
@@ -149,6 +154,15 @@ Route::middleware('auth:sanctum')->prefix('v1')->group(function () {
         Route::get('/specialties/{id}', [SpecialtyController::class, 'show']); // Ver detalhes
         Route::put('/specialties/{id}', [SpecialtyController::class, 'update']); // Editar
         Route::delete('/specialties/{id}', [SpecialtyController::class, 'destroy']); // Deletar
+
+        // ========================================
+        // ADVERTISEMENTS (Admin)
+        // ========================================
+        Route::get('/advertisements', [AdvertisementController::class, 'adminIndex']);
+        Route::post('/advertisements', [AdvertisementController::class, 'store']);
+        Route::put('/advertisements/{id}', [AdvertisementController::class, 'update']);
+        Route::delete('/advertisements/{id}', [AdvertisementController::class, 'destroy']);
+        Route::patch('/advertisements/{id}/toggle-status', [AdvertisementController::class, 'toggleStatus']);
     });
 
     // ============================================

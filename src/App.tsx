@@ -17,6 +17,7 @@ import { CadastroPages } from './components/CadastroPages';
 import { ResetPasswordPage } from './components/ResetPasswordPage';
 import { SejaParceiro } from './components/SejaParceiro';
 import { SejaPaciente } from './components/SejaPaciente';
+import { DoctorHomePage } from './components/DoctorHomePage';
 import './utils/axiosConfig';
 
 function AppContent() {
@@ -86,6 +87,9 @@ function AppContent() {
   const renderCurrentSection = () => {
     switch (currentSection) {
       case 'home':
+        if (user && (user.role === 'doctor' || user.active_role === 'doctor')) {
+          return <DoctorHomePage />;
+        }
         return <HomePage onSectionChange={handleSectionChange} />;
       case 'especialidades':
         return <EspecialidadesPage onSectionChange={handleSectionChange} onBookDoctor={handleBookDoctor} />;

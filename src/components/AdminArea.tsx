@@ -1,12 +1,13 @@
 import { useState, useEffect } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
-import { Shield, Users, Calendar, BarChart3, Stethoscope } from "lucide-react";
+import { Shield, Users, Calendar, BarChart3, Stethoscope, Megaphone } from "lucide-react";
 import { useAuth } from "../hooks/useAuth";
 import Appointments from "./Appointments";
 import Patients from "./Patients";
 import Doctors from "./Doctors";
 import Dashboard from "./Dashboard";
 import Specialties from "./Specialties";
+import Advertisements from "./Advertisements";
 
 interface AdminAreaProps {
   onSectionChange?: (section: string) => void;
@@ -90,7 +91,7 @@ export function AdminArea({ onSectionChange }: AdminAreaProps) {
         {/* Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           <div className="overflow-x-auto mb-6">
-            <TabsList className="inline-flex w-full min-w-max md:grid md:grid-cols-3 lg:grid-cols-5 gap-2">
+            <TabsList className="inline-flex w-full min-w-max md:grid md:grid-cols-3 lg:grid-cols-6 gap-2">
               <TabsTrigger
                 value="dashboard"
                 className="flex items-center space-x-2"
@@ -126,6 +127,13 @@ export function AdminArea({ onSectionChange }: AdminAreaProps) {
                 <Calendar className="w-4 h-4" />
                 <span>Agendamentos</span>
               </TabsTrigger>
+              <TabsTrigger
+                value="anuncios"
+                className="flex items-center space-x-2"
+              >
+                <Megaphone className="w-4 h-4" />
+                <span>Anúncios</span>
+              </TabsTrigger>
               {/*<TabsTrigger value="configuracoes" className="flex items-center space-x-2">
               <Settings className="w-4 h-4" />
               <span>Configurações</span>
@@ -156,6 +164,11 @@ export function AdminArea({ onSectionChange }: AdminAreaProps) {
           {/* Agendamentos Tab */}
           <TabsContent value="agendamentos" className="space-y-6">
             <Appointments />
+          </TabsContent>
+
+          {/* Anúncios Tab */}
+          <TabsContent value="anuncios" className="space-y-6">
+            <Advertisements />
           </TabsContent>
 
           {/* Configurações Tab */}
