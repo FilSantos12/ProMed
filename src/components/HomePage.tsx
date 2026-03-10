@@ -139,9 +139,9 @@ export function HomePage({ onSectionChange }: HomePageProps) {
                           className="w-full h-full object-cover"
                         />
                         {(slide.title || slide.description) && (
-                          <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 to-transparent px-5 py-4 rounded-b-2xl">
-                            {slide.title && <p className="text-white font-semibold text-sm">{slide.title}</p>}
-                            {slide.description && <p className="text-white/80 text-xs">{slide.description}</p>}
+                          <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent px-6 py-5 rounded-b-2xl">
+                            {slide.title && <p className="text-white font-bold text-xl leading-snug drop-shadow">{slide.title}</p>}
+                            {slide.description && <p className="text-white/90 text-base mt-1 drop-shadow">{slide.description}</p>}
                           </div>
                         )}
                       </div>
