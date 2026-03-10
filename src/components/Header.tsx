@@ -96,6 +96,7 @@ export function Header({ currentSection, onSectionChange }: HeaderProps) {
     ? [
       ...(user.roles?.includes('admin') || user.role === 'admin' ? [{ id: 'admin-area', label: 'Administração', icon: Shield }] : []),
       ...(user.roles?.includes('doctor') || user.role === 'doctor' ? [{ id: 'doctor-area', label: 'Área do Médico', icon: Stethoscope }] : []),
+      ...((user.roles?.includes('patient') || user.role === 'patient') && (user.active_role || user.role) !== 'doctor' ? [{ id: 'patient-area', label: 'Área do Paciente', icon: User }] : []),
       { id: 'agendamentos', label: 'Agendamentos', icon: Calendar },
       { id: 'logout', label: 'Sair', icon: LogOut },
     ]
@@ -182,6 +183,12 @@ export function Header({ currentSection, onSectionChange }: HeaderProps) {
                       <DropdownMenuItem onClick={() => handleNavClick('doctor-area')} className={currentSection === 'doctor-area' ? 'bg-blue-50' : ''}>
                         <Stethoscope className="w-4 h-4 mr-2 text-gray-500" />
                         Área do Médico
+                      </DropdownMenuItem>
+                    )}
+                    {(user?.roles?.includes('patient') || user?.role === 'patient') && (user?.active_role || user?.role) !== 'doctor' && (
+                      <DropdownMenuItem onClick={() => handleNavClick('patient-area')} className={currentSection === 'patient-area' ? 'bg-blue-50' : ''}>
+                        <User className="w-4 h-4 mr-2 text-gray-500" />
+                        Área do Paciente
                       </DropdownMenuItem>
                     )}
                     <DropdownMenuItem onClick={() => handleNavClick('agendamentos')} className={currentSection === 'agendamentos' ? 'bg-blue-50' : ''}>
