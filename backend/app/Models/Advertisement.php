@@ -13,6 +13,7 @@ class Advertisement extends Model
         'link_url',
         'link_text',
         'category',
+        'target_audience',
         'is_active',
         'starts_at',
         'ends_at',

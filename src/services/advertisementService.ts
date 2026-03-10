@@ -8,6 +8,7 @@ export interface Advertisement {
   link_url: string | null;
   link_text: string;
   category: 'medicamento' | 'campanha' | 'dispositivo' | 'educacao' | 'outro';
+  target_audience: 'medico' | 'paciente' | 'todos';
   is_active: boolean;
   starts_at: string | null;
   ends_at: string | null;

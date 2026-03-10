@@ -9,11 +9,20 @@ use Illuminate\Http\Request;
 class AdvertisementController extends Controller
 {
     /**
-     * Lista anúncios ativos (para médicos autenticados).
+     * Lista anúncios ativos filtrados pelo role do usuário autenticado.
      */
-    public function index()
+    public function index(Request $request)
     {
+        $role = $request->user()->role ?? 'patient';
+
+        // Mapeia role do sistema para o valor de target_audience
+        $audience = $role === 'doctor' ? 'medico' : 'paciente';
+
         $ads = Advertisement::active()
+            ->where(function ($q) use ($audience) {
+                $q->where('target_audience', 'todos')
+                  ->orWhere('target_audience', $audience);
+            })
             ->orderBy('order')
             ->orderByDesc('created_at')
             ->get();
@@ -44,11 +53,12 @@ class AdvertisementController extends Controller
             'image_url'   => 'nullable|url|max:500',
             'link_url'    => 'nullable|url|max:500',
             'link_text'   => 'nullable|string|max:100',
-            'category'    => 'required|in:medicamento,campanha,dispositivo,educacao,outro',
-            'is_active'   => 'boolean',
-            'starts_at'   => 'nullable|date',
-            'ends_at'     => 'nullable|date|after_or_equal:starts_at',
-            'order'       => 'integer|min:0',
+            'category'         => 'required|in:medicamento,campanha,dispositivo,educacao,outro',
+            'target_audience'  => 'sometimes|in:medico,paciente,todos',
+            'is_active'        => 'boolean',
+            'starts_at'        => 'nullable|date',
+            'ends_at'          => 'nullable|date|after_or_equal:starts_at',
+            'order'            => 'integer|min:0',
         ]);
 
         $ad = Advertisement::create($request->all());
@@ -72,8 +82,9 @@ class AdvertisementController extends Controller
             'image_url'   => 'nullable|url|max:500',
             'link_url'    => 'nullable|url|max:500',
             'link_text'   => 'nullable|string|max:100',
-            'category'    => 'sometimes|in:medicamento,campanha,dispositivo,educacao,outro',
-            'is_active'   => 'boolean',
+            'category'        => 'sometimes|in:medicamento,campanha,dispositivo,educacao,outro',
+            'target_audience' => 'sometimes|in:medico,paciente,todos',
+            'is_active'       => 'boolean',
             'starts_at'   => 'nullable|date',
             'ends_at'     => 'nullable|date',
             'order'       => 'integer|min:0',

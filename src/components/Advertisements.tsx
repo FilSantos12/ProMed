@@ -1,8 +1,7 @@
 import { useState, useEffect } from 'react';
-import { Plus, Pencil, Trash2, Power, Megaphone, ExternalLink } from 'lucide-react';
+import { Plus, Pencil, Trash2, Power, Megaphone, ExternalLink, Stethoscope, User, Users } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Button } from './ui/button';
-import { Badge } from './ui/badge';
 import { Input } from './ui/input';
 import { Label } from './ui/label';
 import { Textarea } from './ui/textarea';
@@ -25,6 +24,19 @@ const CATEGORY_COLORS: Record<Advertisement['category'], string> = {
   outro: 'bg-gray-100 text-gray-800',
 };
 
+const AUDIENCE_CONFIG: Record<Advertisement['target_audience'], { label: string; color: string; Icon: React.ComponentType<{ className?: string }> }> = {
+  medico:   { label: 'Médicos',        color: 'bg-blue-100 text-blue-800',    Icon: Stethoscope },
+  paciente: { label: 'Pacientes',      color: 'bg-emerald-100 text-emerald-800', Icon: User },
+  todos:    { label: 'Todos',          color: 'bg-gray-100 text-gray-700',    Icon: Users },
+};
+
+const FILTER_OPTIONS = [
+  { value: 'todos_filtro', label: 'Todos os anúncios' },
+  { value: 'medico',   label: 'Somente Médicos' },
+  { value: 'paciente', label: 'Somente Pacientes' },
+  { value: 'todos',    label: 'Público Geral' },
+];
+
 const EMPTY_FORM: Partial<AdvertisementForm> = {
   title: '',
   description: '',
@@ -32,6 +44,7 @@ const EMPTY_FORM: Partial<AdvertisementForm> = {
   link_url: '',
   link_text: 'Saiba mais',
   category: 'outro',
+  target_audience: 'todos',
   is_active: true,
   starts_at: null,
   ends_at: null,
@@ -46,6 +59,7 @@ export default function Advertisements() {
   const [editingId, setEditingId] = useState<number | null>(null);
   const [form, setForm] = useState<Partial<AdvertisementForm>>(EMPTY_FORM);
   const [saving, setSaving] = useState(false);
+  const [audienceFilter, setAudienceFilter] = useState<string>('todos_filtro');
 
   const loadAds = async () => {
     try {
@@ -63,6 +77,10 @@ export default function Advertisements() {
     loadAds();
   }, []);
 
+  const filteredAds = audienceFilter === 'todos_filtro'
+    ? ads
+    : ads.filter((a) => a.target_audience === audienceFilter);
+
   const openCreate = () => {
     setEditingId(null);
     setForm(EMPTY_FORM);
@@ -78,6 +96,7 @@ export default function Advertisements() {
       link_url: ad.link_url ?? '',
       link_text: ad.link_text,
       category: ad.category,
+      target_audience: ad.target_audience,
       is_active: ad.is_active,
       starts_at: ad.starts_at,
       ends_at: ad.ends_at,
@@ -130,10 +149,13 @@ export default function Advertisements() {
     }
   };
 
+  // Contadores por público
+  const countByAudience = (aud: Advertisement['target_audience']) => ads.filter((a) => a.target_audience === aud).length;
+
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between flex-wrap gap-3">
         <div className="flex items-center gap-2">
           <Megaphone className="w-5 h-5 text-blue-600" />
           <h2 className="text-lg font-semibold text-gray-800">Gerenciar Anúncios</h2>
@@ -142,6 +164,43 @@ export default function Advertisements() {
           <Plus className="w-4 h-4" />
           Novo Anúncio
         </Button>
+      </div>
+
+      {/* Cards de resumo por público */}
+      <div className="grid grid-cols-3 gap-3">
+        <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 text-center">
+          <Stethoscope className="w-5 h-5 text-blue-600 mx-auto mb-1" />
+          <p className="text-2xl font-bold text-blue-700">{countByAudience('medico')}</p>
+          <p className="text-xs text-blue-600">Para Médicos</p>
+        </div>
+        <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-4 text-center">
+          <User className="w-5 h-5 text-emerald-600 mx-auto mb-1" />
+          <p className="text-2xl font-bold text-emerald-700">{countByAudience('paciente')}</p>
+          <p className="text-xs text-emerald-600">Para Pacientes</p>
+        </div>
+        <div className="bg-gray-50 border border-gray-200 rounded-xl p-4 text-center">
+          <Users className="w-5 h-5 text-gray-500 mx-auto mb-1" />
+          <p className="text-2xl font-bold text-gray-700">{countByAudience('todos')}</p>
+          <p className="text-xs text-gray-500">Público Geral</p>
+        </div>
+      </div>
+
+      {/* Filtro por público */}
+      <div className="flex items-center gap-2 flex-wrap">
+        <span className="text-sm text-gray-500">Filtrar:</span>
+        {FILTER_OPTIONS.map((opt) => (
+          <button
+            key={opt.value}
+            onClick={() => setAudienceFilter(opt.value)}
+            className={`text-xs px-3 py-1.5 rounded-full border font-medium transition-colors ${
+              audienceFilter === opt.value
+                ? 'bg-blue-600 text-white border-blue-600'
+                : 'bg-white text-gray-600 border-gray-300 hover:border-blue-400'
+            }`}
+          >
+            {opt.label}
+          </button>
+        ))}
       </div>
 
       {/* Formulario */}
@@ -157,7 +216,7 @@ export default function Advertisements() {
                 <Input
                   value={form.title ?? ''}
                   onChange={(e) => setForm({ ...form, title: e.target.value })}
-                  placeholder="Ex: Novo antibiótico de amplo espectro"
+                  placeholder="Ex: Campanha Março Lilás"
                 />
               </div>
 
@@ -211,6 +270,33 @@ export default function Advertisements() {
                   <option value="educacao">Educação</option>
                   <option value="outro">Outro</option>
                 </select>
+              </div>
+
+              {/* Público-alvo — destaque visual */}
+              <div className="md:col-span-2">
+                <Label>Público-alvo *</Label>
+                <div className="grid grid-cols-3 gap-3 mt-1">
+                  {((['medico', 'paciente', 'todos'] as Advertisement['target_audience'][]).map((aud) => {
+                    const cfg = AUDIENCE_CONFIG[aud];
+                    const { Icon } = cfg;
+                    const selected = form.target_audience === aud;
+                    return (
+                      <button
+                        key={aud}
+                        type="button"
+                        onClick={() => setForm({ ...form, target_audience: aud })}
+                        className={`flex flex-col items-center gap-1 p-3 rounded-xl border-2 text-sm font-medium transition-all ${
+                          selected
+                            ? 'border-blue-500 bg-blue-50 text-blue-700'
+                            : 'border-gray-200 bg-white text-gray-500 hover:border-gray-300'
+                        }`}
+                      >
+                        <Icon className={`w-5 h-5 ${selected ? 'text-blue-600' : 'text-gray-400'}`} />
+                        {cfg.label}
+                      </button>
+                    );
+                  }))}
+                </div>
               </div>
 
               <div>
@@ -272,85 +358,91 @@ export default function Advertisements() {
             <div key={i} className="h-20 bg-gray-100 animate-pulse rounded-xl" />
           ))}
         </div>
-      ) : ads.length === 0 ? (
+      ) : filteredAds.length === 0 ? (
         <div className="text-center text-gray-400 border-2 border-dashed rounded-xl py-16">
           <Megaphone className="w-10 h-10 mx-auto mb-3 opacity-30" />
-          <p className="text-sm">Nenhum anúncio cadastrado.</p>
+          <p className="text-sm">
+            {audienceFilter === 'todos_filtro'
+              ? 'Nenhum anúncio cadastrado.'
+              : `Nenhum anúncio para "${FILTER_OPTIONS.find((f) => f.value === audienceFilter)?.label}".`}
+          </p>
           <Button variant="outline" className="mt-4" onClick={openCreate}>
-            Criar primeiro anúncio
+            Criar anúncio
           </Button>
         </div>
       ) : (
         <div className="space-y-3">
-          {ads.map((ad) => (
-            <Card key={ad.id} className={`transition-opacity ${!ad.is_active ? 'opacity-50' : ''}`}>
-              <CardContent className="flex items-center gap-4 py-4">
-                {/* Thumbnail */}
-                {ad.image_url ? (
-                  <img
-                    src={ad.image_url}
-                    alt={ad.title}
-                    className="w-14 h-14 rounded-lg object-cover border shrink-0"
-                    onError={(e) => {
-                      (e.target as HTMLImageElement).style.display = 'none';
-                    }}
-                  />
-                ) : (
-                  <div className="w-14 h-14 rounded-lg bg-gray-100 border flex items-center justify-center shrink-0">
-                    <Megaphone className="w-6 h-6 text-gray-300" />
-                  </div>
-                )}
-
-                {/* Info */}
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 mb-1 flex-wrap">
-                    <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${CATEGORY_COLORS[ad.category]}`}>
-                      {CATEGORY_LABELS[ad.category]}
-                    </span>
-                    {!ad.is_active && (
-                      <span className="text-xs text-gray-400 border rounded px-2 py-0.5">Inativo</span>
-                    )}
-                    {ad.ends_at && new Date(ad.ends_at) < new Date() && (
-                      <span className="text-xs text-red-500 border border-red-200 rounded px-2 py-0.5">Expirado</span>
-                    )}
-                  </div>
-                  <p className="font-medium text-gray-800 truncate">{ad.title}</p>
-                  {ad.description && (
-                    <p className="text-xs text-gray-500 truncate">{ad.description}</p>
+          {filteredAds.map((ad) => {
+            const audienceCfg = AUDIENCE_CONFIG[ad.target_audience];
+            const { Icon: AudIcon } = audienceCfg;
+            return (
+              <Card key={ad.id} className={`transition-opacity ${!ad.is_active ? 'opacity-50' : ''}`}>
+                <CardContent className="flex items-center gap-4 py-4">
+                  {/* Thumbnail */}
+                  {ad.image_url ? (
+                    <img
+                      src={ad.image_url}
+                      alt={ad.title}
+                      className="w-14 h-14 rounded-lg object-cover border shrink-0"
+                      onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+                    />
+                  ) : (
+                    <div className="w-14 h-14 rounded-lg bg-gray-100 border flex items-center justify-center shrink-0">
+                      <Megaphone className="w-6 h-6 text-gray-300" />
+                    </div>
                   )}
-                  {ad.link_url && (
-                    <a
-                      href={ad.link_url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-xs text-blue-500 hover:underline flex items-center gap-1 mt-0.5"
-                    >
-                      <ExternalLink className="w-3 h-3" />
-                      {ad.link_url.length > 50 ? ad.link_url.slice(0, 50) + '…' : ad.link_url}
-                    </a>
-                  )}
-                </div>
 
-                {/* Acoes */}
-                <div className="flex items-center gap-2 shrink-0">
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    onClick={() => handleToggle(ad.id)}
-                    title={ad.is_active ? 'Desativar' : 'Ativar'}
-                  >
-                    <Power className={`w-4 h-4 ${ad.is_active ? 'text-green-600' : 'text-gray-400'}`} />
-                  </Button>
-                  <Button size="sm" variant="ghost" onClick={() => openEdit(ad)}>
-                    <Pencil className="w-4 h-4 text-blue-600" />
-                  </Button>
-                  <Button size="sm" variant="ghost" onClick={() => handleDelete(ad.id)}>
-                    <Trash2 className="w-4 h-4 text-red-500" />
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
+                  {/* Info */}
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 mb-1 flex-wrap">
+                      <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${CATEGORY_COLORS[ad.category]}`}>
+                        {CATEGORY_LABELS[ad.category]}
+                      </span>
+                      {/* Badge de público-alvo */}
+                      <span className={`text-xs font-semibold px-2 py-0.5 rounded-full flex items-center gap-1 ${audienceCfg.color}`}>
+                        <AudIcon className="w-3 h-3" />
+                        {audienceCfg.label}
+                      </span>
+                      {!ad.is_active && (
+                        <span className="text-xs text-gray-400 border rounded px-2 py-0.5">Inativo</span>
+                      )}
+                      {ad.ends_at && new Date(ad.ends_at) < new Date() && (
+                        <span className="text-xs text-red-500 border border-red-200 rounded px-2 py-0.5">Expirado</span>
+                      )}
+                    </div>
+                    <p className="font-medium text-gray-800 truncate">{ad.title}</p>
+                    {ad.description && (
+                      <p className="text-xs text-gray-500 truncate">{ad.description}</p>
+                    )}
+                    {ad.link_url && (
+                      <a
+                        href={ad.link_url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-xs text-blue-500 hover:underline flex items-center gap-1 mt-0.5"
+                      >
+                        <ExternalLink className="w-3 h-3" />
+                        {ad.link_url.length > 50 ? ad.link_url.slice(0, 50) + '…' : ad.link_url}
+                      </a>
+                    )}
+                  </div>
+
+                  {/* Acoes */}
+                  <div className="flex items-center gap-2 shrink-0">
+                    <Button size="sm" variant="ghost" onClick={() => handleToggle(ad.id)} title={ad.is_active ? 'Desativar' : 'Ativar'}>
+                      <Power className={`w-4 h-4 ${ad.is_active ? 'text-green-600' : 'text-gray-400'}`} />
+                    </Button>
+                    <Button size="sm" variant="ghost" onClick={() => openEdit(ad)}>
+                      <Pencil className="w-4 h-4 text-blue-600" />
+                    </Button>
+                    <Button size="sm" variant="ghost" onClick={() => handleDelete(ad.id)}>
+                      <Trash2 className="w-4 h-4 text-red-500" />
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            );
+          })}
         </div>
       )}
     </div>

@@ -18,6 +18,7 @@ import { ResetPasswordPage } from './components/ResetPasswordPage';
 import { SejaParceiro } from './components/SejaParceiro';
 import { SejaPaciente } from './components/SejaPaciente';
 import { DoctorHomePage } from './components/DoctorHomePage';
+import { PatientHomePage } from './components/PatientHomePage';
 import './utils/axiosConfig';
 
 function AppContent() {
@@ -89,6 +90,9 @@ function AppContent() {
       case 'home':
         if (user && (user.role === 'doctor' || user.active_role === 'doctor')) {
           return <DoctorHomePage />;
+        }
+        if (user && (user.role === 'patient' || user.active_role === 'patient')) {
+          return <PatientHomePage />;
         }
         return <HomePage onSectionChange={handleSectionChange} />;
       case 'especialidades':
