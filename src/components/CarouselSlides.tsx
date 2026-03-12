@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Plus, Pencil, Trash2, Power, Images, GripVertical } from 'lucide-react';
+import { ConfirmModal } from './ui/confirm-modal';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
@@ -25,6 +26,8 @@ export default function CarouselSlides() {
   const [form, setForm] = useState<Partial<CarouselSlideForm>>(EMPTY_FORM);
   const [saving, setSaving] = useState(false);
   const [previewError, setPreviewError] = useState(false);
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+  const [deletingId, setDeletingId] = useState<number | null>(null);
 
   const loadSlides = async () => {
     try {
@@ -82,14 +85,21 @@ export default function CarouselSlides() {
     }
   };
 
-  const handleDelete = async (id: number) => {
-    if (!confirm('Deseja remover este slide?')) return;
+  const handleDelete = (id: number) => {
+    setDeletingId(id);
+    setDeleteModalOpen(true);
+  };
+
+  const confirmDelete = async () => {
+    if (deletingId === null) return;
     try {
-      await carouselService.remove(id);
+      await carouselService.remove(deletingId);
       toast.success('Slide removido.');
-      setSlides((prev) => prev.filter((s) => s.id !== id));
+      setSlides((prev) => prev.filter((s) => s.id !== deletingId));
     } catch {
       toast.error('Erro ao remover slide.');
+    } finally {
+      setDeletingId(null);
     }
   };
 
@@ -282,6 +292,16 @@ export default function CarouselSlides() {
           ))}
         </div>
       )}
+      <ConfirmModal
+        isOpen={deleteModalOpen}
+        onClose={() => { setDeleteModalOpen(false); setDeletingId(null); }}
+        onConfirm={confirmDelete}
+        title="Excluir slide"
+        message="Tem certeza que deseja excluir este slide do carrossel? Esta ação não pode ser desfeita."
+        confirmText="Excluir"
+        cancelText="Cancelar"
+        type="danger"
+      />
     </div>
   );
 }

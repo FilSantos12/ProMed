@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Plus, Pencil, Trash2, Power, Megaphone, ExternalLink, Stethoscope, User, Users } from 'lucide-react';
+import { ConfirmModal } from './ui/confirm-modal';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
@@ -60,6 +61,8 @@ export default function Advertisements() {
   const [form, setForm] = useState<Partial<AdvertisementForm>>(EMPTY_FORM);
   const [saving, setSaving] = useState(false);
   const [audienceFilter, setAudienceFilter] = useState<string>('todos_filtro');
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+  const [deletingId, setDeletingId] = useState<number | null>(null);
 
   const loadAds = async () => {
     try {
@@ -128,14 +131,21 @@ export default function Advertisements() {
     }
   };
 
-  const handleDelete = async (id: number) => {
-    if (!confirm('Deseja remover este anúncio?')) return;
+  const handleDelete = (id: number) => {
+    setDeletingId(id);
+    setDeleteModalOpen(true);
+  };
+
+  const confirmDelete = async () => {
+    if (deletingId === null) return;
     try {
-      await advertisementService.remove(id);
+      await advertisementService.remove(deletingId);
       toast.success('Anúncio removido.');
-      setAds((prev) => prev.filter((a) => a.id !== id));
+      setAds((prev) => prev.filter((a) => a.id !== deletingId));
     } catch {
       toast.error('Erro ao remover anúncio.');
+    } finally {
+      setDeletingId(null);
     }
   };
 
@@ -445,6 +455,16 @@ export default function Advertisements() {
           })}
         </div>
       )}
+      <ConfirmModal
+        isOpen={deleteModalOpen}
+        onClose={() => { setDeleteModalOpen(false); setDeletingId(null); }}
+        onConfirm={confirmDelete}
+        title="Excluir anúncio"
+        message="Tem certeza que deseja excluir este anúncio? Esta ação não pode ser desfeita."
+        confirmText="Excluir"
+        cancelText="Cancelar"
+        type="danger"
+      />
     </div>
   );
 }
