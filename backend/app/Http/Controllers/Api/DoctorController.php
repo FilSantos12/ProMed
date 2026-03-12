@@ -541,6 +541,44 @@ public function approve($id)
             }
 
     /**
+     * Visualizar documento inline (Admin — autenticado via Sanctum)
+     */
+    public function viewDocument($doctorId, $documentId)
+    {
+        try {
+            $document = DoctorDocument::where('doctor_id', $doctorId)
+                ->where('id', $documentId)
+                ->firstOrFail();
+
+            $possiblePaths = [
+                storage_path('app/public/' . $document->file_path),
+                storage_path('app/' . $document->file_path),
+                public_path('storage/' . $document->file_path),
+            ];
+
+            $filePath = null;
+            foreach ($possiblePaths as $path) {
+                if (file_exists($path)) {
+                    $filePath = $path;
+                    break;
+                }
+            }
+
+            if (!$filePath) {
+                return response()->json(['message' => 'Arquivo não encontrado'], 404);
+            }
+
+            return response()->file($filePath, [
+                'Content-Type' => $document->mime_type,
+                'Content-Disposition' => 'inline',
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Erro ao visualizar documento: ' . $e->getMessage());
+            return response()->json(['message' => 'Erro ao carregar documento'], 500);
+        }
+    }
+
+    /**
      * Dashboard do médico
      */
     public function dashboard($id)

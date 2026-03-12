@@ -22,25 +22,20 @@ class AppointmentController extends Controller
         $user = $request->user();
 
         if ($user) {
-            // Se for médico, mostrar apenas suas consultas
-            if ($user->role === 'doctor' && $user->doctor) {
-                $query->where('doctor_id', $user->doctor->user_id);
+            if ($user->isAdmin()) {
+                // Admin pode ver todas as consultas — filtros opcionais por query param
+                if ($request->has('patient_id')) {
+                    $query->where('patient_id', $request->patient_id);
+                }
+                if ($request->has('doctor_id')) {
+                    $query->where('doctor_id', $request->doctor_id);
+                }
+            } elseif ($user->isDoctor()) {
+                $query->where('doctor_id', $user->id);
+            } else {
+                // Paciente: filtrar pelo próprio user_id (patient_id aponta para users.id)
+                $query->where('patient_id', $user->id);
             }
-            // Se for paciente, mostrar apenas suas consultas
-            elseif ($user->role === 'patient' && $user->patient) {
-                $query->where('patient_id', $user->patient->id);
-            }
-            // Admin pode ver todas as consultas (não aplica filtro)
-        }
-
-        // Filtrar por paciente (sobrescreve filtro automático se fornecido)
-        if ($request->has('patient_id')) {
-            $query->where('patient_id', $request->patient_id);
-        }
-
-        // Filtrar por médico (sobrescreve filtro automático se fornecido)
-        if ($request->has('doctor_id')) {
-            $query->where('doctor_id', $request->doctor_id);
         }
 
         // Filtrar por status (aceita múltiplos status separados por vírgula)
@@ -151,14 +146,21 @@ class AppointmentController extends Controller
      * Exibir consulta específica
      * GET /api/appointments/{id}
      */
-    public function show($id)
+    public function show(Request $request, $id)
     {
         $appointment = Appointment::with(['patient', 'doctor', 'specialty'])->find($id);
 
         if (!$appointment) {
-            return response()->json([
-                'message' => 'Consulta não encontrada.'
-            ], 404);
+            return response()->json(['message' => 'Consulta não encontrada.'], 404);
+        }
+
+        $user = $request->user();
+        if (!$user->isAdmin()) {
+            $isOwner = ($user->isDoctor() && $appointment->doctor_id === $user->id)
+                    || ($user->isPatient() && $appointment->patient_id === $user->id);
+            if (!$isOwner) {
+                return response()->json(['message' => 'Sem permissão para acessar esta consulta.'], 403);
+            }
         }
 
         return response()->json($appointment, 200);
@@ -173,9 +175,16 @@ class AppointmentController extends Controller
         $appointment = Appointment::find($id);
 
         if (!$appointment) {
-            return response()->json([
-                'message' => 'Consulta não encontrada.'
-            ], 404);
+            return response()->json(['message' => 'Consulta não encontrada.'], 404);
+        }
+
+        $user = $request->user();
+        if (!$user->isAdmin()) {
+            $isOwner = ($user->isDoctor() && $appointment->doctor_id === $user->id)
+                    || ($user->isPatient() && $appointment->patient_id === $user->id);
+            if (!$isOwner) {
+                return response()->json(['message' => 'Sem permissão para atualizar esta consulta.'], 403);
+            }
         }
 
         try {
@@ -198,14 +207,21 @@ class AppointmentController extends Controller
      * Deletar consulta
      * DELETE /api/appointments/{id}
      */
-    public function destroy($id)
+    public function destroy(Request $request, $id)
     {
         $appointment = Appointment::find($id);
 
         if (!$appointment) {
-            return response()->json([
-                'message' => 'Consulta não encontrada.'
-            ], 404);
+            return response()->json(['message' => 'Consulta não encontrada.'], 404);
+        }
+
+        $user = $request->user();
+        if (!$user->isAdmin()) {
+            $isOwner = ($user->isDoctor() && $appointment->doctor_id === $user->id)
+                    || ($user->isPatient() && $appointment->patient_id === $user->id);
+            if (!$isOwner) {
+                return response()->json(['message' => 'Sem permissão para excluir esta consulta.'], 403);
+            }
         }
 
         try {

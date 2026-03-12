@@ -27,12 +27,14 @@ api.interceptors.request.use(
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (error.response?.status === 401) {
-      // Token inválido ou expirado — limpar sessão e redirecionar para login
+    const isAuthEndpoint = error.config?.url?.includes('/login')
+                        || error.config?.url?.includes('/register');
+    if (error.response?.status === 401 && !isAuthEndpoint) {
+      // Token inválido ou expirado — limpar sessão e redirecionar para home
       localStorage.removeItem('token');
       localStorage.removeItem('user');
       localStorage.removeItem('pendingAppointment');
-      window.location.href = '/login';
+      window.location.href = '/';
     }
     return Promise.reject(error);
   }
