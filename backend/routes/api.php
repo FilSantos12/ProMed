@@ -33,11 +33,11 @@ Route::get('/health', function () {
 // ========================================
 Route::prefix('v1')->group(function () {
     
-    // Auth
-    Route::post('/login', [AuthController::class, 'login']);
-    Route::post('/register', [AuthController::class, 'register']);
-    Route::post('/forgot-password', [PasswordResetController::class, 'forgotPassword']);
-    Route::post('/reset-password', [PasswordResetController::class, 'resetPassword']);
+    // Auth (com rate limiting para prevenir brute-force)
+    Route::post('/login', [AuthController::class, 'login'])->middleware('throttle:10,1');
+    Route::post('/register', [AuthController::class, 'register'])->middleware('throttle:5,1');
+    Route::post('/forgot-password', [PasswordResetController::class, 'forgotPassword'])->middleware('throttle:3,5');
+    Route::post('/reset-password', [PasswordResetController::class, 'resetPassword'])->middleware('throttle:5,1');
     
     // Especialidades - PÚBLICA
     Route::get('/specialties/available', [SpecialtyController::class, 'available']);

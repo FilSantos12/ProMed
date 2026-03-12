@@ -27,9 +27,10 @@ class PasswordResetController extends Controller
             $user = User::where('email', $email)->first();
 
             if (!$user) {
+                // Mensagem genérica para evitar enumeração de emails
                 return response()->json([
-                    'message' => 'Email não encontrado no sistema.'
-                ], 404);
+                    'message' => 'Se este email estiver cadastrado, você receberá um link de recuperação em breve.'
+                ], 200);
             }
 
             // Gerar token único
@@ -55,9 +56,9 @@ class PasswordResetController extends Controller
             ], 200);
 
         } catch (\Exception $e) {
+            \Log::error('PasswordResetController@forgotPassword - Erro: ' . $e->getMessage());
             return response()->json([
-                'message' => 'Erro ao processar solicitação. Tente novamente.',
-                'error' => $e->getMessage()
+                'message' => 'Erro ao processar solicitação. Tente novamente.'
             ], 500);
         }
     }
@@ -114,9 +115,9 @@ class PasswordResetController extends Controller
             ], 200);
 
         } catch (\Exception $e) {
+            \Log::error('PasswordResetController@resetPassword - Erro: ' . $e->getMessage());
             return response()->json([
-                'message' => 'Erro ao redefinir senha. Tente novamente.',
-                'error' => $e->getMessage()
+                'message' => 'Erro ao redefinir senha. Tente novamente.'
             ], 500);
         }
     }

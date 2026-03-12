@@ -91,9 +91,11 @@ class AppointmentController extends Controller
             }
         }
 
-        // Ordenação
-        $sortBy = $request->input('sort_by', 'appointment_date');
-        $sortOrder = $request->input('sort_order', 'asc');
+        // Ordenação (whitelist para prevenir SQL Injection)
+        $allowedSortBy = ['appointment_date', 'appointment_time', 'status', 'created_at'];
+        $allowedSortOrder = ['asc', 'desc'];
+        $sortBy = in_array($request->input('sort_by'), $allowedSortBy) ? $request->input('sort_by') : 'appointment_date';
+        $sortOrder = in_array(strtolower($request->input('sort_order')), $allowedSortOrder) ? $request->input('sort_order') : 'asc';
         $query->orderBy($sortBy, $sortOrder);
 
         // Paginação
@@ -115,6 +117,13 @@ class AppointmentController extends Controller
 
             // Criar agendamento já confirmado (sem necessidade de confirmação do médico)
             $data = $request->validated();
+
+            // Pacientes nunca podem criar agendamentos em nome de outros — forçar o próprio ID
+            $user = $request->user();
+            if ($user->role !== 'admin') {
+                $data['patient_id'] = $user->id;
+            }
+
             $data['status'] = 'confirmed';
             $data['confirmed_at'] = now();
 
