@@ -6,21 +6,26 @@ interface SuccessModalProps {
   onClose: () => void;
   title?: string;
   message: string;
+  children?: React.ReactNode;
+  /** Rótulo do botão de navegação secundário (ex: "Área do Paciente") */
+  navigationLabel?: string;
+  /** Callback do botão de navegação; se definido, exibe o botão ao lado de "Fechar" */
+  onNavigate?: () => void;
 }
 
-export function SuccessModal({ isOpen, onClose, title = 'Sucesso!', message }: SuccessModalProps) {
+export function SuccessModal({ isOpen, onClose, title = 'Sucesso!', message, children, navigationLabel, onNavigate }: SuccessModalProps) {
   if (!isOpen) return null;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 animate-fade-in">
       {/* Overlay */}
-      <div 
+      <div
         className="absolute inset-0 bg-black/50 backdrop-blur-sm"
         onClick={onClose}
       />
-      
+
       {/* Modal */}
-      <div className="relative bg-white rounded-lg shadow-xl max-w-md w-full mx-4 p-6 animate-zoom-in">
+      <div className="relative bg-white rounded-lg shadow-xl max-w-md w-full mx-4 p-6 animate-zoom-in overflow-y-auto max-h-[90vh]">
         {/* Botão fechar */}
         <button
           onClick={onClose}
@@ -42,17 +47,43 @@ export function SuccessModal({ isOpen, onClose, title = 'Sucesso!', message }: S
           </h3>
 
           {/* Mensagem */}
-          <p className="text-gray-600 mb-6">
+          <p className="text-gray-600 mb-4">
             {message}
           </p>
 
-          {/* Botão OK */}
-          <button
-            onClick={onClose}
-            className="w-full bg-green-600 text-white py-2.5 px-4 rounded-lg hover:bg-green-700 transition-colors font-medium"
-          >
-            OK
-          </button>
+          {/* Conteúdo extra (dados do agendamento, etc.) */}
+          {children && (
+            <div className="w-full mb-4">
+              {children}
+            </div>
+          )}
+
+          {/* Botões */}
+          {onNavigate ? (
+            <div style={{ display: 'flex', gap: '0.75rem', width: '100%' }}>
+              <button
+                onClick={onClose}
+                style={{ flex: 1 }}
+                className="border border-gray-300 text-gray-700 py-2.5 px-4 rounded-lg hover:bg-gray-50 transition-colors font-medium"
+              >
+                Fechar
+              </button>
+              <button
+                onClick={onNavigate}
+                style={{ flex: 1, background: '#16a34a', color: 'white' }}
+                className="py-2.5 px-4 rounded-lg hover:bg-green-700 transition-colors font-medium"
+              >
+                {navigationLabel ?? 'Continuar'}
+              </button>
+            </div>
+          ) : (
+            <button
+              onClick={onClose}
+              className="w-full bg-green-600 text-white py-2.5 px-4 rounded-lg hover:bg-green-700 transition-colors font-medium"
+            >
+              OK
+            </button>
+          )}
         </div>
       </div>
     </div>

@@ -119,6 +119,20 @@ class AppointmentController extends Controller
                 $data['patient_id'] = $user->id;
             }
 
+            // Verificar se o paciente já possui agendamento ativo na mesma data e horário
+            $conflict = Appointment::where('patient_id', $data['patient_id'])
+                ->where('appointment_date', $data['appointment_date'])
+                ->where('appointment_time', $data['appointment_time'])
+                ->whereIn('status', ['pending', 'confirmed'])
+                ->exists();
+
+            if ($conflict) {
+                return response()->json([
+                    'message' => 'Você já possui uma consulta agendada para esta data e horário.',
+                    'conflict' => true,
+                ], 409);
+            }
+
             $data['status'] = 'confirmed';
             $data['confirmed_at'] = now();
 

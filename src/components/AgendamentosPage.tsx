@@ -60,6 +60,7 @@ import {
 } from "../services/appointmentService";
 import { LoadingSpinner } from "./ui/loading-spinner";
 import { ErrorModal } from "./ui/error-modal";
+import { SuccessModal } from "./ui/success-modal";
 import { Calendar } from "./ui/calendar";
 
 // Mapa de ícones médicos (sincronizado com IconPicker)
@@ -131,12 +132,19 @@ export function AgendamentosPage({
   });
 
   // Estado de sucesso
-  const [appointmentCreated, setAppointmentCreated] = useState(false);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [confirmedAppointment, setConfirmedAppointment] = useState<{
+    specialtyName: string;
+    doctorName: string;
+    date: string;
+    time: string;
+    notes?: string;
+  } | null>(null);
 
   // Estado para modal de login/cadastro
   const [showAuthPrompt, setShowAuthPrompt] = useState(false);
 
-  // Estado para modal de sem disponibilidade
+  // Estado para modal de sem disponibilidade / conflito
   const [noSlotsModal, setNoSlotsModal] = useState({ open: false, title: '', message: '' });
 
   // ID de médico pendente de seleção (aguarda lista de médicos carregar)
@@ -412,15 +420,25 @@ export function AgendamentosPage({
 
       await appointmentService.createAppointment(appointmentData);
 
-      toast.success("Agendamento realizado com sucesso!");
-      setAppointmentCreated(true);
-
-      // Reset form após 3 segundos
-      setTimeout(() => {
-        resetForm();
-        setAppointmentCreated(false);
-      }, 3000);
+      const specialtyInfo = specialties.find((s) => s.id.toString() === selectedSpecialty);
+      setConfirmedAppointment({
+        specialtyName: specialtyInfo?.name || '-',
+        doctorName: selectedDoctorInfo.user.name,
+        date: selectedDate,
+        time: selectedTime,
+        notes: formData.observations || undefined,
+      });
+      setShowSuccessModal(true);
     } catch (err: any) {
+      if (err.response?.status === 409 && err.response?.data?.conflict) {
+        setNoSlotsModal({
+          open: true,
+          title: 'Horário já ocupado',
+          message: `Você já possui uma consulta agendada para ${formatDateDisplay(selectedDate)} às ${selectedTime}.\n\nEscolha outro horário ou outra data para continuar.`,
+        });
+        return;
+      }
+
       const errorMessage =
         err.response?.data?.message || "Erro ao criar agendamento";
       const validationErrors = err.response?.data?.errors;
@@ -482,30 +500,6 @@ export function AgendamentosPage({
           <LoadingSpinner size="lg" />
           <p className="mt-4 text-gray-600">Carregando...</p>
         </div>
-      </div>
-    );
-  }
-
-  if (appointmentCreated) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <Card className="max-w-md">
-          <CardContent className="p-8 text-center">
-            <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <CheckCircle2 className="w-10 h-10 text-green-600" />
-            </div>
-            <h2 className="text-2xl font-bold text-gray-900 mb-2">
-              Agendamento Confirmado!
-            </h2>
-            <p className="text-gray-600 mb-4">
-              Você receberá uma confirmação por email e SMS com todos os
-              detalhes da consulta.
-            </p>
-            <Button onClick={resetForm} className="mt-4">
-              Fazer Novo Agendamento
-            </Button>
-          </CardContent>
-        </Card>
       </div>
     );
   }
@@ -615,6 +609,54 @@ export function AgendamentosPage({
         message={noSlotsModal.message}
         onClose={() => setNoSlotsModal({ open: false, title: '', message: '' })}
       />
+
+      {/* Modal de Agendamento Confirmado */}
+      <SuccessModal
+        isOpen={showSuccessModal && !!confirmedAppointment}
+        onClose={() => { setShowSuccessModal(false); resetForm(); }}
+        title="Consulta Agendada!"
+        message="Seu agendamento foi confirmado com sucesso."
+        navigationLabel="Área do Paciente"
+        onNavigate={() => { setShowSuccessModal(false); resetForm(); onSectionChange?.('patient-area'); }}
+      >
+        {confirmedAppointment && (
+          <>
+            {/* Dados do agendamento */}
+            <div className="text-left border border-gray-200 rounded-lg divide-y divide-gray-100 mb-3">
+              <div className="flex justify-between items-center px-3 py-2">
+                <span className="text-sm text-gray-500">Especialidade</span>
+                <span className="text-sm font-medium text-gray-900">{confirmedAppointment.specialtyName}</span>
+              </div>
+              <div className="flex justify-between items-center px-3 py-2 bg-gray-50">
+                <span className="text-sm text-gray-500">Médico(a)</span>
+                <span className="text-sm font-medium text-gray-900">Dr(a). {confirmedAppointment.doctorName}</span>
+              </div>
+              <div className="flex justify-between items-center px-3 py-2">
+                <span className="text-sm text-gray-500">Data</span>
+                <span className="text-sm font-medium text-gray-900">{formatDateDisplay(confirmedAppointment.date)}</span>
+              </div>
+              <div className="flex justify-between items-center px-3 py-2 bg-gray-50">
+                <span className="text-sm text-gray-500">Horário</span>
+                <span className="text-sm font-medium text-gray-900">{confirmedAppointment.time}</span>
+              </div>
+              {confirmedAppointment.notes && (
+                <div className="px-3 py-2 text-left">
+                  <span className="text-sm text-gray-500 block">Observações</span>
+                  <span className="text-sm text-gray-900">{confirmedAppointment.notes}</span>
+                </div>
+              )}
+            </div>
+
+            {/* Aviso de email */}
+            <div className="flex items-start gap-2 bg-blue-50 border border-blue-100 rounded-lg px-3 py-2 text-left">
+              <AlertCircle className="w-4 h-4 text-blue-500 shrink-0 mt-0.5" />
+              <p className="text-xs text-blue-700 leading-relaxed">
+                Você receberá um <span className="font-semibold">e-mail de confirmação</span> com todos os detalhes desta consulta. Verifique também sua caixa de spam.
+              </p>
+            </div>
+          </>
+        )}
+      </SuccessModal>
 
       <div className="container mx-auto px-4 max-w-4xl">
         {/* Header */}
