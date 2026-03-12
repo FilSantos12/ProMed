@@ -20,6 +20,10 @@ interface User {
   birth_date: string;
   gender: string;
   is_active: boolean;
+  city?: string;
+  state?: string;
+  is_foreigner?: boolean;
+  passport_country?: string;
 }
 
 interface Patient {
@@ -528,6 +532,20 @@ const Patients: React.FC = () => {
                     <label className="block text-sm font-medium text-gray-700">Gênero</label>
                     <p className="text-gray-900">{selectedPatient.user.gender || '-'}</p>
                   </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700">Cidade</label>
+                    <p className="text-gray-900">
+                      {selectedPatient.user.city
+                        ? `${selectedPatient.user.city}${selectedPatient.user.state ? ` / ${selectedPatient.user.state}` : ''}`
+                        : '-'}
+                    </p>
+                  </div>
+                  {selectedPatient.user.is_foreigner && (
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700">País</label>
+                      <p className="text-gray-900">{selectedPatient.user.passport_country || '-'}</p>
+                    </div>
+                  )}
                   <div>
                     <label className="block text-sm font-medium text-gray-700">Status</label>
                     <Badge className={selectedPatient.user.is_active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}>
