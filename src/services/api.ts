@@ -28,10 +28,11 @@ api.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 401) {
-      // Token inválido ou expirado
+      // Token inválido ou expirado — limpar sessão e redirecionar para login
       localStorage.removeItem('token');
       localStorage.removeItem('user');
-      //window.location.href = '/login';
+      localStorage.removeItem('pendingAppointment');
+      window.location.href = '/login';
     }
     return Promise.reject(error);
   }
