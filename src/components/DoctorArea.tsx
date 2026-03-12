@@ -213,6 +213,8 @@ export function DoctorArea({
       const response = await doctorService.getAppointments({
         status: "completed,cancelled,no_show",
         page: historyPage,
+        sort_by: "appointment_date",
+        sort_order: "desc",
       });
 
       console.log("Histórico carregado:", response);

@@ -109,6 +109,8 @@ class DoctorService {
     startDate?: string;
     endDate?: string;
     page?: number;
+    sort_by?: string;
+    sort_order?: 'asc' | 'desc';
   }): Promise<any> {
     const response = await api.get('/appointments', { params: filters });
     // Retornar resposta completa para ter acesso aos dados de paginação

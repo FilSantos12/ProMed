@@ -202,10 +202,15 @@ class PatientProfileController extends Controller
                 $query->where('appointment_date', $request->date);
             }
 
+            $allowedSortBy = ['appointment_date', 'appointment_time', 'status', 'created_at'];
+            $allowedSortOrder = ['asc', 'desc'];
+            $sortBy = in_array($request->input('sort_by'), $allowedSortBy) ? $request->input('sort_by') : 'appointment_date';
+            $sortOrder = in_array($request->input('sort_order'), $allowedSortOrder) ? $request->input('sort_order') : 'desc';
+
             $appointments = $query
-                ->orderBy('appointment_date', 'desc')
-                ->orderBy('appointment_time', 'desc')
-                ->get();
+                ->orderBy($sortBy, $sortOrder)
+                ->orderBy('appointment_time', $sortOrder)
+                ->paginate($request->input('per_page', 15));
 
             \Log::info('PatientProfileController@getAppointments - Total: ' . $appointments->count());
             \Log::info('PatientProfileController@getAppointments - First appointment: ' . json_encode($appointments->first()));

@@ -158,6 +158,8 @@ class PatientService {
     status?: string;
     date?: string;
     page?: number;
+    sort_by?: string;
+    sort_order?: 'asc' | 'desc';
   }): Promise<any> {
     const response = await api.get('/patient/appointments', { params: filters });
     // Retornar resposta completa para ter acesso aos dados de paginação
