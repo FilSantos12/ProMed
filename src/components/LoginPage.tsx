@@ -188,6 +188,17 @@ export function LoginPage({ onSectionChange }: LoginPageProps) {
                   showError={shouldShowError("password")}
                   isValid={isFieldValid("password")}
                 />
+                <div className="flex justify-end">
+                  <Button
+                    type="button"
+                    variant="link"
+                    className="text-xs h-auto p-0"
+                    onClick={() => setShowForgotPasswordModal(true)}
+                    disabled={loading}
+                  >
+                    Esqueceu sua senha?
+                  </Button>
+                </div>
               </div>
               <Button
                 type="submit"
@@ -225,15 +236,6 @@ export function LoginPage({ onSectionChange }: LoginPageProps) {
               >
                 É médico? Cadastre-se aqui
               </Button>
-              <br />
-              <Button
-                variant="link"
-                className="text-sm"
-                onClick={() => setShowForgotPasswordModal(true)}
-                disabled={loading}
-              >
-                Esqueceu sua senha?
-              </Button>
             </div>
           </CardContent>
         </Card>
@@ -253,6 +255,7 @@ export function LoginPage({ onSectionChange }: LoginPageProps) {
         <ForgotPasswordModal
           isOpen={showForgotPasswordModal}
           onClose={() => setShowForgotPasswordModal(false)}
+          initialEmail={loginData.email}
         />
 
         {statusInfo && (

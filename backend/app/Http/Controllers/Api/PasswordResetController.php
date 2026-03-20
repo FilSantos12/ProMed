@@ -51,9 +51,16 @@ class PasswordResetController extends Controller
             // Enviar email com token
             $user->notify(new ResetPasswordNotification($token));
 
-            return response()->json([
+            $responseData = [
                 'message' => 'Email de recuperação enviado com sucesso! Verifique sua caixa de entrada.'
-            ], 200);
+            ];
+
+            if (app()->environment('local')) {
+                $resetLink = env('FRONTEND_URL', 'http://localhost:3000') . '/redefinir-senha?token=' . $token . '&email=' . urlencode($email);
+                $responseData['dev_reset_link'] = $resetLink;
+            }
+
+            return response()->json($responseData, 200);
 
         } catch (\Exception $e) {
             \Log::error('PasswordResetController@forgotPassword - Erro: ' . $e->getMessage());

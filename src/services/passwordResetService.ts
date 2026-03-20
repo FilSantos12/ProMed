@@ -15,6 +15,7 @@ export interface ResetPasswordData {
 
 export interface ApiResponse {
   message: string;
+  dev_reset_link?: string;
 }
 
 export interface ApiError {
