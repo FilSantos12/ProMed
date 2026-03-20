@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
-import { Shield, Users, Calendar, BarChart3, Stethoscope, Megaphone, Images } from "lucide-react";
+import { Shield, Users, Calendar, BarChart3, Stethoscope, Megaphone, Images, Percent } from "lucide-react";
 import { useAuth } from "../hooks/useAuth";
 import Appointments from "./Appointments";
 import Patients from "./Patients";
@@ -9,6 +9,7 @@ import Dashboard from "./Dashboard";
 import Specialties from "./Specialties";
 import Advertisements from "./Advertisements";
 import CarouselSlides from "./CarouselSlides";
+import PlatformSettings from "./PlatformSettings";
 
 interface AdminAreaProps {
   onSectionChange?: (section: string) => void;
@@ -92,7 +93,7 @@ export function AdminArea({ onSectionChange }: AdminAreaProps) {
         {/* Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           <div className="overflow-x-auto mb-6">
-            <TabsList className="inline-flex w-full min-w-max md:grid md:grid-cols-3 lg:grid-cols-7 gap-2">
+            <TabsList className="inline-flex w-full min-w-max md:grid md:grid-cols-3 lg:grid-cols-8 gap-2">
               <TabsTrigger
                 value="dashboard"
                 className="flex items-center space-x-2"
@@ -142,10 +143,10 @@ export function AdminArea({ onSectionChange }: AdminAreaProps) {
                 <Images className="w-4 h-4" />
                 <span>Carrossel</span>
               </TabsTrigger>
-              {/*<TabsTrigger value="configuracoes" className="flex items-center space-x-2">
-              <Settings className="w-4 h-4" />
-              <span>Configurações</span>
-            </TabsTrigger>*/}
+              <TabsTrigger value="valores" className="flex items-center space-x-2">
+                <Percent className="w-4 h-4" />
+                <span>Valores</span>
+              </TabsTrigger>
             </TabsList>
           </div>
 
@@ -184,7 +185,11 @@ export function AdminArea({ onSectionChange }: AdminAreaProps) {
             <CarouselSlides />
           </TabsContent>
 
-          {/* Configurações Tab */}
+          {/* Valores Tab */}
+          <TabsContent value="valores" className="space-y-6">
+            <PlatformSettings />
+          </TabsContent>
+
           {/*<TabsContent value="configuracoes" className="space-y-6">
             <Card>
               <CardHeader>

@@ -24,6 +24,7 @@ interface Doctor {
   crm_state: string;
   bio: string | null;
   years_experience: number;
+  consultation_price: number | null;
   status: string;
   user: {
     id: number;
@@ -47,6 +48,7 @@ export function EspecialidadesPage({ onSectionChange, onBookDoctor }: Especialid
   const [filteredEspecialidades, setFilteredEspecialidades] = useState<SpecialtyWithAvailability[]>([]);
   const [doctors, setDoctors] = useState<Doctor[]>([]);
   const [filteredDoctors, setFilteredDoctors] = useState<Doctor[]>([]);
+  const [serviceFee, setServiceFee] = useState<number>(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
@@ -64,10 +66,12 @@ export function EspecialidadesPage({ onSectionChange, onBookDoctor }: Especialid
     try {
       setLoading(true);
       setError(null);
-      const [especialidadesData, doctorsData] = await Promise.all([
+      const [especialidadesData, doctorsData, settingsData] = await Promise.all([
         specialtyService.getAvailableSpecialties(),
         api.get('/doctors'),
+        api.get('/platform-settings').catch(() => ({ data: { service_fee_percentage: 0 } })),
       ]);
+      setServiceFee(settingsData.data.service_fee_percentage ?? 0);
 
       setEspecialidades(especialidadesData);
       setFilteredEspecialidades(especialidadesData);
@@ -273,11 +277,13 @@ export function EspecialidadesPage({ onSectionChange, onBookDoctor }: Especialid
               <div className="grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                 {filteredDoctors.map((doctor) => {
                   const IconComponent = ICON_MAP[doctor.specialty.icon] || Stethoscope;
-                  const avatarUrl =
-                    doctor.user.avatar_url ||
-                    (doctor.user.avatar
-                      ? `${(import.meta.env.VITE_API_URL || 'http://localhost:8000/api/v1').replace('/api/v1', '')}/storage/${doctor.user.avatar}`
-                      : null);
+                  const backendBase = (import.meta.env.VITE_API_URL || 'http://localhost:8000/api/v1').replace('/api/v1', '');
+                  const rawAvatar = doctor.user.avatar_url || doctor.user.avatar;
+                  const avatarUrl = rawAvatar
+                    ? rawAvatar.startsWith('http')
+                      ? rawAvatar.replace('https://localhost', 'http://localhost')
+                      : `${backendBase}/storage/${rawAvatar}`
+                    : null;
 
                   return (
                     <Card key={doctor.id} className="hover:shadow-lg transition-shadow">
@@ -315,6 +321,14 @@ export function EspecialidadesPage({ onSectionChange, onBookDoctor }: Especialid
                             <div className="text-sm text-blue-600">
                               {doctor.years_experience}{' '}
                               {doctor.years_experience === 1 ? 'ano' : 'anos'} de experiência
+                            </div>
+                          )}
+                          {doctor.consultation_price != null && doctor.consultation_price > 0 && (
+                            <div className="flex items-center justify-center gap-1 text-sm font-semibold text-green-700 bg-green-50 rounded-md py-1 px-2">
+                              {(Number(doctor.consultation_price) * (1 + serviceFee / 100)).toLocaleString('pt-BR', {
+                                style: 'currency',
+                                currency: 'BRL',
+                              })}
                             </div>
                           )}
                         </div>

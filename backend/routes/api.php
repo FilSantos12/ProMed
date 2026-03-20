@@ -13,6 +13,7 @@ use App\Http\Controllers\Api\DoctorProfileController;
 use App\Http\Controllers\Api\PatientProfileController;
 use App\Http\Controllers\Api\AdvertisementController;
 use App\Http\Controllers\Api\CarouselSlideController;
+use App\Http\Controllers\Api\PlatformSettingController;
 
 /*
 |--------------------------------------------------------------------------
@@ -49,6 +50,9 @@ Route::prefix('v1')->group(function () {
 
     // Carrossel - PÚBLICO (usado na HomePage)
     Route::get('/carousel-slides', [CarouselSlideController::class, 'index']);
+
+    // Configurações da plataforma - PÚBLICO (taxa exibida nos cards de médicos)
+    Route::get('/platform-settings', [PlatformSettingController::class, 'index']);
 
     // Horários - PÚBLICO (para visualização em agendamentos)
     Route::get('/schedules', [ScheduleController::class, 'index']);
@@ -175,6 +179,12 @@ Route::middleware('auth:sanctum')->prefix('v1')->group(function () {
         Route::put('/advertisements/{id}', [AdvertisementController::class, 'update']);
         Route::delete('/advertisements/{id}', [AdvertisementController::class, 'destroy']);
         Route::patch('/advertisements/{id}/toggle-status', [AdvertisementController::class, 'toggleStatus']);
+
+        // ========================================
+        // PLATFORM SETTINGS (Admin)
+        // ========================================
+        Route::get('/platform-settings', [PlatformSettingController::class, 'index']);
+        Route::put('/platform-settings', [PlatformSettingController::class, 'update']);
     });
 
     // ============================================

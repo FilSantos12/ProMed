@@ -156,9 +156,10 @@ export function DoctorArea({
       // Carregar avatar do backend (se existir)
       if (profileData?.user?.avatar) {
         // Usar avatar_url se disponível, senão construir URL manualmente
-        const avatarUrl =
-          (profileData.user as any).avatar_url ||
-          `${import.meta.env.VITE_API_URL}/storage/${profileData.user.avatar}`;
+        const rawAvatar = (profileData.user as any).avatar_url || profileData.user.avatar;
+        const avatarUrl = rawAvatar?.startsWith('http')
+          ? rawAvatar
+          : `${(import.meta.env.VITE_API_URL || 'http://localhost:8000/api/v1').replace('/api/v1', '')}/storage/${rawAvatar}`;
         setProfilePhoto(avatarUrl);
         console.log("Avatar do médico carregado:", avatarUrl);
       } else {
@@ -355,8 +356,13 @@ export function DoctorArea({
       // Upload para o backend
       const response = await doctorService.uploadAvatar(file);
 
-      // Usar a URL retornada pelo backend
-      setProfilePhoto(response.avatar_url);
+      // Montar URL do avatar retornado pelo backend
+      const backendBase = (import.meta.env.VITE_API_URL || 'http://localhost:8000/api/v1').replace('/api/v1', '');
+      const returnedAvatar = response.avatar_url;
+      const resolvedAvatar = returnedAvatar?.startsWith('http')
+        ? returnedAvatar.replace('https://localhost', 'http://localhost')
+        : `${backendBase}/storage/${returnedAvatar}`;
+      setProfilePhoto(resolvedAvatar);
 
       toast.success("Foto atualizada com sucesso!", 3000);
 

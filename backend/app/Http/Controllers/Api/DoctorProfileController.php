@@ -152,35 +152,44 @@ class DoctorProfileController extends Controller
             }
 
             $user = $request->user();
+            $file = $request->file('avatar');
 
-            // Inicializar Cloudinary com a URL do ambiente
-            $cloudinary = new Cloudinary(env('CLOUDINARY_URL'));
+            if (env('CLOUDINARY_URL')) {
+                // --- Cloudinary (produção) ---
+                $cloudinary = new Cloudinary(env('CLOUDINARY_URL'));
 
-            // Deletar avatar antigo do Cloudinary se existir e for URL do Cloudinary
-            if ($user->avatar && str_contains($user->avatar, 'cloudinary.com')) {
-                try {
-                    // Extrair public_id da URL do Cloudinary
-                    preg_match('/upload\/(?:v\d+\/)?(.+)\.\w+$/', $user->avatar, $matches);
-                    if (!empty($matches[1])) {
-                        $cloudinary->uploadApi()->destroy($matches[1]);
+                if ($user->avatar && str_contains($user->avatar, 'cloudinary.com')) {
+                    try {
+                        preg_match('/upload\/(?:v\d+\/)?(.+)\.\w+$/', $user->avatar, $matches);
+                        if (!empty($matches[1])) {
+                            $cloudinary->uploadApi()->destroy($matches[1]);
+                        }
+                    } catch (\Exception $e) {
+                        Log::warning('Não foi possível deletar avatar antigo do Cloudinary: ' . $e->getMessage());
                     }
-                } catch (\Exception $e) {
-                    Log::warning('Não foi possível deletar avatar antigo do Cloudinary: ' . $e->getMessage());
                 }
+
+                $uploadResult = $cloudinary->uploadApi()->upload($file->getRealPath(), [
+                    'folder' => 'promed/avatars',
+                    'transformation' => [
+                        'width' => 400,
+                        'height' => 400,
+                        'crop' => 'fill',
+                        'gravity' => 'face'
+                    ]
+                ]);
+
+                $avatarUrl = $uploadResult['secure_url'];
+            } else {
+                // --- Storage local (desenvolvimento) ---
+                if ($user->avatar && !str_contains($user->avatar, 'cloudinary.com')) {
+                    Storage::disk('public')->delete($user->avatar);
+                }
+
+                $path = $file->store('avatars', 'public');
+                $avatarUrl = $path; // salva só o path; frontend monta a URL
             }
 
-            // Upload novo avatar para o Cloudinary
-            $uploadResult = $cloudinary->uploadApi()->upload($request->file('avatar')->getRealPath(), [
-                'folder' => 'promed/avatars',
-                'transformation' => [
-                    'width' => 400,
-                    'height' => 400,
-                    'crop' => 'fill',
-                    'gravity' => 'face'
-                ]
-            ]);
-
-            $avatarUrl = $uploadResult['secure_url'];
             $user->update(['avatar' => $avatarUrl]);
 
             return response()->json([
