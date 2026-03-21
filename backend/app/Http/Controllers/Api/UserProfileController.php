@@ -63,8 +63,7 @@ class UserProfileController extends Controller
         } catch (\Exception $e) {
             Log::error('Erro ao trocar perfil: ' . $e->getMessage());
             return response()->json([
-                'message' => 'Erro ao trocar perfil',
-                'error' => config('app.debug') ? $e->getMessage() : null
+                'message' => 'Erro ao trocar perfil'
             ], 500);
         }
     }

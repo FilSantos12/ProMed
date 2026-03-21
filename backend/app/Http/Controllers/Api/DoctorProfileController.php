@@ -47,7 +47,6 @@ class DoctorProfileController extends Controller
             Log::error('Erro ao carregar perfil do médico: ' . $e->getMessage());
             return response()->json([
                 'message' => 'Erro ao carregar perfil',
-                'error' => $e->getMessage()
             ], 500);
         }
     }
@@ -129,7 +128,6 @@ class DoctorProfileController extends Controller
             Log::error('Erro ao atualizar perfil do médico: ' . $e->getMessage());
             return response()->json([
                 'message' => 'Erro ao atualizar perfil',
-                'error' => $e->getMessage()
             ], 500);
         }
     }
@@ -203,8 +201,6 @@ class DoctorProfileController extends Controller
             Log::error('CLOUDINARY_URL configurada: ' . (env('CLOUDINARY_URL') ? 'Sim' : 'Não'));
             return response()->json([
                 'message' => 'Erro ao fazer upload do avatar',
-                'error' => $e->getMessage(),
-                'trace' => config('app.debug') ? $e->getTraceAsString() : null
             ], 500);
         }
     }
@@ -238,7 +234,6 @@ class DoctorProfileController extends Controller
             Log::error('Erro ao carregar horários: ' . $e->getMessage());
             return response()->json([
                 'message' => 'Erro ao carregar horários',
-                'error' => $e->getMessage()
             ], 500);
         }
     }
@@ -327,7 +322,6 @@ class DoctorProfileController extends Controller
             Log::error('Erro ao adicionar horário: ' . $e->getMessage());
             return response()->json([
                 'message' => 'Erro ao adicionar horário',
-                'error' => $e->getMessage()
             ], 500);
         }
     }
@@ -377,7 +371,6 @@ class DoctorProfileController extends Controller
             Log::error('Erro ao atualizar horário: ' . $e->getMessage());
             return response()->json([
                 'message' => 'Erro ao atualizar horário',
-                'error' => $e->getMessage()
             ], 500);
         }
     }
@@ -409,7 +402,6 @@ class DoctorProfileController extends Controller
             Log::error('Erro ao deletar horário: ' . $e->getMessage());
             return response()->json([
                 'message' => 'Erro ao deletar horário',
-                'error' => $e->getMessage()
             ], 500);
         }
     }
@@ -430,7 +422,6 @@ class DoctorProfileController extends Controller
             Log::error('Erro ao carregar documentos: ' . $e->getMessage());
             return response()->json([
                 'message' => 'Erro ao carregar documentos',
-                'error' => $e->getMessage()
             ], 500);
         }
     }
@@ -513,7 +504,6 @@ class DoctorProfileController extends Controller
             Log::error('Erro ao fazer upload do documento: ' . $e->getMessage());
             return response()->json([
                 'message' => 'Erro ao fazer upload do documento',
-                'error' => $e->getMessage()
             ], 500);
         }
     }
@@ -543,7 +533,6 @@ class DoctorProfileController extends Controller
             Log::error('Erro ao deletar documento: ' . $e->getMessage());
             return response()->json([
                 'message' => 'Erro ao deletar documento',
-                'error' => $e->getMessage()
             ], 500);
         }
     }
@@ -618,7 +607,6 @@ class DoctorProfileController extends Controller
             Log::error('Erro ao alterar senha: ' . $e->getMessage());
             return response()->json([
                 'message' => 'Erro ao alterar senha',
-                'error' => $e->getMessage()
             ], 500);
         }
     }

@@ -62,9 +62,9 @@ class DoctorController extends Controller
 
             return response()->json($doctors);
         } catch (\Exception $e) {
+            Log::error('Erro ao carregar médicos: ' . $e->getMessage());
             return response()->json([
                 'message' => 'Erro ao carregar médicos',
-                'error' => $e->getMessage()
             ], 500);
         }
     }
@@ -107,10 +107,8 @@ class DoctorController extends Controller
 
                 return response()->json($doctor);
             } catch (\Exception $e) {
-                return response()->json([
-                    'message' => 'Médico não encontrado',
-                    'error' => $e->getMessage()
-                ], 404);
+                Log::error('Erro ao buscar médico: ' . $e->getMessage());
+                return response()->json(['message' => 'Médico não encontrado'], 404);
             }
         }
 
@@ -180,9 +178,9 @@ public function update(Request $request, $id)
         ]);
     } catch (\Exception $e) {
         DB::rollBack();
+        Log::error('Erro ao atualizar médico: ' . $e->getMessage());
         return response()->json([
             'message' => 'Erro ao atualizar médico',
-            'error' => $e->getMessage()
         ], 500);
     }
 }
@@ -206,9 +204,9 @@ public function toggleStatus($id)
             'is_active' => $user->is_active
         ]);
     } catch (\Exception $e) {
+        Log::error('Erro ao alterar status do médico: ' . $e->getMessage());
         return response()->json([
             'message' => 'Erro ao alterar status do médico',
-            'error' => $e->getMessage()
         ], 500);
     }
 }
@@ -236,9 +234,9 @@ public function toggleStatus($id)
             'appointments' => $appointments
         ]);
     } catch (\Exception $e) {
+        Log::error('Erro ao buscar histórico de consultas: ' . $e->getMessage());
         return response()->json([
             'message' => 'Erro ao buscar histórico de consultas',
-            'error' => $e->getMessage()
         ], 500);
     }
 }
@@ -257,9 +255,9 @@ public function toggleStatus($id)
                 'documents' => $doctor->documents
             ]);
         } catch (\Exception $e) {
+            Log::error('Erro ao carregar documentos: ' . $e->getMessage());
             return response()->json([
                 'message' => 'Erro ao carregar documentos',
-                'error' => $e->getMessage()
             ], 500);
         }
     }
@@ -288,7 +286,6 @@ public function approve($id)
         Log::error('Erro ao aprovar médico: ' . $e->getMessage());
         return response()->json([
             'message' => 'Erro ao aprovar médico',
-            'error' => $e->getMessage()
         ], 500);
     }
 }
@@ -329,7 +326,6 @@ public function approve($id)
             Log::error('Erro ao rejeitar médico: ' . $e->getMessage());
             return response()->json([
                 'message' => 'Erro ao rejeitar médico',
-                'error' => $e->getMessage()
             ], 500);
         }
     }
@@ -365,9 +361,9 @@ public function approve($id)
                 'document' => $document
             ]);
         } catch (\Exception $e) {
+            Log::error('Erro ao aprovar documento: ' . $e->getMessage());
             return response()->json([
                 'message' => 'Erro ao aprovar documento',
-                'error' => $e->getMessage()
             ], 500);
         }
     }
@@ -412,9 +408,9 @@ public function approve($id)
             'document' => $document
         ]);
     } catch (\Exception $e) {
+        Log::error('Erro ao rejeitar documento: ' . $e->getMessage());
         return response()->json([
             'message' => 'Erro ao rejeitar documento',
-            'error' => $e->getMessage()
         ], 500);
     }
  }
@@ -458,7 +454,7 @@ public function approve($id)
 
         } catch (\Exception $e) {
             Log::error('Erro ao baixar documento: ' . $e->getMessage());
-            return response()->json(['message' => 'Erro ao baixar documento', 'error' => $e->getMessage()], 500);
+            return response()->json(['message' => 'Erro ao baixar documento'], 500);
         }
     }
 
@@ -500,7 +496,6 @@ public function approve($id)
                 Log::error('Erro ao visualizar documento público: ' . $e->getMessage());
                 return response()->json([
                     'message' => 'Erro ao carregar documento',
-                    'error' => $e->getMessage()
                 ], 500);
             }
         }

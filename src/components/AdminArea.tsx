@@ -35,19 +35,12 @@ export function AdminArea({ onSectionChange }: AdminAreaProps) {
 
   // ⚠️ PROTEÇÃO DE ACESSO - Apenas administradores podem acessar
   useEffect(() => {
-    console.log("Verificando acesso - Usuário:", user);
-
     if (!user) {
-      console.log("❌ Usuário não autenticado - Redirecionando para login");
       onSectionChange?.("login");
       return;
     }
 
-    console.log("Role do usuário:", user.role);
-
     if (user.role !== "admin") {
-      console.log("❌ Usuário não é admin - Redirecionando baseado no role");
-      // Redirecionar baseado no role
       if (user.role === "doctor") {
         onSectionChange?.("doctor-area");
       } else if (user.role === "patient") {
@@ -55,8 +48,6 @@ export function AdminArea({ onSectionChange }: AdminAreaProps) {
       } else {
         onSectionChange?.("home");
       }
-    } else {
-      console.log("✅ Acesso permitido - Usuário é admin");
     }
   }, [user, onSectionChange]);
 

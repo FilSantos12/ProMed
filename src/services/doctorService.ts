@@ -243,16 +243,6 @@ class DoctorService {
       const monthArray = Array.isArray(monthAppts) ? monthAppts : (monthAppts?.data || []);
       const allArray = Array.isArray(allAppts) ? allAppts : (allAppts?.data || []);
 
-      console.log('📊 DoctorService.getStats - Dados carregados:', {
-        today: todayArray.length,
-        week: weekArray.length,
-        month: monthArray.length,
-        all: allArray.length,
-        todayRaw: todayAppts,
-        weekRaw: weekAppts,
-        monthRaw: monthAppts,
-        allRaw: allAppts,
-      });
 
       // Contar pacientes únicos no histórico COMPLETO (não apenas este mês)
       const uniquePatients = new Set(
@@ -266,11 +256,8 @@ class DoctorService {
         activePatients: uniquePatients,
       };
 
-      console.log('📊 DoctorService.getStats - Estatísticas calculadas:', stats);
-
       return stats;
     } catch (error) {
-      console.error('Erro ao buscar estatísticas:', error);
       // Retornar estatísticas vazias em caso de erro
       return {
         appointmentsToday: 0,

@@ -41,8 +41,7 @@ class PatientProfileController extends Controller
         } catch (\Exception $e) {
             Log::error('Erro ao carregar perfil do paciente: ' . $e->getMessage());
             return response()->json([
-                'message' => 'Erro ao carregar perfil',
-                'error' => $e->getMessage()
+                'message' => 'Erro ao carregar perfil'
             ], 500);
         }
     }
@@ -127,8 +126,7 @@ class PatientProfileController extends Controller
             DB::rollBack();
             Log::error('Erro ao atualizar perfil do paciente: ' . $e->getMessage());
             return response()->json([
-                'message' => 'Erro ao atualizar perfil',
-                'error' => $e->getMessage()
+                'message' => 'Erro ao atualizar perfil'
             ], 500);
         }
     }
@@ -169,8 +167,7 @@ class PatientProfileController extends Controller
         } catch (\Exception $e) {
             Log::error('Erro ao fazer upload do avatar: ' . $e->getMessage());
             return response()->json([
-                'message' => 'Erro ao fazer upload do avatar',
-                'error' => $e->getMessage()
+                'message' => 'Erro ao fazer upload do avatar'
             ], 500);
         }
     }
@@ -219,8 +216,7 @@ class PatientProfileController extends Controller
         } catch (\Exception $e) {
             Log::error('Erro ao carregar consultas: ' . $e->getMessage());
             return response()->json([
-                'message' => 'Erro ao carregar consultas',
-                'error' => $e->getMessage()
+                'message' => 'Erro ao carregar consultas'
             ], 500);
         }
     }
@@ -251,8 +247,7 @@ class PatientProfileController extends Controller
         } catch (\Exception $e) {
             Log::error('Erro ao carregar consultas futuras: ' . $e->getMessage());
             return response()->json([
-                'message' => 'Erro ao carregar consultas futuras',
-                'error' => $e->getMessage()
+                'message' => 'Erro ao carregar consultas futuras'
             ], 500);
         }
     }
@@ -306,8 +301,7 @@ class PatientProfileController extends Controller
         } catch (\Exception $e) {
             Log::error('Erro ao cancelar consulta: ' . $e->getMessage());
             return response()->json([
-                'message' => 'Erro ao cancelar consulta',
-                'error' => $e->getMessage()
+                'message' => 'Erro ao cancelar consulta'
             ], 500);
         }
     }
@@ -351,8 +345,7 @@ class PatientProfileController extends Controller
         } catch (\Exception $e) {
             Log::error('Erro ao alterar senha: ' . $e->getMessage());
             return response()->json([
-                'message' => 'Erro ao alterar senha',
-                'error' => $e->getMessage()
+                'message' => 'Erro ao alterar senha'
             ], 500);
         }
     }
@@ -392,8 +385,7 @@ class PatientProfileController extends Controller
         } catch (\Exception $e) {
             Log::error('Erro ao buscar estatísticas: ' . $e->getMessage());
             return response()->json([
-                'message' => 'Erro ao buscar estatísticas',
-                'error' => $e->getMessage()
+                'message' => 'Erro ao buscar estatísticas'
             ], 500);
         }
     }
@@ -426,8 +418,7 @@ class PatientProfileController extends Controller
         } catch (\Exception $e) {
             Log::error('Erro ao buscar prontuários: ' . $e->getMessage());
             return response()->json([
-                'message' => 'Erro ao buscar prontuários médicos',
-                'error' => $e->getMessage()
+                'message' => 'Erro ao buscar prontuários médicos'
             ], 500);
         }
     }

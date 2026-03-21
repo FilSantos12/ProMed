@@ -7,6 +7,7 @@ use App\Models\Patient;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
 
 class PatientController extends Controller
@@ -41,9 +42,9 @@ class PatientController extends Controller
 
             return response()->json($patients);
         } catch (\Exception $e) {
+            Log::error('Erro ao buscar pacientes: ' . $e->getMessage());
             return response()->json([
                 'message' => 'Erro ao buscar pacientes',
-                'error' => $e->getMessage()
             ], 500);
         }
     }
@@ -58,10 +59,7 @@ class PatientController extends Controller
 
             return response()->json($patient);
         } catch (\Exception $e) {
-            return response()->json([
-                'message' => 'Paciente não encontrado',
-                'error' => $e->getMessage()
-            ], 404);
+            return response()->json(['message' => 'Paciente não encontrado'], 404);
         }
     }
 
@@ -143,9 +141,9 @@ class PatientController extends Controller
             ]);
         } catch (\Exception $e) {
             DB::rollBack();
+            Log::error('Erro ao atualizar paciente: ' . $e->getMessage());
             return response()->json([
                 'message' => 'Erro ao atualizar paciente',
-                'error' => $e->getMessage()
             ], 500);
         }
     }
@@ -169,9 +167,9 @@ class PatientController extends Controller
                 'is_active' => $user->is_active
             ]);
         } catch (\Exception $e) {
+            Log::error('Erro ao alterar status do paciente: ' . $e->getMessage());
             return response()->json([
                 'message' => 'Erro ao alterar status do paciente',
-                'error' => $e->getMessage()
             ], 500);
         }
     }
@@ -205,12 +203,9 @@ class PatientController extends Controller
                 'appointments' => $appointments
             ]);
         } catch (\Exception $e) {
-            \Log::error('Erro ao buscar histórico de consultas: ' . $e->getMessage());
-            \Log::error($e->getTraceAsString());
-
+            Log::error('Erro ao buscar histórico de consultas: ' . $e->getMessage());
             return response()->json([
                 'message' => 'Erro ao buscar histórico de consultas',
-                'error' => $e->getMessage()
             ], 500);
         }
     }

@@ -137,8 +137,7 @@ class DoctorApplicationController extends Controller
         } catch (\Exception $e) {
             Log::error('Erro ao processar solicitação: ' . $e->getMessage());
             return response()->json([
-                'message' => 'Erro ao processar solicitação. Por favor, tente novamente.',
-                'error' => config('app.debug') ? $e->getMessage() : null
+                'message' => 'Erro ao processar solicitação. Por favor, tente novamente.'
             ], 500);
         }
     }
@@ -319,8 +318,7 @@ class DoctorApplicationController extends Controller
         } catch (\Exception $e) {
             Log::error('Erro ao aprovar médico: ' . $e->getMessage());
             return response()->json([
-                'message' => 'Erro ao aprovar médico',
-                'error' => config('app.debug') ? $e->getMessage() : null
+                'message' => 'Erro ao aprovar médico'
             ], 500);
         }
     }
@@ -395,8 +393,7 @@ class DoctorApplicationController extends Controller
         } catch (\Exception $e) {
             Log::error('Erro ao rejeitar médico: ' . $e->getMessage());
             return response()->json([
-                'message' => 'Erro ao rejeitar médico',
-                'error' => config('app.debug') ? $e->getMessage() : null
+                'message' => 'Erro ao rejeitar médico'
             ], 500);
         }
     }

@@ -106,8 +106,7 @@ class DashboardController extends Controller
             
         } catch (\Exception $e) {
             return response()->json([
-                'message' => 'Erro ao buscar estatísticas',
-                'error' => $e->getMessage()
+                'message' => 'Erro ao buscar estatísticas'
             ], 500);
         }
     }

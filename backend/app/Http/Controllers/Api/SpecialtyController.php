@@ -152,8 +152,7 @@ class SpecialtyController extends Controller
             \Log::error($e->getTraceAsString());
 
             return response()->json([
-                'message' => 'Erro ao buscar especialidades disponíveis',
-                'error' => $e->getMessage()
+                'message' => 'Erro ao buscar especialidades disponíveis'
             ], 500);
         }
     }

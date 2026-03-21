@@ -70,8 +70,7 @@ class ScheduleController extends Controller
 
         } catch (\Exception $e) {
             return response()->json([
-                'message' => 'Erro ao criar horário.',
-                'error' => $e->getMessage()
+                'message' => 'Erro ao criar horário.'
             ], 500);
         }
     }
@@ -117,8 +116,7 @@ class ScheduleController extends Controller
 
         } catch (\Exception $e) {
             return response()->json([
-                'message' => 'Erro ao atualizar horário.',
-                'error' => $e->getMessage()
+                'message' => 'Erro ao atualizar horário.'
             ], 500);
         }
     }
@@ -146,8 +144,7 @@ class ScheduleController extends Controller
 
         } catch (\Exception $e) {
             return response()->json([
-                'message' => 'Erro ao deletar horário.',
-                'error' => $e->getMessage()
+                'message' => 'Erro ao deletar horário.'
             ], 500);
         }
     }

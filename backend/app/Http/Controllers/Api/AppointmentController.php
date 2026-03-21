@@ -151,7 +151,6 @@ class AppointmentController extends Controller
             \Log::error('AppointmentController@store - Erro: ' . $e->getMessage());
             return response()->json([
                 'message' => 'Erro ao agendar consulta.',
-                'error' => $e->getMessage()
             ], 500);
         }
     }
@@ -210,9 +209,9 @@ class AppointmentController extends Controller
             ], 200);
 
         } catch (\Exception $e) {
+            \Log::error('AppointmentController@update - Erro: ' . $e->getMessage());
             return response()->json([
                 'message' => 'Erro ao atualizar consulta.',
-                'error' => $e->getMessage()
             ], 500);
         }
     }
@@ -246,9 +245,9 @@ class AppointmentController extends Controller
             ], 200);
 
         } catch (\Exception $e) {
+            \Log::error('AppointmentController@destroy - Erro: ' . $e->getMessage());
             return response()->json([
                 'message' => 'Erro ao deletar consulta.',
-                'error' => $e->getMessage()
             ], 500);
         }
     }
@@ -284,9 +283,9 @@ class AppointmentController extends Controller
             ], 200);
 
         } catch (\Exception $e) {
+            \Log::error('AppointmentController@confirm - Erro: ' . $e->getMessage());
             return response()->json([
                 'message' => 'Erro ao confirmar consulta.',
-                'error' => $e->getMessage()
             ], 500);
         }
     }
@@ -326,9 +325,9 @@ class AppointmentController extends Controller
             ], 200);
 
         } catch (\Exception $e) {
+            \Log::error('AppointmentController@cancel - Erro: ' . $e->getMessage());
             return response()->json([
                 'message' => 'Erro ao cancelar consulta.',
-                'error' => $e->getMessage()
             ], 500);
         }
     }
@@ -371,9 +370,9 @@ class AppointmentController extends Controller
             ], 200);
 
         } catch (\Exception $e) {
+            \Log::error('AppointmentController@complete - Erro: ' . $e->getMessage());
             return response()->json([
                 'message' => 'Erro ao marcar consulta como realizada.',
-                'error' => $e->getMessage()
             ], 500);
         }
     }
@@ -432,9 +431,9 @@ class AppointmentController extends Controller
             ], 200);
 
         } catch (\Exception $e) {
+            \Log::error('AppointmentController@reschedule - Erro: ' . $e->getMessage());
             return response()->json([
                 'message' => 'Erro ao reagendar consulta.',
-                'error' => $e->getMessage()
             ], 500);
         }
     }
