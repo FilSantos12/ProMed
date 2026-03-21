@@ -1,5 +1,8 @@
+import { useEffect, useState } from "react";
 import { Award, Users, Heart, Shield } from "lucide-react";
 import { ImageWithFallback } from "./figma/ImageWithFallback";
+import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious, type CarouselApi } from "./ui/carousel";
+import carouselService, { CarouselSlide } from "../services/carouselService";
 
 interface SobrePageProps {
   onSectionChange?: (section: string) => void;
@@ -28,7 +31,24 @@ const values = [
   },
 ];
 
+const FALLBACK_SLIDE = "/img/banner_sobre.jpg";
+
 export function SobrePage({ onSectionChange: _ }: SobrePageProps) {
+  const [slides, setSlides] = useState<CarouselSlide[]>([]);
+  const [carouselApi, setCarouselApi] = useState<CarouselApi>();
+
+  useEffect(() => {
+    carouselService.getActive('sobre')
+      .then((data) => { if (data.length > 0) setSlides(data); })
+      .catch(() => { /* mantém fallback */ });
+  }, []);
+
+  useEffect(() => {
+    if (!carouselApi || slides.length <= 1) return;
+    const id = setInterval(() => carouselApi.scrollNext(), 4000);
+    return () => clearInterval(id);
+  }, [carouselApi, slides]);
+
   return (
     <div className="min-h-screen bg-gray-50 py-12">
       <div className="container mx-auto px-4">
@@ -72,14 +92,48 @@ export function SobrePage({ onSectionChange: _ }: SobrePageProps) {
                 </div>
               </div>
             </div>
-            <div className="relative">
-              <div className="rounded-2xl overflow-hidden shadow-2xl">
+
+            {/* Imagem dinâmica ou fallback */}
+            <div className="relative rounded-2xl overflow-hidden shadow-2xl">
+              {slides.length > 0 ? (
+                <Carousel setApi={setCarouselApi} className="w-full">
+                  <CarouselContent>
+                    {slides.map((slide, index) => (
+                      <CarouselItem key={slide.id || index}>
+                        <div className="relative h-96">
+                          <ImageWithFallback
+                            src={slide.image_url}
+                            alt={slide.title}
+                            className="w-full h-full object-cover"
+                          />
+                          {(slide.title || slide.description) && (
+                            <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 to-transparent p-4">
+                              {slide.title && (
+                                <p className="text-white font-semibold text-sm">{slide.title}</p>
+                              )}
+                              {slide.description && (
+                                <p className="text-white/80 text-xs">{slide.description}</p>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      </CarouselItem>
+                    ))}
+                  </CarouselContent>
+                  {slides.length > 1 && (
+                    <>
+                      <CarouselPrevious className="left-2" />
+                      <CarouselNext className="right-2" />
+                    </>
+                  )}
+                </Carousel>
+              ) : (
                 <ImageWithFallback
-                  src="/img/banner_sobre.jpg"
+                  src={FALLBACK_SLIDE}
                   alt="Equipe médica da ProMed"
                   className="w-full h-96 object-cover"
                 />
-              </div>
+              )}
             </div>
           </div>
         </section>

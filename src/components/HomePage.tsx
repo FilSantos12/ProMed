@@ -40,7 +40,7 @@ export function HomePage({ onSectionChange }: HomePageProps) {
 
   // Busca slides do backend; mantém fallback se vazio ou erro
   useEffect(() => {
-    carouselService.getActive()
+    carouselService.getActive('home')
       .then((data) => { if (data.length > 0) setSlides(data); })
       .catch(() => { /* mantém fallback */ });
   }, []);

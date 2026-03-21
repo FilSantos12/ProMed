@@ -13,6 +13,7 @@ class CarouselSlide extends Model
         'link_url',
         'is_active',
         'order',
+        'location',
     ];
 
     protected $casts = [

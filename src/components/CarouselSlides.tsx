@@ -15,6 +15,7 @@ const EMPTY_FORM: Partial<CarouselSlideForm> = {
   link_url: '',
   is_active: true,
   order: 0,
+  location: 'home',
 };
 
 export default function CarouselSlides() {
@@ -59,6 +60,7 @@ export default function CarouselSlides() {
       link_url: slide.link_url ?? '',
       is_active: slide.is_active,
       order: slide.order,
+      location: slide.location ?? 'home',
     });
     setPreviewError(false);
     setShowForm(true);
@@ -197,6 +199,19 @@ export default function CarouselSlides() {
               </div>
 
               <div>
+                <Label>Exibir em</Label>
+                <select
+                  value={form.location ?? 'home'}
+                  onChange={(e) => setForm({ ...form, location: e.target.value as 'home' | 'sobre' | 'all' })}
+                  className="w-full mt-1 px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="home">Apenas Home</option>
+                  <option value="sobre">Apenas Sobre Nós</option>
+                  <option value="all">Home e Sobre Nós</option>
+                </select>
+              </div>
+
+              <div>
                 <Label>Ordem de exibição</Label>
                 <Input
                   type="number"
@@ -215,7 +230,7 @@ export default function CarouselSlides() {
                   onChange={(e) => setForm({ ...form, is_active: e.target.checked })}
                   className="rounded"
                 />
-                <Label htmlFor="slide_active" className="cursor-pointer">Ativo (visível na home)</Label>
+                <Label htmlFor="slide_active" className="cursor-pointer">Ativo</Label>
               </div>
             </div>
 

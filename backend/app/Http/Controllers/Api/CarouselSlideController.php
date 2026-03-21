@@ -11,9 +11,15 @@ class CarouselSlideController extends Controller
     /**
      * Lista slides ativos (público — usado na HomePage).
      */
-    public function index()
+    public function index(Request $request)
     {
+        $location = $request->query('location', 'home');
+
         $slides = CarouselSlide::active()
+            ->where(function ($q) use ($location) {
+                $q->where('location', $location)
+                  ->orWhere('location', 'all');
+            })
             ->orderBy('order')
             ->orderBy('created_at')
             ->get();
@@ -45,6 +51,7 @@ class CarouselSlideController extends Controller
             'link_url'    => 'nullable|url|max:500',
             'is_active'   => 'boolean',
             'order'       => 'integer|min:0',
+            'location'    => 'in:home,sobre,all',
         ]);
 
         $slide = CarouselSlide::create($request->all());
@@ -69,6 +76,7 @@ class CarouselSlideController extends Controller
             'link_url'    => 'nullable|url|max:500',
             'is_active'   => 'boolean',
             'order'       => 'integer|min:0',
+            'location'    => 'in:home,sobre,all',
         ]);
 
         $slide->update($request->all());

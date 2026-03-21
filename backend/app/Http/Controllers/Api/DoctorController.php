@@ -429,12 +429,15 @@ public function approve($id)
                 ->where('id', $documentId)
                 ->firstOrFail();
 
-            $relativePath = $document->file_path;
-            
+            // Se for URL externa (Cloudinary), redireciona para download direto
+            if (str_starts_with($document->file_path, 'http')) {
+                return redirect($document->file_path);
+            }
+
             $possiblePaths = [
-                storage_path('app/public/' . $relativePath),
-                storage_path('app/' . $relativePath),
-                public_path('storage/' . $relativePath),
+                storage_path('app/public/' . $document->file_path),
+                storage_path('app/' . $document->file_path),
+                public_path('storage/' . $document->file_path),
             ];
 
             $filePath = null;
@@ -446,19 +449,16 @@ public function approve($id)
             }
 
             if (!$filePath) {
-                return response()->json(['message' => 'Arquivo não encontrado'], 404);
+                return response()->json(['message' => 'Arquivo não encontrado no servidor. Faça o upload novamente.'], 404);
             }
 
             return response()->download($filePath, $document->file_name, [
                 'Content-Type' => $document->mime_type
             ]);
-            
+
         } catch (\Exception $e) {
             Log::error('Erro ao baixar documento: ' . $e->getMessage());
-            return response()->json([
-                'message' => 'Erro ao baixar documento',
-                'error' => $e->getMessage()
-            ], 500);
+            return response()->json(['message' => 'Erro ao baixar documento', 'error' => $e->getMessage()], 500);
         }
     }
 
@@ -550,6 +550,12 @@ public function approve($id)
                 ->where('id', $documentId)
                 ->firstOrFail();
 
+            // Se o file_path for uma URL externa (Cloudinary), redireciona direto
+            if (str_starts_with($document->file_path, 'http')) {
+                return redirect($document->file_path);
+            }
+
+            // Caso contrário, tenta servir do disco local
             $possiblePaths = [
                 storage_path('app/public/' . $document->file_path),
                 storage_path('app/' . $document->file_path),
@@ -565,7 +571,7 @@ public function approve($id)
             }
 
             if (!$filePath) {
-                return response()->json(['message' => 'Arquivo não encontrado'], 404);
+                return response()->json(['message' => 'Arquivo não encontrado no servidor. Faça o upload novamente.'], 404);
             }
 
             return response()->file($filePath, [

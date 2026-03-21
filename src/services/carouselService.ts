@@ -8,6 +8,7 @@ export interface CarouselSlide {
   link_url: string | null;
   is_active: boolean;
   order: number;
+  location: 'home' | 'sobre' | 'all';
   created_at: string;
   updated_at: string;
 }
@@ -15,9 +16,9 @@ export interface CarouselSlide {
 export type CarouselSlideForm = Omit<CarouselSlide, 'id' | 'created_at' | 'updated_at'>;
 
 const carouselService = {
-  // Público — usado na HomePage
-  getActive: async (): Promise<CarouselSlide[]> => {
-    const { data } = await api.get('/carousel-slides');
+  // Público — filtra por location ('home' | 'sobre')
+  getActive: async (location: 'home' | 'sobre' = 'home'): Promise<CarouselSlide[]> => {
+    const { data } = await api.get('/carousel-slides', { params: { location } });
     return data;
   },
 

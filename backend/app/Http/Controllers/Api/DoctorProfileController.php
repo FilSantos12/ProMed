@@ -462,23 +462,46 @@ class DoctorProfileController extends Controller
                 ->first();
 
             if ($existingDoc) {
-                if (Storage::disk('public')->exists($existingDoc->file_path)) {
+                if (str_starts_with($existingDoc->file_path, 'http')) {
+                    // Cloudinary: tentar deletar pelo public_id
+                    try {
+                        if (env('CLOUDINARY_URL')) {
+                            $cloudinary = new Cloudinary(env('CLOUDINARY_URL'));
+                            preg_match('/upload\/(?:v\d+\/)?(.+)\.\w+$/', $existingDoc->file_path, $matches);
+                            if (!empty($matches[1])) {
+                                $cloudinary->uploadApi()->destroy($matches[1], ['resource_type' => 'auto']);
+                            }
+                        }
+                    } catch (\Exception $e) {
+                        Log::warning('Não foi possível deletar documento antigo do Cloudinary: ' . $e->getMessage());
+                    }
+                } else {
                     Storage::disk('public')->delete($existingDoc->file_path);
                 }
                 $existingDoc->delete();
             }
 
-            // Upload novo documento
-            $filePath = $file->store('doctor_documents/' . $user->doctor->id, 'public');
+            // Upload do documento
+            if (env('CLOUDINARY_URL')) {
+                $cloudinary = new Cloudinary(env('CLOUDINARY_URL'));
+                $uploadResult = $cloudinary->uploadApi()->upload($file->getRealPath(), [
+                    'folder'        => 'promed/documents/' . $user->doctor->id,
+                    'resource_type' => 'auto', // suporta PDF e imagens
+                    'public_id'     => $request->document_type . '_' . time(),
+                ]);
+                $filePath = $uploadResult['secure_url'];
+            } else {
+                $filePath = $file->store('doctor_documents/' . $user->doctor->id, 'public');
+            }
 
             $document = DoctorDocument::create([
-                'doctor_id' => $user->doctor->id,
+                'doctor_id'     => $user->doctor->id,
                 'document_type' => $request->document_type,
-                'file_name' => $file->getClientOriginalName(),
-                'file_path' => $filePath,
-                'file_size' => $file->getSize(),
-                'mime_type' => $file->getMimeType(),
-                'status' => 'pending'
+                'file_name'     => $file->getClientOriginalName(),
+                'file_path'     => $filePath,
+                'file_size'     => $file->getSize(),
+                'mime_type'     => $file->getMimeType(),
+                'status'        => 'pending',
             ]);
 
             return response()->json([
