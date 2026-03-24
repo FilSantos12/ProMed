@@ -412,14 +412,19 @@ const handleViewDocument = async (doc: any) => {
       `${API_URL}/doctors/${selectedDoctor?.id}/documents/${doc.id}/view`,
       { headers: { Authorization: `Bearer ${token}` } }
     );
-    if (!response.ok) throw new Error('Erro ao carregar documento');
-    const blob = await response.blob();
-    const objectUrl = URL.createObjectURL(blob);
-    window.open(objectUrl, '_blank');
-    setTimeout(() => URL.revokeObjectURL(objectUrl), 60000);
-  } catch (err) {
-    toast.error('❌ Erro ao visualizar documento', 6000);
-    console.error(err);
+    if (!response.ok) throw new Error('Arquivo não encontrado. Faça o upload novamente.');
+    const contentType = response.headers.get('Content-Type') ?? '';
+    if (contentType.includes('application/json')) {
+      const data = await response.json();
+      window.open(data.url, '_blank');
+    } else {
+      const blob = await response.blob();
+      const objectUrl = URL.createObjectURL(blob);
+      window.open(objectUrl, '_blank');
+      setTimeout(() => URL.revokeObjectURL(objectUrl), 60000);
+    }
+  } catch (err: any) {
+    toast.error(err?.message ?? '❌ Erro ao visualizar documento', 6000);
   }
 };
 
@@ -430,17 +435,26 @@ const handleDownloadDocument = async (doc: any) => {
       `${API_URL}/doctors/${selectedDoctor?.id}/documents/${doc.id}/download`,
       { headers: { Authorization: `Bearer ${token}` } }
     );
-    if (!response.ok) throw new Error('Erro ao baixar documento');
-    const blob = await response.blob();
-    const objectUrl = URL.createObjectURL(blob);
-    const anchor = document.createElement('a');
-    anchor.href = objectUrl;
-    anchor.download = doc.file_name || 'documento';
-    anchor.click();
-    URL.revokeObjectURL(objectUrl);
-  } catch (err) {
-    toast.error('❌ Erro ao baixar documento', 6000);
-    console.error(err);
+    if (!response.ok) throw new Error('Arquivo não encontrado. Faça o upload novamente.');
+    const contentType = response.headers.get('Content-Type') ?? '';
+    if (contentType.includes('application/json')) {
+      const data = await response.json();
+      const anchor = document.createElement('a');
+      anchor.href = data.url;
+      anchor.download = data.file_name || doc.file_name || 'documento';
+      anchor.target = '_blank';
+      anchor.click();
+    } else {
+      const blob = await response.blob();
+      const objectUrl = URL.createObjectURL(blob);
+      const anchor = document.createElement('a');
+      anchor.href = objectUrl;
+      anchor.download = doc.file_name || 'documento';
+      anchor.click();
+      URL.revokeObjectURL(objectUrl);
+    }
+  } catch (err: any) {
+    toast.error(err?.message ?? '❌ Erro ao baixar documento', 6000);
   }
 };
 

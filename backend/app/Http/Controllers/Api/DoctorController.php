@@ -425,9 +425,9 @@ public function approve($id)
                 ->where('id', $documentId)
                 ->firstOrFail();
 
-            // Se for URL externa (Cloudinary), redireciona para download direto
+            // Se for URL externa (Cloudinary), retorna a URL para o frontend baixar direto
             if (str_starts_with($document->file_path, 'http')) {
-                return redirect($document->file_path);
+                return response()->json(['url' => $document->file_path, 'file_name' => $document->file_name]);
             }
 
             $possiblePaths = [
@@ -545,9 +545,9 @@ public function approve($id)
                 ->where('id', $documentId)
                 ->firstOrFail();
 
-            // Se o file_path for uma URL externa (Cloudinary), redireciona direto
+            // Se o file_path for uma URL externa (Cloudinary), retorna a URL para o frontend abrir direto
             if (str_starts_with($document->file_path, 'http')) {
-                return redirect($document->file_path);
+                return response()->json(['url' => $document->file_path]);
             }
 
             // Caso contrário, tenta servir do disco local
@@ -566,7 +566,7 @@ public function approve($id)
             }
 
             if (!$filePath) {
-                return response()->json(['message' => 'Arquivo não encontrado no servidor. Faça o upload novamente.'], 404);
+                return response()->json(['message' => 'Arquivo não encontrado. Faça o upload novamente.'], 404);
             }
 
             return response()->file($filePath, [
