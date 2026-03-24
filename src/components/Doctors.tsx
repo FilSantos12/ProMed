@@ -614,7 +614,7 @@ const getDocumentIcon = (type: string) => {
   }
 
   return (
-    <Card>
+    <><Card>
       <CardHeader>
         <div className="flex items-center justify-between mb-4">
           <div>
@@ -1605,9 +1605,11 @@ const getDocumentIcon = (type: string) => {
         </div>
       )}
 
+    </Card>
+
       {/* Modal — Aprovar Documento */}
       {showApproveDocModal && pendingDocAction && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-[200] flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => { setShowApproveDocModal(false); setPendingDocAction(null); }} />
           <div className="relative bg-white rounded-xl shadow-2xl w-full max-w-sm p-6">
             <div className="flex items-center gap-3 mb-4">
@@ -1629,7 +1631,7 @@ const getDocumentIcon = (type: string) => {
 
       {/* Modal — Solicitar Reenvio */}
       {showResetDocModal && pendingDocAction && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-[200] flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => { setShowResetDocModal(false); setPendingDocAction(null); }} />
           <div className="relative bg-white rounded-xl shadow-2xl w-full max-w-sm p-6">
             <div className="flex items-center gap-3 mb-4">
@@ -1649,7 +1651,7 @@ const getDocumentIcon = (type: string) => {
         </div>
       )}
 
-    </Card>
+    </>
   );
 };
 
