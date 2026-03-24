@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { Input } from './ui/input';
 import {
   Stethoscope, Edit, Eye, Power, Search, Calendar, CheckCircle, XCircle,
-  FileText, Download, GraduationCap, Building2, CreditCard, Camera, Award, File,
+  FileText, Download, GraduationCap, Building2, CreditCard, Camera, Award, File, RotateCcw,
   Heart, Brain, Bone, Baby, Activity, Eye as EyeIcon, Ear, Users, Pill,
   Syringe, TestTube, Microscope, Thermometer, UserCircle, UserCheck,
   Circle, Square, Triangle, Star, AlertCircle, Info, Zap,
@@ -511,6 +511,22 @@ const confirmRejectDocument = async () => {
     }
   } catch (err: any) {
     toast.error(`❌ ${err.response?.data?.message || 'Erro ao rejeitar documento'}`, 6000);
+  }
+};
+
+const handleResetDocument = async (doc: any) => {
+  if (!window.confirm('Solicitar que o médico reenvie este documento? O status voltará para Pendente.')) return;
+  try {
+    const token = localStorage.getItem('token');
+    await axios.patch(
+      `${API_URL}/doctors/${selectedDoctor?.id}/documents/${doc.id}/reset`,
+      {},
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
+    toast.success('✅ Reenvio solicitado. O médico poderá enviar um novo documento.');
+    if (selectedDoctor) handleViewDocuments(selectedDoctor);
+  } catch (err: any) {
+    toast.error(`❌ ${err.response?.data?.message || 'Erro ao solicitar reenvio'}`, 6000);
   }
 };
 
@@ -1518,15 +1534,15 @@ const getDocumentIcon = (type: string) => {
                       )}
 
                       {/* Botões de ação */}
-                      <div className="flex space-x-2">
+                      <div className="flex flex-wrap gap-2">
                         <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => handleDownloadDocument(doc)}
-                            className="flex-1"
-                            >
-                            <Download className="w-4 h-4 mr-1" />
-                            Baixar
+                          size="sm"
+                          variant="outline"
+                          onClick={() => handleDownloadDocument(doc)}
+                          className="flex-1"
+                        >
+                          <Download className="w-4 h-4 mr-1" />
+                          Baixar
                         </Button>
 
                         {doc.status === 'pending' && (
@@ -1548,6 +1564,18 @@ const getDocumentIcon = (type: string) => {
                               Rejeitar
                             </Button>
                           </>
+                        )}
+
+                        {(doc.status === 'approved' || doc.status === 'rejected') && (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => handleResetDocument(doc)}
+                            className="flex-1 border-orange-300 text-orange-600 hover:bg-orange-50"
+                          >
+                            <RotateCcw className="w-4 h-4 mr-1" />
+                            Solicitar Reenvio
+                          </Button>
                         )}
                       </div>
                     </div>

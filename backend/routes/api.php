@@ -124,6 +124,7 @@ Route::middleware('auth:sanctum')->prefix('v1')->group(function () {
         Route::get('/doctors/{doctorId}/documents/{documentId}/download', [DoctorController::class, 'downloadDocument']);
         Route::put('/doctors/{doctorId}/documents/{documentId}/approve', [DoctorController::class, 'approveDocument']);
         Route::put('/doctors/{doctorId}/documents/{documentId}/reject', [DoctorController::class, 'rejectDocument']);
+        Route::patch('/doctors/{doctorId}/documents/{documentId}/reset', [DoctorController::class, 'resetDocument']);
 
         // Solicitações de médicos pendentes
         Route::get('/doctors/pending', [\App\Http\Controllers\Api\DoctorApplicationController::class, 'getPendingDoctors']);

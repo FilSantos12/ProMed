@@ -580,6 +580,32 @@ public function approve($id)
     }
 
     /**
+     * Solicitar reenvio de documento (Admin) — reseta status para pending
+     */
+    public function resetDocument($doctorId, $documentId)
+    {
+        try {
+            $document = DoctorDocument::where('doctor_id', $doctorId)
+                ->where('id', $documentId)
+                ->firstOrFail();
+
+            $document->status = 'pending';
+            $document->verified_at = null;
+            $document->verified_by = null;
+            $document->notes = null;
+            $document->save();
+
+            return response()->json([
+                'message' => 'Reenvio solicitado. O médico poderá enviar um novo documento.',
+                'document' => $document,
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Erro ao solicitar reenvio de documento: ' . $e->getMessage());
+            return response()->json(['message' => 'Erro ao solicitar reenvio'], 500);
+        }
+    }
+
+    /**
      * Dashboard do médico
      */
     public function dashboard($id)

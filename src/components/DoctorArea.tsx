@@ -27,6 +27,10 @@ import {
   AlertCircle,
   Trash2,
   Power,
+  Upload,
+  RotateCcw,
+  CheckCircle,
+  XCircle,
 } from "lucide-react";
 import { useAuth } from "../hooks/useAuth";
 import { useToast } from "../contexts/ToastContext";
@@ -96,6 +100,11 @@ export function DoctorArea({
     break_start: "",
     break_end: "",
   });
+
+  // Estados para Documentos
+  const [documents, setDocuments] = useState<any[]>([]);
+  const [loadingDocuments, setLoadingDocuments] = useState(false);
+  const [uploadingDocType, setUploadingDocType] = useState<string | null>(null);
 
   // Estados para modal de confirmação
   const [showDeleteModal, setShowDeleteModal] = useState(false);
@@ -230,8 +239,6 @@ export function DoctorArea({
         setAppointmentsHistory(response);
       }
     } catch (err: any) {
-      console.error("Erro ao carregar histórico:", err);
-      console.error("Detalhes do erro:", err.response?.data);
       toast.error("Erro ao carregar histórico de consultas", 6000);
     } finally {
       setLoadingHistory(false);
@@ -243,8 +250,35 @@ export function DoctorArea({
       loadSchedules();
     } else if (activeTab === "historico") {
       loadHistory();
+    } else if (activeTab === "documentos") {
+      loadDocuments();
     }
   }, [activeTab, historyPage]);
+
+  const loadDocuments = async () => {
+    try {
+      setLoadingDocuments(true);
+      const data = await doctorService.getDocuments();
+      setDocuments(data);
+    } catch {
+      toast.error("Erro ao carregar documentos", 6000);
+    } finally {
+      setLoadingDocuments(false);
+    }
+  };
+
+  const handleDocumentUpload = async (type: string, file: File) => {
+    try {
+      setUploadingDocType(type);
+      await doctorService.uploadDocument({ document_type: type, file });
+      toast.success("Documento enviado com sucesso!", 3000);
+      loadDocuments();
+    } catch {
+      toast.error("Erro ao enviar documento", 6000);
+    } finally {
+      setUploadingDocType(null);
+    }
+  };
 
   // Funções de manipulação de consultas
   const handleConfirmAppointment = async (appointmentId: number) => {
@@ -763,6 +797,13 @@ export function DoctorArea({
             >
               <FileText className="w-4 h-4" />
               <span>Histórico</span>
+            </TabsTrigger>
+            <TabsTrigger
+              value="documentos"
+              className="flex items-center space-x-2 flex-1 min-w-fit"
+            >
+              <FileText className="w-4 h-4" />
+              <span>Documentos</span>
             </TabsTrigger>
             <TabsTrigger
               value="configuracoes"
@@ -1663,6 +1704,113 @@ export function DoctorArea({
           </TabsContent>
 
           {/* Configurações Tab */}
+          {/* Documentos Tab */}
+          <TabsContent value="documentos" className="space-y-4">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center space-x-2">
+                  <FileText className="w-5 h-5 text-blue-600" />
+                  <span>Meus Documentos</span>
+                </CardTitle>
+                <CardDescription>
+                  Gerencie seus documentos profissionais. Você pode reenviar qualquer documento a qualquer momento.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                {loadingDocuments ? (
+                  <div className="text-center py-8 text-gray-500">Carregando documentos...</div>
+                ) : (
+                  <div className="space-y-4">
+                    {[
+                      { type: 'diploma', label: 'Diploma', description: 'Diploma de graduação em medicina' },
+                      { type: 'crm_document', label: 'Documento CRM', description: 'Registro no Conselho Regional de Medicina' },
+                      { type: 'certificate', label: 'Certificado de Especialização', description: 'Certificado da especialidade médica' },
+                      { type: 'photo', label: 'Foto Profissional', description: 'Foto para identificação no sistema' },
+                      { type: 'other', label: 'Outro Documento', description: 'Outros documentos relevantes' },
+                    ].map(({ type, label, description }) => {
+                      const doc = documents.find((d) => d.document_type === type);
+                      const isUploading = uploadingDocType === type;
+                      return (
+                        <div
+                          key={type}
+                          className={`border rounded-lg p-4 flex items-center justify-between gap-4 ${
+                            doc?.status === 'approved' ? 'border-green-200 bg-green-50' :
+                            doc?.status === 'rejected' ? 'border-red-200 bg-red-50' :
+                            doc?.status === 'pending' ? 'border-yellow-200 bg-yellow-50' :
+                            'border-gray-200 bg-gray-50'
+                          }`}
+                        >
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <p className="font-medium text-gray-900">{label}</p>
+                              {doc ? (
+                                <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
+                                  doc.status === 'approved' ? 'bg-green-100 text-green-700' :
+                                  doc.status === 'rejected' ? 'bg-red-100 text-red-700' :
+                                  'bg-yellow-100 text-yellow-700'
+                                }`}>
+                                  {doc.status === 'approved' ? '✓ Aprovado' :
+                                   doc.status === 'rejected' ? '✗ Rejeitado' : '⏳ Em análise'}
+                                </span>
+                              ) : (
+                                <span className="text-xs px-2 py-0.5 rounded-full bg-gray-100 text-gray-500">Não enviado</span>
+                              )}
+                            </div>
+                            <p className="text-sm text-gray-500 mt-0.5">{description}</p>
+                            {doc?.status === 'rejected' && doc.notes && (
+                              <p className="text-xs text-red-600 mt-1 bg-red-100 rounded px-2 py-1">
+                                Motivo: {doc.notes}
+                              </p>
+                            )}
+                            {doc && (
+                              <p className="text-xs text-gray-400 mt-1">Arquivo: {doc.file_name}</p>
+                            )}
+                          </div>
+
+                          <div className="flex items-center gap-2 shrink-0">
+                            <label className="cursor-pointer">
+                              <input
+                                type="file"
+                                accept=".pdf,.jpg,.jpeg,.png"
+                                className="hidden"
+                                disabled={isUploading}
+                                onChange={(e) => {
+                                  const file = e.target.files?.[0];
+                                  if (file) handleDocumentUpload(type, file);
+                                  e.target.value = '';
+                                }}
+                              />
+                              <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium border transition-colors ${
+                                isUploading
+                                  ? 'bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed'
+                                  : doc
+                                  ? 'bg-orange-50 text-orange-600 border-orange-200 hover:bg-orange-100'
+                                  : 'bg-blue-50 text-blue-600 border-blue-200 hover:bg-blue-100'
+                              }`}>
+                                {isUploading ? (
+                                  <><RotateCcw className="w-3.5 h-3.5 animate-spin" /> Enviando...</>
+                                ) : doc ? (
+                                  <><Upload className="w-3.5 h-3.5" /> Reenviar</>
+                                ) : (
+                                  <><Upload className="w-3.5 h-3.5" /> Enviar</>
+                                )}
+                              </span>
+                            </label>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+
+                <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg text-sm text-blue-700">
+                  <p className="font-medium mb-1">Formatos aceitos: PDF, JPG, PNG (máx. 5MB)</p>
+                  <p>Documentos aprovados ficam salvos mesmo após reenvio. Novos envios substituem o arquivo anterior e voltam para análise.</p>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
           <TabsContent value="configuracoes" className="space-y-6">
             <Card>
               <CardHeader>
