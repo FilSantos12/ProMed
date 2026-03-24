@@ -98,6 +98,9 @@ const Doctors: React.FC<DoctorsProps> = ({ initialFilterStatus }) => {
   const [doctorAppointments, setDoctorAppointments] = useState<any[]>([]);
   const [showDocumentsModal, setShowDocumentsModal] = useState(false);
   const [showRejectDocumentModal, setShowRejectDocumentModal] = useState(false);
+  const [showApproveDocModal, setShowApproveDocModal] = useState(false);
+  const [showResetDocModal, setShowResetDocModal] = useState(false);
+  const [pendingDocAction, setPendingDocAction] = useState<any>(null);
   const [doctorDocuments, setDoctorDocuments] = useState<any[]>([]);
   const [loadingDocuments, setLoadingDocuments] = useState(false);
   const [selectedDocument, setSelectedDocument] = useState<any>(null);
@@ -408,45 +411,46 @@ const Doctors: React.FC<DoctorsProps> = ({ initialFilterStatus }) => {
 const handleViewDocument = async (doc: any) => {
   try {
     const token = localStorage.getItem('token');
-    const response = await fetch(
+    const response = await axios.get(
       `${API_URL}/doctors/${selectedDoctor?.id}/documents/${doc.id}/view`,
-      { headers: { Authorization: `Bearer ${token}` } }
+      { headers: { Authorization: `Bearer ${token}` }, responseType: 'blob' }
     );
-    if (!response.ok) throw new Error('Arquivo não encontrado. Faça o upload novamente.');
-    const contentType = response.headers.get('Content-Type') ?? '';
+    const contentType = response.headers['content-type'] ?? '';
     if (contentType.includes('application/json')) {
-      const data = await response.json();
+      const text = await (response.data as Blob).text();
+      const data = JSON.parse(text);
       window.open(data.url, '_blank');
     } else {
-      const blob = await response.blob();
-      const objectUrl = URL.createObjectURL(blob);
+      const objectUrl = URL.createObjectURL(response.data);
       window.open(objectUrl, '_blank');
       setTimeout(() => URL.revokeObjectURL(objectUrl), 60000);
     }
   } catch (err: any) {
-    toast.error(err?.message ?? '❌ Erro ao visualizar documento', 6000);
+    const msg = err.response?.data?.message ?? err.response?.status === 404
+      ? 'Arquivo não encontrado. Faça o upload novamente.'
+      : '❌ Erro ao visualizar documento';
+    toast.error(msg, 6000);
   }
 };
 
 const handleDownloadDocument = async (doc: any) => {
   try {
     const token = localStorage.getItem('token');
-    const response = await fetch(
+    const response = await axios.get(
       `${API_URL}/doctors/${selectedDoctor?.id}/documents/${doc.id}/download`,
-      { headers: { Authorization: `Bearer ${token}` } }
+      { headers: { Authorization: `Bearer ${token}` }, responseType: 'blob' }
     );
-    if (!response.ok) throw new Error('Arquivo não encontrado. Faça o upload novamente.');
-    const contentType = response.headers.get('Content-Type') ?? '';
+    const contentType = response.headers['content-type'] ?? '';
     if (contentType.includes('application/json')) {
-      const data = await response.json();
+      const text = await (response.data as Blob).text();
+      const data = JSON.parse(text);
       const anchor = document.createElement('a');
       anchor.href = data.url;
       anchor.download = data.file_name || doc.file_name || 'documento';
       anchor.target = '_blank';
       anchor.click();
     } else {
-      const blob = await response.blob();
-      const objectUrl = URL.createObjectURL(blob);
+      const objectUrl = URL.createObjectURL(response.data);
       const anchor = document.createElement('a');
       anchor.href = objectUrl;
       anchor.download = doc.file_name || 'documento';
@@ -454,27 +458,28 @@ const handleDownloadDocument = async (doc: any) => {
       URL.revokeObjectURL(objectUrl);
     }
   } catch (err: any) {
-    toast.error(err?.message ?? '❌ Erro ao baixar documento', 6000);
+    toast.error('❌ Erro ao baixar documento', 6000);
   }
 };
 
-const handleApproveDocument = async (document: any) => {
-  if (!window.confirm('Deseja aprovar este documento?')) return;
+const handleApproveDocument = (document: any) => {
+  setPendingDocAction(document);
+  setShowApproveDocModal(true);
+};
 
+const confirmApproveDocument = async () => {
+  if (!pendingDocAction) return;
   try {
     const token = localStorage.getItem('token');
     await axios.put(
-      `${API_URL}/doctors/${selectedDoctor?.id}/documents/${document.id}/approve`,
+      `${API_URL}/doctors/${selectedDoctor?.id}/documents/${pendingDocAction.id}/approve`,
       {},
       { headers: { Authorization: `Bearer ${token}` } }
     );
-
     toast.success('✅ Documento aprovado com sucesso!');
-    
-    // Recarregar documentos
-    if (selectedDoctor) {
-      handleViewDocuments(selectedDoctor);
-    }
+    setShowApproveDocModal(false);
+    setPendingDocAction(null);
+    if (selectedDoctor) handleViewDocuments(selectedDoctor);
   } catch (err: any) {
     toast.error(`❌ ${err.response?.data?.message || 'Erro ao aprovar documento'}`, 6000);
   }
@@ -514,16 +519,23 @@ const confirmRejectDocument = async () => {
   }
 };
 
-const handleResetDocument = async (doc: any) => {
-  if (!window.confirm('Solicitar que o médico reenvie este documento? O status voltará para Pendente.')) return;
+const handleResetDocument = (doc: any) => {
+  setPendingDocAction(doc);
+  setShowResetDocModal(true);
+};
+
+const confirmResetDocument = async () => {
+  if (!pendingDocAction) return;
   try {
     const token = localStorage.getItem('token');
     await axios.patch(
-      `${API_URL}/doctors/${selectedDoctor?.id}/documents/${doc.id}/reset`,
+      `${API_URL}/doctors/${selectedDoctor?.id}/documents/${pendingDocAction.id}/reset`,
       {},
       { headers: { Authorization: `Bearer ${token}` } }
     );
     toast.success('✅ Reenvio solicitado. O médico poderá enviar um novo documento.');
+    setShowResetDocModal(false);
+    setPendingDocAction(null);
     if (selectedDoctor) handleViewDocuments(selectedDoctor);
   } catch (err: any) {
     toast.error(`❌ ${err.response?.data?.message || 'Erro ao solicitar reenvio'}`, 6000);
@@ -1588,6 +1600,50 @@ const getDocumentIcon = (type: string) => {
               <Button onClick={() => setShowDocumentsModal(false)} className="shadow-lg">
                 Fechar
               </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal — Aprovar Documento */}
+      {showApproveDocModal && pendingDocAction && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => { setShowApproveDocModal(false); setPendingDocAction(null); }} />
+          <div className="relative bg-white rounded-xl shadow-2xl w-full max-w-sm p-6">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
+                <CheckCircle className="w-5 h-5 text-green-600" />
+              </div>
+              <h3 className="text-lg font-semibold text-gray-900">Aprovar Documento</h3>
+            </div>
+            <p className="text-gray-600 mb-6">
+              Deseja aprovar o documento <strong>{pendingDocAction.file_name}</strong>?
+            </p>
+            <div className="flex gap-3">
+              <Button variant="outline" className="flex-1" onClick={() => { setShowApproveDocModal(false); setPendingDocAction(null); }}>Cancelar</Button>
+              <Button className="flex-1 bg-green-600 hover:bg-green-700" onClick={confirmApproveDocument}>Aprovar</Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal — Solicitar Reenvio */}
+      {showResetDocModal && pendingDocAction && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => { setShowResetDocModal(false); setPendingDocAction(null); }} />
+          <div className="relative bg-white rounded-xl shadow-2xl w-full max-w-sm p-6">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-10 h-10 bg-orange-100 rounded-full flex items-center justify-center">
+                <RotateCcw className="w-5 h-5 text-orange-600" />
+              </div>
+              <h3 className="text-lg font-semibold text-gray-900">Solicitar Reenvio</h3>
+            </div>
+            <p className="text-gray-600 mb-6">
+              O documento <strong>{pendingDocAction.file_name}</strong> voltará para <strong>Pendente</strong> e o médico poderá enviar um novo arquivo.
+            </p>
+            <div className="flex gap-3">
+              <Button variant="outline" className="flex-1" onClick={() => { setShowResetDocModal(false); setPendingDocAction(null); }}>Cancelar</Button>
+              <Button className="flex-1 bg-orange-500 hover:bg-orange-600" onClick={confirmResetDocument}>Solicitar Reenvio</Button>
             </div>
           </div>
         </div>
