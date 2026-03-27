@@ -477,10 +477,12 @@ class DoctorProfileController extends Controller
             if (env('CLOUDINARY_URL')) {
                 $cloudinary = new Cloudinary(env('CLOUDINARY_URL'));
                 $resourceType = $file->getMimeType() === 'application/pdf' ? 'raw' : 'image';
+                $ext = strtolower($file->getClientOriginalExtension());
+                $publicId = $request->document_type . '_' . time() . ($ext ? '.' . $ext : '');
                 $uploadResult = $cloudinary->uploadApi()->upload($file->getRealPath(), [
                     'folder'        => 'promed/documents/' . $user->doctor->id,
                     'resource_type' => $resourceType,
-                    'public_id'     => $request->document_type . '_' . time(),
+                    'public_id'     => $publicId,
                 ]);
                 $filePath = $uploadResult['secure_url'];
             } else {

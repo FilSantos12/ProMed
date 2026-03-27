@@ -427,7 +427,11 @@ public function approve($id)
 
             // Se for URL externa (Cloudinary), retorna a URL para o frontend baixar direto
             if (str_starts_with($document->file_path, 'http')) {
-                return response()->json(['url' => $document->file_path, 'file_name' => $document->file_name]);
+                return response()->json([
+                    'url'       => $document->file_path,
+                    'file_name' => $document->file_name,
+                    'mime_type' => $document->mime_type,
+                ]);
             }
 
             $possiblePaths = [
@@ -547,7 +551,11 @@ public function approve($id)
 
             // Se o file_path for uma URL externa (Cloudinary), retorna a URL para o frontend abrir direto
             if (str_starts_with($document->file_path, 'http')) {
-                return response()->json(['url' => $document->file_path]);
+                return response()->json([
+                    'url'       => $document->file_path,
+                    'file_name' => $document->file_name,
+                    'mime_type' => $document->mime_type,
+                ]);
             }
 
             // Caso contrário, tenta servir do disco local

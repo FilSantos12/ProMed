@@ -419,9 +419,18 @@ const handleViewDocument = async (doc: any) => {
     if (contentType.includes('application/json')) {
       const text = await (response.data as Blob).text();
       const data = JSON.parse(text);
-      window.open(data.url, '_blank');
+      const mimeType = data.mime_type || doc.mime_type || 'application/octet-stream';
+      // Buscar como blob para garantir MIME type correto (resolve PDFs sem extensão na URL)
+      const fetchRes = await fetch(data.url);
+      const blob = await fetchRes.blob();
+      const typedBlob = new Blob([blob], { type: mimeType });
+      const objectUrl = URL.createObjectURL(typedBlob);
+      window.open(objectUrl, '_blank');
+      setTimeout(() => URL.revokeObjectURL(objectUrl), 60000);
     } else {
-      const objectUrl = URL.createObjectURL(response.data);
+      const mimeType = doc.mime_type || response.data.type || 'application/octet-stream';
+      const typedBlob = new Blob([response.data], { type: mimeType });
+      const objectUrl = URL.createObjectURL(typedBlob);
       window.open(objectUrl, '_blank');
       setTimeout(() => URL.revokeObjectURL(objectUrl), 60000);
     }
@@ -441,19 +450,26 @@ const handleDownloadDocument = async (doc: any) => {
       { headers: { Authorization: `Bearer ${token}` }, responseType: 'blob' }
     );
     const contentType = response.headers['content-type'] ?? '';
+    const fileName = doc.file_name || 'documento';
     if (contentType.includes('application/json')) {
       const text = await (response.data as Blob).text();
       const data = JSON.parse(text);
+      const mimeType = data.mime_type || doc.mime_type || 'application/octet-stream';
+      // Buscar como blob para garantir filename correto (atributo download ignorado em URLs cross-origin)
+      const fetchRes = await fetch(data.url);
+      const blob = await fetchRes.blob();
+      const typedBlob = new Blob([blob], { type: mimeType });
+      const objectUrl = URL.createObjectURL(typedBlob);
       const anchor = document.createElement('a');
-      anchor.href = data.url;
-      anchor.download = data.file_name || doc.file_name || 'documento';
-      anchor.target = '_blank';
+      anchor.href = objectUrl;
+      anchor.download = data.file_name || fileName;
       anchor.click();
+      URL.revokeObjectURL(objectUrl);
     } else {
       const objectUrl = URL.createObjectURL(response.data);
       const anchor = document.createElement('a');
       anchor.href = objectUrl;
-      anchor.download = doc.file_name || 'documento';
+      anchor.download = fileName;
       anchor.click();
       URL.revokeObjectURL(objectUrl);
     }

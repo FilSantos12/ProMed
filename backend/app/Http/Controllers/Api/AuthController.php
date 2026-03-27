@@ -304,10 +304,12 @@ public function login(Request $request)
                             try {
                                 $cloudinary = new Cloudinary(env('CLOUDINARY_URL'));
                                 $resourceType = $file->getMimeType() === 'application/pdf' ? 'raw' : 'image';
+                                $ext = strtolower($file->getClientOriginalExtension());
+                                $publicId = $type . '_' . time() . ($ext ? '.' . $ext : '');
                                 $uploadResult = $cloudinary->uploadApi()->upload($file->getRealPath(), [
                                     'folder' => 'promed/documents/' . $doctor->id,
                                     'resource_type' => $resourceType,
-                                    'public_id' => $type . '_' . time(),
+                                    'public_id' => $publicId,
                                 ]);
                                 $filePath = $uploadResult['secure_url'];
                             } catch (\Exception $e) {
