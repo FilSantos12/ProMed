@@ -312,10 +312,27 @@ public function login(Request $request)
                             \Log::error('Erro ao fazer upload da foto para Cloudinary: ' . $e->getMessage());
                         }
                     } else {
-                        // Para outros documentos, salvar localmente (ou pode usar Cloudinary também)
-                        $folder = 'doctors/documents';
-                        $fileName = time() . '_' . $type . '_' . $file->getClientOriginalName();
-                        $filePath = $file->storeAs($folder, $fileName, 'public');
+                        // Para outros documentos, usar Cloudinary se disponível (produção)
+                        if (env('CLOUDINARY_URL')) {
+                            try {
+                                $cloudinary = new Cloudinary(env('CLOUDINARY_URL'));
+                                $uploadResult = $cloudinary->uploadApi()->upload($file->getRealPath(), [
+                                    'folder' => 'promed/documents/' . $doctor->id,
+                                    'resource_type' => 'auto',
+                                    'public_id' => $type . '_' . time(),
+                                ]);
+                                $filePath = $uploadResult['secure_url'];
+                            } catch (\Exception $e) {
+                                \Log::error('Erro ao fazer upload de documento para Cloudinary: ' . $e->getMessage());
+                                $folder = 'doctors/documents';
+                                $fileName = time() . '_' . $type . '_' . $file->getClientOriginalName();
+                                $filePath = $file->storeAs($folder, $fileName, 'public');
+                            }
+                        } else {
+                            $folder = 'doctors/documents';
+                            $fileName = time() . '_' . $type . '_' . $file->getClientOriginalName();
+                            $filePath = $file->storeAs($folder, $fileName, 'public');
+                        }
 
                         DoctorDocument::create([
                             'doctor_id' => $doctor->id,

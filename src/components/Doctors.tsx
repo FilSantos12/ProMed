@@ -1430,11 +1430,14 @@ const getDocumentIcon = (type: string) => {
             </div>
             )}
       
+
+    </Card>
+
       {/* Modal de Documentos */}
       {showDocumentsModal && selectedDoctor && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setShowDocumentsModal(false)} />
-          
+
           <div className="relative bg-white rounded-lg shadow-2xl w-full max-w-5xl">
             <div className="flex items-center justify-between p-6 border-b bg-gradient-to-r from-purple-50 to-white">
               <div className="flex items-center space-x-3">
@@ -1446,8 +1449,8 @@ const getDocumentIcon = (type: string) => {
                   <p className="text-sm text-gray-600">{selectedDoctor.user.name}</p>
                 </div>
               </div>
-              <button 
-                onClick={() => setShowDocumentsModal(false)} 
+              <button
+                onClick={() => setShowDocumentsModal(false)}
                 className="text-gray-400 hover:text-gray-600 transition-colors"
               >
                 <span className="text-2xl">×</span>
@@ -1466,68 +1469,65 @@ const getDocumentIcon = (type: string) => {
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {doctorDocuments.map((doc) => (
-                    <div 
-                      key={doc.id} 
+                    <div
+                      key={doc.id}
                       className={`border rounded-lg p-4 ${
                         doc.status === 'approved' ? 'border-green-200 bg-green-50' :
                         doc.status === 'rejected' ? 'border-red-200 bg-red-50' :
                         'border-gray-200 bg-white'
                       }`}
                     >
-                      {/* Cabeçalho do documento */}
-                        <div className="flex items-center justify-between mb-3">
+                      <div className="flex items-center justify-between mb-3">
                         <div className="flex items-center space-x-2">
-                            {getDocumentIcon(doc.document_type).icon}
-                            <span className="font-semibold text-gray-900">
+                          {getDocumentIcon(doc.document_type).icon}
+                          <span className="font-semibold text-gray-900">
                             {getDocumentIcon(doc.document_type).name}
-                            </span>
+                          </span>
                         </div>
                         <Badge className={
-                            doc.status === 'approved' ? 'bg-green-100 text-green-800' :
-                            doc.status === 'rejected' ? 'bg-red-100 text-red-800' :
-                            'bg-yellow-100 text-yellow-800'
+                          doc.status === 'approved' ? 'bg-green-100 text-green-800' :
+                          doc.status === 'rejected' ? 'bg-red-100 text-red-800' :
+                          'bg-yellow-100 text-yellow-800'
                         }>
-                            {doc.status === 'pending' ? 'Pendente' :
-                            doc.status === 'approved' ? 'Aprovado' :
-                            'Rejeitado'}
+                          {doc.status === 'pending' ? 'Pendente' :
+                           doc.status === 'approved' ? 'Aprovado' :
+                           'Rejeitado'}
                         </Badge>
-                        </div>
+                      </div>
 
-                     {/* Card clicável (sem preview) */}
-                     <div
+                      <div
                         className="mb-3 w-full h-32 bg-gradient-to-br from-gray-50 to-gray-100 rounded-lg border-2 border-gray-200 flex items-center justify-center cursor-pointer hover:shadow-lg hover:border-blue-400 transition-all"
                         onClick={() => handleViewDocument(doc)}
-                        >
+                      >
                         <div className="text-center">
-                            {doc.mime_type?.startsWith('image/') ? (
+                          {doc.mime_type?.startsWith('image/') ? (
                             <>
-                                <div className="flex justify-center mb-2">
+                              <div className="flex justify-center mb-2">
                                 {getDocumentIcon(doc.document_type).icon}
-                                </div>
-                                <p className="text-sm font-semibold text-gray-700">
+                              </div>
+                              <p className="text-sm font-semibold text-gray-700">
                                 {getDocumentIcon(doc.document_type).name}
-                                </p>
-                                <p className="text-xs text-gray-500 mt-1">Clique para visualizar</p>
+                              </p>
+                              <p className="text-xs text-gray-500 mt-1">Clique para visualizar</p>
                             </>
-                            ) : doc.mime_type === 'application/pdf' ? (
+                          ) : doc.mime_type === 'application/pdf' ? (
                             <>
-                                <FileText className="w-8 h-8 mx-auto mb-2 text-red-600" />
-                                <p className="text-sm font-semibold text-gray-700">
+                              <FileText className="w-8 h-8 mx-auto mb-2 text-red-600" />
+                              <p className="text-sm font-semibold text-gray-700">
                                 {getDocumentIcon(doc.document_type).name}
-                                </p>
-                                <p className="text-xs text-gray-500 mt-1">Clique para ver PDF</p>
+                              </p>
+                              <p className="text-xs text-gray-500 mt-1">Clique para ver PDF</p>
                             </>
-                            ) : (
+                          ) : (
                             <>
-                                <FileText className="w-8 h-8 mx-auto mb-2 text-gray-400" />
-                                <p className="text-sm text-gray-600">Arquivo</p>
-                                <p className="text-xs text-gray-400 mt-1">Clique para visualizar</p>
+                              <FileText className="w-8 h-8 mx-auto mb-2 text-gray-400" />
+                              <p className="text-sm text-gray-600">Arquivo</p>
+                              <p className="text-xs text-gray-400 mt-1">Clique para visualizar</p>
                             </>
-                            )}
+                          )}
                         </div>
-                    </div>
+                      </div>
 
-                      {/* Informações do arquivo */}
                       <div className="text-sm text-gray-600 mb-3">
                         <p className="truncate" title={doc.file_name}>📄 {doc.file_name}</p>
                         <p>📦 {(doc.file_size / 1024).toFixed(2)} KB</p>
@@ -1537,7 +1537,6 @@ const getDocumentIcon = (type: string) => {
                         )}
                       </div>
 
-                      {/* Notas de rejeição */}
                       {doc.status === 'rejected' && doc.notes && (
                         <div className="bg-red-50 border border-red-200 rounded p-2 mb-3">
                           <p className="text-xs font-semibold text-red-900">Motivo da rejeição:</p>
@@ -1545,7 +1544,6 @@ const getDocumentIcon = (type: string) => {
                         </div>
                       )}
 
-                      {/* Botões de ação */}
                       <div className="flex flex-wrap gap-2">
                         <Button
                           size="sm"
@@ -1562,7 +1560,7 @@ const getDocumentIcon = (type: string) => {
                             <Button
                               size="sm"
                               onClick={() => handleApproveDocument(doc)}
-                              className="flex-1 bg-green-600 hover:bg-green-700 text-black"
+                              className="flex-1 bg-green-600 hover:bg-green-700 text-white"
                             >
                               <CheckCircle className="w-4 h-4 mr-1" />
                               Aprovar
@@ -1570,7 +1568,7 @@ const getDocumentIcon = (type: string) => {
                             <Button
                               size="sm"
                               onClick={() => handleRejectDocument(doc)}
-                              className="flex-1 bg-red-600 hover:bg-red-700 text-black"
+                              className="flex-1 bg-red-600 hover:bg-red-700 text-white"
                             >
                               <XCircle className="w-4 h-4 mr-1" />
                               Rejeitar
@@ -1604,8 +1602,6 @@ const getDocumentIcon = (type: string) => {
           </div>
         </div>
       )}
-
-    </Card>
 
       {/* Modal — Aprovar Documento */}
       {showApproveDocModal && pendingDocAction && (
@@ -1646,6 +1642,35 @@ const getDocumentIcon = (type: string) => {
             <div className="flex gap-3">
               <Button variant="outline" className="flex-1" onClick={() => { setShowResetDocModal(false); setPendingDocAction(null); }}>Cancelar</Button>
               <Button className="flex-1 bg-orange-500 hover:bg-orange-600" onClick={confirmResetDocument}>Solicitar Reenvio</Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal — Rejeitar Documento */}
+      {showRejectDocumentModal && selectedDocument && (
+        <div className="fixed inset-0 z-[200] flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => { setShowRejectDocumentModal(false); setSelectedDocument(null); setRejectNotes(''); }} />
+          <div className="relative bg-white rounded-xl shadow-2xl w-full max-w-sm p-6">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-10 h-10 bg-red-100 rounded-full flex items-center justify-center">
+                <XCircle className="w-5 h-5 text-red-600" />
+              </div>
+              <h3 className="text-lg font-semibold text-gray-900">Rejeitar Documento</h3>
+            </div>
+            <p className="text-gray-600 mb-3">
+              Informe o motivo da rejeição do documento <strong>{selectedDocument.file_name}</strong>:
+            </p>
+            <textarea
+              value={rejectNotes}
+              onChange={(e) => setRejectNotes(e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 resize-none mb-4"
+              rows={3}
+              placeholder="Motivo da rejeição (obrigatório)..."
+            />
+            <div className="flex gap-3">
+              <Button variant="outline" className="flex-1" onClick={() => { setShowRejectDocumentModal(false); setSelectedDocument(null); setRejectNotes(''); }}>Cancelar</Button>
+              <Button className="flex-1 bg-red-600 hover:bg-red-700 text-white" onClick={confirmRejectDocument}>Rejeitar</Button>
             </div>
           </div>
         </div>
