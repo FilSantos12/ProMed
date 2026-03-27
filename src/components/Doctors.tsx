@@ -1619,7 +1619,7 @@ const getDocumentIcon = (type: string) => {
             </p>
             <div className="flex gap-3">
               <Button variant="outline" className="flex-1" onClick={() => { setShowApproveDocModal(false); setPendingDocAction(null); }}>Cancelar</Button>
-              <Button className="flex-1 bg-green-600 hover:bg-green-700" onClick={confirmApproveDocument}>Aprovar</Button>
+              <Button className="flex-1 bg-green-600 hover:bg-green-700 text-white" onClick={confirmApproveDocument}>Aprovar</Button>
             </div>
           </div>
         </div>
@@ -1641,7 +1641,7 @@ const getDocumentIcon = (type: string) => {
             </p>
             <div className="flex gap-3">
               <Button variant="outline" className="flex-1" onClick={() => { setShowResetDocModal(false); setPendingDocAction(null); }}>Cancelar</Button>
-              <Button className="flex-1 bg-orange-500 hover:bg-orange-600" onClick={confirmResetDocument}>Solicitar Reenvio</Button>
+              <Button className="flex-1 bg-orange-500 hover:bg-orange-600 text-white" onClick={confirmResetDocument}>Solicitar Reenvio</Button>
             </div>
           </div>
         </div>
