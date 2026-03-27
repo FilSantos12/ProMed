@@ -1619,7 +1619,7 @@ const getDocumentIcon = (type: string) => {
             </p>
             <div className="flex gap-3">
               <Button variant="outline" className="flex-1" onClick={() => { setShowApproveDocModal(false); setPendingDocAction(null); }}>Cancelar</Button>
-              <Button className="flex-1 bg-green-600 hover:bg-green-700 text-white" onClick={confirmApproveDocument}>Aprovar</Button>
+              <button style={{ backgroundColor: '#16a34a', color: '#fff' }} className="flex-1 rounded-md px-3 py-2 text-sm font-medium hover:opacity-90 transition-opacity" onClick={confirmApproveDocument}>Aprovar</button>
             </div>
           </div>
         </div>
@@ -1641,7 +1641,7 @@ const getDocumentIcon = (type: string) => {
             </p>
             <div className="flex gap-3">
               <Button variant="outline" className="flex-1" onClick={() => { setShowResetDocModal(false); setPendingDocAction(null); }}>Cancelar</Button>
-              <Button className="flex-1 bg-orange-500 hover:bg-orange-600 text-white" onClick={confirmResetDocument}>Solicitar Reenvio</Button>
+              <button style={{ backgroundColor: '#f97316', color: '#fff' }} className="flex-1 rounded-md px-3 py-2 text-sm font-medium hover:opacity-90 transition-opacity" onClick={confirmResetDocument}>Solicitar Reenvio</button>
             </div>
           </div>
         </div>
@@ -1670,7 +1670,7 @@ const getDocumentIcon = (type: string) => {
             />
             <div className="flex gap-3">
               <Button variant="outline" className="flex-1" onClick={() => { setShowRejectDocumentModal(false); setSelectedDocument(null); setRejectNotes(''); }}>Cancelar</Button>
-              <Button className="flex-1 bg-red-600 hover:bg-red-700 text-white" onClick={confirmRejectDocument}>Rejeitar</Button>
+              <button style={{ backgroundColor: '#dc2626', color: '#fff' }} className="flex-1 rounded-md px-3 py-2 text-sm font-medium hover:opacity-90 transition-opacity" onClick={confirmRejectDocument}>Rejeitar</button>
             </div>
           </div>
         </div>
