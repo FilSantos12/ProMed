@@ -1557,22 +1557,24 @@ const getDocumentIcon = (type: string) => {
 
                         {doc.status === 'pending' && (
                           <>
-                            <Button
-                              size="sm"
+                            <button
+                              type="button"
+                              style={{ backgroundColor: '#16a34a', color: '#fff' }}
+                              className="flex-1 inline-flex items-center justify-center rounded-md px-2.5 py-1.5 text-sm font-medium hover:opacity-90 transition-opacity"
                               onClick={() => handleApproveDocument(doc)}
-                              className="flex-1 bg-green-600 hover:bg-green-700 text-white"
                             >
                               <CheckCircle className="w-4 h-4 mr-1" />
                               Aprovar
-                            </Button>
-                            <Button
-                              size="sm"
+                            </button>
+                            <button
+                              type="button"
+                              style={{ backgroundColor: '#dc2626', color: '#fff' }}
+                              className="flex-1 inline-flex items-center justify-center rounded-md px-2.5 py-1.5 text-sm font-medium hover:opacity-90 transition-opacity"
                               onClick={() => handleRejectDocument(doc)}
-                              className="flex-1 bg-red-600 hover:bg-red-700 text-white"
                             >
                               <XCircle className="w-4 h-4 mr-1" />
                               Rejeitar
-                            </Button>
+                            </button>
                           </>
                         )}
 
