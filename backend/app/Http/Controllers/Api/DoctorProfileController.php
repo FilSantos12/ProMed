@@ -460,7 +460,8 @@ class DoctorProfileController extends Controller
                             $cloudinary = new Cloudinary(env('CLOUDINARY_URL'));
                             preg_match('/upload\/(?:v\d+\/)?(.+)\.\w+$/', $existingDoc->file_path, $matches);
                             if (!empty($matches[1])) {
-                                $cloudinary->uploadApi()->destroy($matches[1], ['resource_type' => 'auto']);
+                                $deleteResourceType = str_contains($existingDoc->file_path, '/raw/upload/') ? 'raw' : 'image';
+                                $cloudinary->uploadApi()->destroy($matches[1], ['resource_type' => $deleteResourceType]);
                             }
                         }
                     } catch (\Exception $e) {
@@ -475,9 +476,10 @@ class DoctorProfileController extends Controller
             // Upload do documento
             if (env('CLOUDINARY_URL')) {
                 $cloudinary = new Cloudinary(env('CLOUDINARY_URL'));
+                $resourceType = $file->getMimeType() === 'application/pdf' ? 'raw' : 'image';
                 $uploadResult = $cloudinary->uploadApi()->upload($file->getRealPath(), [
                     'folder'        => 'promed/documents/' . $user->doctor->id,
-                    'resource_type' => 'auto', // suporta PDF e imagens
+                    'resource_type' => $resourceType,
                     'public_id'     => $request->document_type . '_' . time(),
                 ]);
                 $filePath = $uploadResult['secure_url'];

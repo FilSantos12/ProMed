@@ -316,9 +316,10 @@ public function login(Request $request)
                         if (env('CLOUDINARY_URL')) {
                             try {
                                 $cloudinary = new Cloudinary(env('CLOUDINARY_URL'));
+                                $resourceType = $file->getMimeType() === 'application/pdf' ? 'raw' : 'image';
                                 $uploadResult = $cloudinary->uploadApi()->upload($file->getRealPath(), [
                                     'folder' => 'promed/documents/' . $doctor->id,
-                                    'resource_type' => 'auto',
+                                    'resource_type' => $resourceType,
                                     'public_id' => $type . '_' . time(),
                                 ]);
                                 $filePath = $uploadResult['secure_url'];
