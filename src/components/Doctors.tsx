@@ -1487,10 +1487,12 @@ const getDocumentIcon = (type: string) => {
                         <Badge className={
                           doc.status === 'approved' ? 'bg-green-100 text-green-800' :
                           doc.status === 'rejected' ? 'bg-red-100 text-red-800' :
+                          doc.status === 'awaiting_resend' ? 'bg-orange-100 text-orange-800' :
                           'bg-yellow-100 text-yellow-800'
                         }>
                           {doc.status === 'pending' ? 'Pendente' :
                            doc.status === 'approved' ? 'Aprovado' :
+                           doc.status === 'awaiting_resend' ? '⏳ Ag. Reenvio' :
                            'Rejeitado'}
                         </Badge>
                       </div>
@@ -1576,6 +1578,12 @@ const getDocumentIcon = (type: string) => {
                               Rejeitar
                             </button>
                           </>
+                        )}
+
+                        {doc.status === 'awaiting_resend' && (
+                          <div className="flex-1 text-xs text-orange-600 bg-orange-50 border border-orange-200 rounded-md px-2.5 py-1.5 text-center">
+                            ⏳ Aguardando novo envio do médico
+                          </div>
                         )}
 
                         {(doc.status === 'approved' || doc.status === 'rejected') && (

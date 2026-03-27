@@ -589,7 +589,7 @@ public function approve($id)
                 ->where('id', $documentId)
                 ->firstOrFail();
 
-            $document->status = 'pending';
+            $document->status = 'awaiting_resend';
             $document->verified_at = null;
             $document->verified_by = null;
             $document->notes = null;

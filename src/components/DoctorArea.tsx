@@ -126,6 +126,13 @@ export function DoctorArea({
     end_time: "",
   });
 
+  // Redirecionar para aba documentos se médico não estiver aprovado
+  useEffect(() => {
+    if (profile && profile.status !== 'approved') {
+      setActiveTab('documentos');
+    }
+  }, [profile]);
+
   // Carregar dados iniciais
   useEffect(() => {
     loadInitialData();
@@ -774,30 +781,64 @@ export function DoctorArea({
           </Card>
         </div>
 
+        {/* Banner de status para médicos pendentes/rejeitados */}
+        {profile?.status === 'pending' && (
+          <div className="mb-6 p-4 bg-yellow-50 border border-yellow-300 rounded-xl flex items-start gap-3">
+            <AlertCircle className="w-5 h-5 text-yellow-600 shrink-0 mt-0.5" />
+            <div>
+              <p className="font-semibold text-yellow-800">Cadastro em análise</p>
+              <p className="text-sm text-yellow-700 mt-0.5">
+                Seu cadastro está sendo avaliado pela nossa equipe. Enquanto isso, você pode acompanhar e reenviar seus documentos na aba <strong>Documentos</strong>. Você será notificado por e-mail quando aprovado.
+              </p>
+            </div>
+          </div>
+        )}
+        {profile?.status === 'rejected' && (
+          <div className="mb-6 p-4 bg-red-50 border border-red-300 rounded-xl flex items-start gap-3">
+            <XCircle className="w-5 h-5 text-red-600 shrink-0 mt-0.5" />
+            <div>
+              <p className="font-semibold text-red-800">Cadastro rejeitado</p>
+              <p className="text-sm text-red-700 mt-0.5">
+                {profile?.rejection_notes
+                  ? `Motivo: ${profile.rejection_notes}`
+                  : 'Seu cadastro foi rejeitado. Entre em contato com o suporte para mais informações.'}
+              </p>
+            </div>
+          </div>
+        )}
+
         {/* Tabs */}
-        <Tabs value={activeTab} onValueChange={setActiveTab}>
+        <Tabs
+          value={activeTab}
+          onValueChange={setActiveTab}
+          defaultValue={profile?.status === 'pending' || profile?.status === 'rejected' ? 'documentos' : 'agenda'}
+        >
           <TabsList className="inline-flex w-full h-auto flex-wrap gap-2 bg-gray-100 p-2 rounded-lg">
-            <TabsTrigger
-              value="agenda"
-              className="flex items-center space-x-2 flex-1 min-w-fit"
-            >
-              <Calendar className="w-4 h-4" />
-              <span>Agenda</span>
-            </TabsTrigger>
-            <TabsTrigger
-              value="controle-agenda"
-              className="flex items-center space-x-2 flex-1 min-w-fit"
-            >
-              <Clock className="w-4 h-4" />
-              <span>Controle de Agenda</span>
-            </TabsTrigger>
-            <TabsTrigger
-              value="historico"
-              className="flex items-center space-x-2 flex-1 min-w-fit"
-            >
-              <FileText className="w-4 h-4" />
-              <span>Histórico</span>
-            </TabsTrigger>
+            {(profile?.status === 'approved' || !profile?.status) && (
+              <>
+                <TabsTrigger
+                  value="agenda"
+                  className="flex items-center space-x-2 flex-1 min-w-fit"
+                >
+                  <Calendar className="w-4 h-4" />
+                  <span>Agenda</span>
+                </TabsTrigger>
+                <TabsTrigger
+                  value="controle-agenda"
+                  className="flex items-center space-x-2 flex-1 min-w-fit"
+                >
+                  <Clock className="w-4 h-4" />
+                  <span>Controle de Agenda</span>
+                </TabsTrigger>
+                <TabsTrigger
+                  value="historico"
+                  className="flex items-center space-x-2 flex-1 min-w-fit"
+                >
+                  <FileText className="w-4 h-4" />
+                  <span>Histórico</span>
+                </TabsTrigger>
+              </>
+            )}
             <TabsTrigger
               value="documentos"
               className="flex items-center space-x-2 flex-1 min-w-fit"
@@ -1736,6 +1777,7 @@ export function DoctorArea({
                           className={`border rounded-lg p-4 flex items-center justify-between gap-4 ${
                             doc?.status === 'approved' ? 'border-green-200 bg-green-50' :
                             doc?.status === 'rejected' ? 'border-red-200 bg-red-50' :
+                            doc?.status === 'awaiting_resend' ? 'border-orange-300 bg-orange-50 ring-1 ring-orange-300' :
                             doc?.status === 'pending' ? 'border-yellow-200 bg-yellow-50' :
                             'border-gray-200 bg-gray-50'
                           }`}
@@ -1747,10 +1789,13 @@ export function DoctorArea({
                                 <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
                                   doc.status === 'approved' ? 'bg-green-100 text-green-700' :
                                   doc.status === 'rejected' ? 'bg-red-100 text-red-700' :
+                                  doc.status === 'awaiting_resend' ? 'bg-orange-100 text-orange-700' :
                                   'bg-yellow-100 text-yellow-700'
                                 }`}>
                                   {doc.status === 'approved' ? '✓ Aprovado' :
-                                   doc.status === 'rejected' ? '✗ Rejeitado' : '⏳ Em análise'}
+                                   doc.status === 'rejected' ? '✗ Rejeitado' :
+                                   doc.status === 'awaiting_resend' ? '🔄 Reenvio solicitado' :
+                                   '⏳ Em análise'}
                                 </span>
                               ) : (
                                 <span className="text-xs px-2 py-0.5 rounded-full bg-gray-100 text-gray-500">Não enviado</span>
@@ -1760,6 +1805,11 @@ export function DoctorArea({
                             {doc?.status === 'rejected' && doc.notes && (
                               <p className="text-xs text-red-600 mt-1 bg-red-100 rounded px-2 py-1">
                                 Motivo: {doc.notes}
+                              </p>
+                            )}
+                            {doc?.status === 'awaiting_resend' && (
+                              <p className="text-xs text-orange-700 mt-1 bg-orange-100 rounded px-2 py-1 font-medium">
+                                ⚠️ O administrador solicitou o reenvio deste documento. Clique em "Reenviar" para enviar um novo arquivo.
                               </p>
                             )}
                             {doc && (
@@ -1783,12 +1833,16 @@ export function DoctorArea({
                               <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium border transition-colors ${
                                 isUploading
                                   ? 'bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed'
+                                  : doc?.status === 'awaiting_resend'
+                                  ? 'bg-orange-500 text-white border-orange-500 hover:bg-orange-600'
                                   : doc
                                   ? 'bg-orange-50 text-orange-600 border-orange-200 hover:bg-orange-100'
                                   : 'bg-blue-50 text-blue-600 border-blue-200 hover:bg-blue-100'
                               }`}>
                                 {isUploading ? (
                                   <><RotateCcw className="w-3.5 h-3.5 animate-spin" /> Enviando...</>
+                                ) : doc?.status === 'awaiting_resend' ? (
+                                  <><Upload className="w-3.5 h-3.5" /> Reenviar agora</>
                                 ) : doc ? (
                                   <><Upload className="w-3.5 h-3.5" /> Reenviar</>
                                 ) : (

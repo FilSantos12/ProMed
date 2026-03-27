@@ -13,6 +13,7 @@ export interface DoctorProfile {
   formation: any;
   years_experience: number;
   status: string;
+  rejection_notes?: string;
   user: {
     id: number;
     name: string;

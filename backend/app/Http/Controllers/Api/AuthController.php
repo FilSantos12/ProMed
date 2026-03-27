@@ -73,22 +73,9 @@ public function login(Request $request)
             ], 403);
         }
 
-        if ($doctor->status === 'pending') {
-            Auth::logout();
-            return response()->json([
-                'message' => 'Seu cadastro está aguardando aprovação. Você receberá um email quando for aprovado.',
-                'status' => 'pending'
-            ], 403);
-        }
-
-        if ($doctor->status === 'rejected') {
-            Auth::logout();
-            return response()->json([
-                'message' => 'Seu cadastro foi rejeitado.',
-                'status' => 'rejected',
-                'rejection_notes' => $doctor->rejection_notes ?? 'Motivo não especificado.'
-            ], 403);
-        }
+        // Médicos pendentes podem fazer login (acesso restrito para reenviar documentos)
+        // Médicos rejeitados também podem fazer login para ver o motivo
+        // O frontend controla o que é exibido baseado em doctor.status
     }
 
     // Definir o perfil ativo
